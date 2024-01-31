@@ -1,23 +1,10 @@
-# cement
-
-An Agnostic Platform Wrapper
-
-which Provides:
-
-- SysAbstraction
-```typescript
-export interface SysAbstraction {
-  Time(): Time;
-  Stdout(): WritableStream<Uint8Array>;
-  Stderr(): WritableStream<Uint8Array>;
-  NextId(): string;
-  Random0ToValue(value: number): number;
-  System(): SystemService;
-  FileSystem(): FileService;
+export enum Level {
+  WARN = "warn",
+  DEBUG = "debug",
+  INFO = "info",
+  ERROR = "error",
 }
-```
-- Logger inspired from golang zlogger
-```typescript
+
 export interface LoggerInterface<R> {
   Module(key: string): R;
   SetDebug(...modules: (string | string[])[]): R;
@@ -36,4 +23,13 @@ export interface LoggerInterface<R> {
   Dur(key: string, nsec: number): R;
   Uint64(key: string, value: number): R;
 }
-```
+export interface WithLogger extends LoggerInterface<WithLogger> {
+  Logger(): Logger;
+}
+
+export interface Logger extends LoggerInterface<Logger> {
+  With(): WithLogger;
+
+  Msg(...args: string[]): void;
+  Flush(): Promise<void>;
+}
