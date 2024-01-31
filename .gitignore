@@ -1,6 +1,7 @@
 **/dist/
 .vscode/
 **/pubdir/
+**/*.tgz
 **/generated-ts/
 **/node_modules/
 **/src/generated/
