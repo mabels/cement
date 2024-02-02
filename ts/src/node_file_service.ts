@@ -55,6 +55,13 @@ export class NodeFileService implements FileService {
     return path.isAbsolute(fname);
   }
 
+  async writeFileString(fname: string, content: string): Promise<void> {
+    const o = await this.create(fname);
+    const wr = o.stream.getWriter();
+    await wr.write(new TextEncoder().encode(content));
+    await wr.close();
+  }
+
   async create(fname: string): Promise<NamedWritableStream> {
     let oName = fname;
     if (!path.isAbsolute(fname)) {

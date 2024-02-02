@@ -7,6 +7,7 @@ export interface FileService {
   readonly baseDir: string;
   create(fname: string): Promise<NamedWritableStream>;
   readFileString(fname: string): Promise<string>;
+  writeFileString(fname: string, content: string): Promise<void>;
 
   abs(fname: string): string;
 
