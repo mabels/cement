@@ -26,10 +26,10 @@ export abstract class Result<T, E = Error> {
     return this.unwrap_err();
   }
 
-  abstract is_ok(): boolean
-  abstract is_err(): boolean
-  abstract unwrap(): T
-  abstract unwrap_err(): E
+  abstract is_ok(): boolean;
+  abstract is_err(): boolean;
+  abstract unwrap(): T;
+  abstract unwrap_err(): E;
 }
 
 export class ResultOK<T> extends Result<T, Error> {

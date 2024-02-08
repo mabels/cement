@@ -26,14 +26,11 @@ it("ResultErr", () => {
   expect(() => result.unwrap()).toThrow();
 });
 
-
-class xResult {
-
-}
+class xResult {}
 it("is Result", () => {
   expect(Result.Is(Result.Ok(1))).toBe(true);
   expect(Result.Is(Result.Err("xxx"))).toEqual(true);
-  expect(Result.Is(new xResult)).toBe(false);
+  expect(Result.Is(new xResult())).toBe(false);
 });
 
 it("WithoutResult", () => {
