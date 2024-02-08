@@ -56,3 +56,5 @@ export class None<T> extends Option<T> {
     throw new Error("None.unwrap");
   }
 }
+
+export type WithoutOption<T> = T extends Option<infer U> ? U : T;
