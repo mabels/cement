@@ -8,3 +8,5 @@ export * from "./sys_abstraction";
 export * from "./time";
 export * from "./test/log_collector";
 export * from "./test/mock_logger";
+export * from "./result";
+export * from "./option";
