@@ -1,5 +1,4 @@
 export * from "./file_service";
-export * from "./node/mock_file_service";
 export * from "./logger_impl";
 export * from "./logger";
 export * from "./sys_abstraction";
