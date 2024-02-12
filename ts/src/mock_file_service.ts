@@ -1,5 +1,5 @@
 import { NamedWritableStream } from "./file_service";
-import { NodeFileService } from "./node_file_service";
+import { NodeFileService } from "./node/node_file_service";
 
 export interface FileCollector {
   readonly name: string;

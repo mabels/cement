@@ -1,6 +1,6 @@
-import { NodeSysAbstraction } from "./node_sys_abstraction";
+import { NodeSysAbstraction } from "./node/node_sys_abstraction";
 import { IDMode, TimeMode, RandomMode } from "./sys_abstraction";
-import { WebSysAbstraction } from "./web_sys_abstraction";
+import { WebSysAbstraction } from "./web/web_sys_abstraction";
 
 for (const abstraction of [
   { name: "NodeSysAbstraction", fn: NodeSysAbstraction },

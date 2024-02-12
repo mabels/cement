@@ -1,6 +1,6 @@
-import { BaseSysAbstraction, WrapperSysAbstraction, WrapperSysAbstractionParams } from "./base_sys_abstraction";
-import { FileService, NamedWritableStream } from "./file_service";
-import { SysAbstraction, SystemService, VoidFunc } from "./sys_abstraction";
+import { BaseSysAbstraction, WrapperSysAbstraction, WrapperSysAbstractionParams } from "../base_sys_abstraction";
+import { FileService, NamedWritableStream } from "../file_service";
+import { SysAbstraction, SystemService, VoidFunc } from "../sys_abstraction";
 
 class WebFileService implements FileService {
   get baseDir(): string {

@@ -1,5 +1,5 @@
 (async () => {
-  const sa = await import("../node_sys_abstraction");
+  const sa = await import("../node/node_sys_abstraction");
 
   const my = sa.NodeSysAbstraction();
 

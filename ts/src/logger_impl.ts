@@ -1,6 +1,6 @@
 // import { v4 } from "uuid";
 import { Level, Logger, WithLogger } from "./logger";
-import { NodeSysAbstraction } from "./node_sys_abstraction";
+import { NodeSysAbstraction } from "./node/node_sys_abstraction";
 import { SysAbstraction } from "./sys_abstraction";
 
 const encoder = new TextEncoder();

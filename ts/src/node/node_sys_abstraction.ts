@@ -1,11 +1,11 @@
-import { SysAbstraction, SystemService, VoidFunc } from "./sys_abstraction";
+import { SysAbstraction, SystemService, VoidFunc } from "../sys_abstraction";
 import {
   BaseSysAbstraction,
   ExitHandler,
   ExitService,
   WrapperSysAbstraction,
   WrapperSysAbstractionParams,
-} from "./base_sys_abstraction";
+} from "../base_sys_abstraction";
 import { NodeFileService } from "./node_file_service";
 
 export class ExitServiceImpl implements ExitService {

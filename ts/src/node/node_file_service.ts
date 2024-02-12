@@ -1,6 +1,6 @@
 import path from "node:path";
 import fs from "node:fs";
-import { FileService, NamedWritableStream } from "./file_service";
+import { FileService, NamedWritableStream } from "../file_service";
 
 export class NodeFileService implements FileService {
   readonly baseDir: string;

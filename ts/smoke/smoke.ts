@@ -1,4 +1,6 @@
-import { WebSysAbstraction, NodeSysAbstraction, LoggerImpl, Result, Option } from "@adviser/cement";
+import { WebSysAbstraction } from "@adviser/cement/web";
+import { NodeSysAbstraction } from "@adviser/cement/node";
+import { LoggerImpl, Result, Option } from "@adviser/cement";
 
 (async () => {
   const none = Option.None();
