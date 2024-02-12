@@ -1,7 +1,7 @@
 (async () => {
   const sa = await import("../node_sys_abstraction");
 
-  const my = new sa.NodeSysAbstraction();
+  const my = sa.NodeSysAbstraction();
 
   const larg = process.argv[process.argv.length - 1];
   console.log(

@@ -4,6 +4,7 @@ export * from "./mock_file_service";
 export * from "./logger_impl";
 export * from "./logger";
 export * from "./node_sys_abstraction";
+export * from "./web_sys_abstraction";
 export * from "./sys_abstraction";
 export * from "./time";
 export * from "./test/log_collector";
