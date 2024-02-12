@@ -84,7 +84,7 @@ export class LoggerImpl implements Logger {
       params = {};
     }
     if (!params.sys) {
-      this._sys = new NodeSysAbstraction();
+      this._sys = NodeSysAbstraction();
     } else {
       this._sys = params.sys;
     }

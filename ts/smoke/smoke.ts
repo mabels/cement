@@ -1,4 +1,4 @@
-import { NodeSysAbstraction, LoggerImpl, Result, Option } from "@adviser/cement";
+import { WebSysAbstraction, NodeSysAbstraction, LoggerImpl, Result, Option } from "@adviser/cement";
 
 (async () => {
   const none = Option.None();
@@ -6,7 +6,14 @@ import { NodeSysAbstraction, LoggerImpl, Result, Option } from "@adviser/cement"
   if (!result.isOk()) {
     throw new Error("Result is Err");
   }
-  const sys = new NodeSysAbstraction();
   const log = new LoggerImpl();
-  log.Info().Str("id", sys.NextId()).Msg("Alright");
+
+  {
+    const sys = NodeSysAbstraction();
+    log.Info().Str("id", sys.NextId()).Msg("Node-Alright");
+  }
+  {
+    const sys = WebSysAbstraction();
+    log.Info().Str("id", sys.NextId()).Msg("Web-Alright");
+  }
 })();
