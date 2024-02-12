@@ -3,7 +3,7 @@ import { LogCollector } from "./test/log_collector";
 
 import { Logger, Level } from "./logger";
 import { TimeMode } from "./sys_abstraction";
-import { NodeSysAbstraction } from "./node/node_sys_abstraction";
+import { WebSysAbstraction } from "./web/web_sys_abstraction";
 import { TimeFactory } from "./base_sys_abstraction";
 
 describe("TestLogger", () => {
@@ -14,7 +14,7 @@ describe("TestLogger", () => {
     logCollector = new LogCollector();
     logger = new LoggerImpl({
       out: logCollector,
-      sys: NodeSysAbstraction({ TimeMode: TimeMode.STEP }),
+      sys: WebSysAbstraction({ TimeMode: TimeMode.STEP }),
     });
   });
 

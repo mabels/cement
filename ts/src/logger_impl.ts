@@ -1,6 +1,6 @@
 // import { v4 } from "uuid";
 import { Level, Logger, WithLogger } from "./logger";
-import { NodeSysAbstraction } from "./node/node_sys_abstraction";
+import { WebSysAbstraction } from "./web/web_sys_abstraction";
 import { SysAbstraction } from "./sys_abstraction";
 
 const encoder = new TextEncoder();
@@ -84,7 +84,7 @@ export class LoggerImpl implements Logger {
       params = {};
     }
     if (!params.sys) {
-      this._sys = NodeSysAbstraction();
+      this._sys = WebSysAbstraction();
     } else {
       this._sys = params.sys;
     }
