@@ -9,10 +9,14 @@ export interface FileCollector {
 export class MockFileService extends NodeFileService {
   readonly files = {} as Record<string, FileCollector>;
 
+  override abs(fname: string): string {
+    return this.join("/mock/", fname);
+  }
+
   override async create(fname: string): Promise<NamedWritableStream> {
     let oName = fname;
     if (!this.isAbsolute(fname)) {
-      oName = this.abs(fname);
+      oName = await this.abs(fname);
     }
 
     const fc = {
@@ -20,6 +24,7 @@ export class MockFileService extends NodeFileService {
       content: "",
     };
     this.files[oName] = fc;
+    this.files[fname] = fc;
     const decoder = new TextDecoder();
 
     return {

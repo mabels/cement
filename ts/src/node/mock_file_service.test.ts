@@ -2,11 +2,14 @@ import { MockFileService } from "./mock_file_service";
 
 it("writeFileString", async () => {
   const f = new MockFileService();
-  const fname = f.abs("test.txt");
-  await f.writeFileString(fname, "hello");
+  await f.writeFileString("test", "hello");
   expect(f.files).toEqual({
-    [fname]: {
-      name: fname,
+    "/mock/test": {
+      content: "hello",
+      name: "/mock/test",
+    },
+    test: {
+      name: "/mock/test",
       content: "hello",
     },
   });
