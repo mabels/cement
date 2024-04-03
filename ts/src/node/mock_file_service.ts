@@ -9,9 +9,9 @@ export interface FileCollector {
 export class MockFileService extends NodeFileService {
   readonly files = {} as Record<string, FileCollector>;
 
-  override abs(fname: string): string {
-    return this.join("/mock/", fname);
-  }
+  // override abs(fname: string): string {
+  //   return this.join("/mock/", fname);
+  // }
 
   override async create(fname: string): Promise<NamedWritableStream> {
     let oName = fname;
