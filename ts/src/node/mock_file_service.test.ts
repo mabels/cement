@@ -7,7 +7,7 @@ it("writeFileString", async () => {
   expect(f.files).toEqual({
     [absFname]: {
       content: "hello",
-      name: absFname
+      name: absFname,
     },
     test: {
       name: absFname,
