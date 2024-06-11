@@ -7,10 +7,84 @@ const encoder = new TextEncoder();
 
 type JsonRecord = Record<string, string | number | boolean | unknown>;
 
+export interface LevelHandler {
+  enableLevel(level: Level, ...modules: string[]): void;
+  disableLevel(level: Level, ...modules: string[]): void;
+  setDebug(...modules: (string | string[])[]): void;
+  isEnabled(ilevel: unknown, module: unknown): boolean;
+}
+
+export class LevelHandlerImpl implements LevelHandler {
+  readonly _globalLevels: Set<Level> = new Set([Level.INFO, Level.ERROR, Level.WARN]);
+  readonly _modules: Map<string, Set<Level>> = new Map();
+  enableLevel(level: Level, ...modules: string[]): void {
+    if (modules.length == 0) {
+      this._globalLevels.add(level);
+      return;
+    }
+    this.forModules(
+      level,
+      (p) => {
+        this._modules.set(p, new Set([...this._globalLevels, level]));
+      },
+      ...modules,
+    );
+  }
+  disableLevel(level: Level, ...modules: string[]): void {
+    if (modules.length == 0) {
+      this._globalLevels.delete(level);
+      return;
+    }
+    this.forModules(
+      level,
+      (p) => {
+        this._modules.delete(p);
+      },
+      ...modules,
+    );
+  }
+
+  forModules(level: Level, fnAction: (p: string) => void, ...modules: (string | string[])[]): void {
+    for (const m of modules.flat()) {
+      const parts = m
+        .split(",")
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0);
+      for (const p of parts) {
+        fnAction(p);
+      }
+    }
+  }
+  setDebug(...modules: (string | string[])[]): void {
+    this.forModules(
+      Level.DEBUG,
+      (p) => {
+        this._modules.set(p, new Set([...this._globalLevels, Level.DEBUG]));
+      },
+      ...modules,
+    );
+  }
+  isEnabled(ilevel: unknown, module: unknown): boolean {
+    const level = ilevel as Level; // what if it's not a level?
+    if (module !== undefined) {
+      const levels = this._modules.get(module as string);
+      if (levels && levels.has(level)) {
+        return true;
+      }
+    }
+    if (level === undefined) {
+      // this is a plain log
+      return true;
+    }
+    return this._globalLevels.has(level);
+  }
+}
+
+const levelSingleton = new LevelHandlerImpl();
+
 export class LogWriter {
   readonly _out: WritableStream<Uint8Array>;
   readonly _toFlush: Array<() => Promise<void>> = [];
-  readonly modules: Set<string> = new Set();
 
   constructor(out: WritableStream<Uint8Array>) {
     this._out = out;
@@ -71,12 +145,14 @@ export interface LoggerImplParams {
   readonly logWriter?: LogWriter;
   readonly sys?: SysAbstraction;
   readonly withAttributes?: JsonRecord;
+  readonly levelHandler?: LevelHandler;
 }
 export class LoggerImpl implements Logger {
   readonly _sys: SysAbstraction;
   readonly _attributes: JsonRecord = {};
   readonly _withAttributes: JsonRecord;
   readonly _logWriter: LogWriter;
+  readonly _levelHandler: LevelHandler;
   // readonly _id: string = "logger-" + Math.random().toString(36)
 
   constructor(params?: LoggerImplParams) {
@@ -103,7 +179,21 @@ export class LoggerImpl implements Logger {
       this._withAttributes = { ...params.withAttributes };
     }
     this._attributes = { ...this._withAttributes };
+    if (params.levelHandler) {
+      this._levelHandler = params.levelHandler;
+    } else {
+      this._levelHandler = levelSingleton;
+    }
     // console.log("LoggerImpl", this._id, this._attributes, this._withAttributes)
+  }
+
+  EnableLevel(level: Level, ...modules: string[]): Logger {
+    this._levelHandler.enableLevel(level, ...modules);
+    return this;
+  }
+  DisableLevel(level: Level, ...modules: string[]): Logger {
+    this._levelHandler.disableLevel(level, ...modules);
+    return this;
   }
 
   Module(key: string): Logger {
@@ -112,15 +202,8 @@ export class LoggerImpl implements Logger {
     return this;
   }
   SetDebug(...modules: (string | string[])[]): Logger {
-    for (const m of modules.flat()) {
-      const parts = m
-        .split(",")
-        .map((s) => s.trim())
-        .filter((s) => s.length > 0);
-      for (const p of parts) {
-        this._logWriter.modules.add(p);
-      }
-    }
+    this._levelHandler.setDebug(...modules);
+
     return this;
   }
 
@@ -191,6 +274,7 @@ export class LoggerImpl implements Logger {
       new LoggerImpl({
         logWriter: this._logWriter,
         sys: this._sys,
+        levelHandler: this._levelHandler,
         withAttributes: {
           module: this._attributes["module"],
           ...this._withAttributes,
@@ -209,14 +293,7 @@ export class LoggerImpl implements Logger {
   }
   Msg(...args: string[]): AsError {
     const error = this._resetAttributes(() => {
-      let skipWrite = false;
-      if (this._attributes["level"] === Level.DEBUG) {
-        if (typeof this._attributes["module"] !== "string") {
-          skipWrite = true;
-        } else if (!this._logWriter.modules.has(this._attributes["module"])) {
-          skipWrite = true;
-        }
-      }
+      const doWrite = this._levelHandler.isEnabled(this._attributes["level"], this._attributes["module"]);
       this._attributes["msg"] = args.join(" ");
       if (typeof this._attributes["msg"] === "string" && !this._attributes["msg"].trim().length) {
         delete this._attributes["msg"];
@@ -225,7 +302,7 @@ export class LoggerImpl implements Logger {
         this.Timestamp();
       }
       const str = JSON.stringify(this._attributes);
-      if (!skipWrite) {
+      if (doWrite) {
         const encoded = encoder.encode(str + "\n");
         this._logWriter.write(encoded);
       }
@@ -246,6 +323,15 @@ class WithLoggerBuilder implements WithLogger {
     Object.assign(this._li._withAttributes, this._li._attributes);
     // console.log("WithLoggerBuilder.Logger", this._li._id, this._li._withAttributes);
     return this._li;
+  }
+
+  EnableLevel(level: Level, ...modules: string[]): WithLogger {
+    this._li._levelHandler.enableLevel(level, ...modules);
+    return this;
+  }
+  DisableLevel(level: Level, ...modules: string[]): WithLogger {
+    this._li._levelHandler.enableLevel(level, ...modules);
+    return this;
   }
 
   Module(key: string): WithLogger {

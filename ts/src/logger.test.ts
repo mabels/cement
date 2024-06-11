@@ -1,4 +1,4 @@
-import { LoggerImpl } from "./logger_impl";
+import { LevelHandlerImpl, LoggerImpl } from "./logger_impl";
 import { LogCollector } from "./test/log_collector";
 
 import { Logger, Level } from "./logger";
@@ -15,6 +15,7 @@ describe("TestLogger", () => {
     logger = new LoggerImpl({
       out: logCollector,
       sys: WebSysAbstraction({ TimeMode: TimeMode.STEP }),
+      levelHandler: new LevelHandlerImpl(),
     });
   });
 
@@ -284,6 +285,131 @@ describe("TestLogger", () => {
         level: "info",
         module: "xxx",
         msg: "Info2",
+      },
+    ]);
+  });
+
+  it("top should enable modules wildcard", async () => {
+    const log = logger;
+
+    const xxxModule = log.With().Module("xxx").Logger();
+
+    log.Debug().Msg("log-Msg0");
+    xxxModule.Debug().Msg("xxx-log-Msg0");
+    log.EnableLevel(Level.DEBUG);
+
+    log.Debug().Msg("log-Msg");
+    xxxModule.Debug().Msg("xxx-log-Msg");
+
+    const yyyModule = log.With().Module("yyy").Logger();
+    yyyModule.Debug().Msg("yyy-log-Msg");
+
+    log.DisableLevel(Level.DEBUG);
+    yyyModule.Debug().Msg("yyy-log-Msg1");
+    log.Debug().Msg("log-Msg1");
+    xxxModule.Debug().Msg("xxx-log-Msg1");
+
+    await log.Flush();
+    expect(logCollector.Logs()).toEqual([
+      {
+        level: "debug",
+        msg: "log-Msg",
+      },
+      {
+        level: "debug",
+        module: "xxx",
+        msg: "xxx-log-Msg",
+      },
+      {
+        level: "debug",
+        module: "yyy",
+        msg: "yyy-log-Msg",
+      },
+    ]);
+  });
+
+  it("down should enable modules wildcard", async () => {
+    const log = logger;
+
+    const xxxModule = log.With().Module("xxx").Logger();
+
+    log.Debug().Msg("log-Msg");
+    xxxModule.Debug().Msg("xxx-log-Msg");
+    xxxModule.EnableLevel(Level.DEBUG);
+
+    log.Debug().Msg("log-Msg1");
+    xxxModule.Debug().Msg("xxx-log-Msg1");
+
+    const yyyModule = log.With().Module("yyy").Logger();
+    yyyModule.Debug().Msg("yyy-log-Msg");
+
+    yyyModule.DisableLevel(Level.DEBUG);
+
+    log.Debug().Msg("log-Msg2");
+    xxxModule.Debug().Msg("xxx-log-Msg2");
+    yyyModule.Debug().Msg("yyy-log-Msg2");
+
+    await log.Flush();
+    expect(logCollector.Logs()).toEqual([
+      {
+        level: "debug",
+        msg: "log-Msg1",
+      },
+      {
+        level: "debug",
+        module: "xxx",
+        msg: "xxx-log-Msg1",
+      },
+      {
+        level: "debug",
+        module: "yyy",
+        msg: "yyy-log-Msg",
+      },
+    ]);
+  });
+
+  it("global set debug on modules", async () => {
+    const log = logger;
+
+    const xxxModule = log.With().Module("xxx").Logger();
+
+    log.Debug().Msg("log-Msg");
+    xxxModule.Debug().Msg("xxx-log-Msg");
+    await log.Flush();
+    expect(logCollector.Logs()).toEqual([]);
+
+    xxxModule.EnableLevel(Level.DEBUG, "yyy", "xxx");
+
+    const yyyModule = log.With().Module("yyy").Logger();
+    yyyModule.Debug().Msg("yyy-log-Msg");
+
+    xxxModule.Debug().Msg("xxx-log-Msg1");
+
+    log.Debug().Msg("log-Msg1");
+
+    yyyModule.DisableLevel(Level.DEBUG, "yyy");
+    yyyModule.Debug().Msg("yyy-log-Msg1");
+
+    xxxModule.Debug().Msg("xxx-log-Msg2");
+
+    log.Debug().Msg("log-Msg3");
+
+    await log.Flush();
+    expect(logCollector.Logs()).toEqual([
+      {
+        level: "debug",
+        module: "yyy",
+        msg: "yyy-log-Msg",
+      },
+      {
+        level: "debug",
+        module: "xxx",
+        msg: "xxx-log-Msg1",
+      },
+      {
+        level: "debug",
+        module: "xxx",
+        msg: "xxx-log-Msg2",
       },
     ]);
   });

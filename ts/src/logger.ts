@@ -7,6 +7,10 @@ export enum Level {
 
 export interface LoggerInterface<R> {
   Module(key: string): R;
+  // if modules is empty, set for all Levels
+  EnableLevel(level: Level, ...modules: string[]): R;
+  DisableLevel(level: Level, ...modules: string[]): R;
+
   SetDebug(...modules: (string | string[])[]): R;
 
   Str(key: string, value: string): R;

@@ -1,5 +1,5 @@
 import { Logger } from "../logger";
-import { LoggerImpl } from "../logger_impl";
+import { LevelHandlerImpl, LoggerImpl } from "../logger_impl";
 import { SysAbstraction } from "../sys_abstraction";
 import { LogCollector } from "./log_collector";
 
@@ -20,7 +20,14 @@ export function MockLogger(params?: {
   } else if (Array.isArray(params?.moduleName)) {
     modNames = [...params!.moduleName, ...modNames];
   }
-  const logger = new LoggerImpl({ out: lc, sys: params?.sys }).With().Module(modNames[0]).Logger();
+  const logger = new LoggerImpl({
+    out: lc,
+    sys: params?.sys,
+    levelHandler: new LevelHandlerImpl(),
+  })
+    .With()
+    .Module(modNames[0])
+    .Logger();
   !params?.disableDebug && logger.SetDebug(...modNames);
   return {
     logCollector: lc,
