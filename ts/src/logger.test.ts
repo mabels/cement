@@ -251,4 +251,40 @@ describe("TestLogger", () => {
       },
     ]);
   });
+
+  it("should return an Error on Msg", async () => {
+    const log = logger;
+    log.Module("xxx").SetDebug("xxx");
+    log.Debug().Msg("Debug1");
+    expect(JSON.parse(log.Debug().Msg("Debug2").AsError().message)).toEqual({
+      level: "debug",
+      module: "xxx",
+      msg: "Debug2",
+    });
+
+    expect(JSON.parse(log.Info().Msg("Info2").AsError().message)).toEqual({
+      level: "info",
+      module: "xxx",
+      msg: "Info2",
+    });
+
+    await log.Flush();
+    expect(logCollector.Logs()).toEqual([
+      {
+        level: "debug",
+        module: "xxx",
+        msg: "Debug1",
+      },
+      {
+        level: "debug",
+        module: "xxx",
+        msg: "Debug2",
+      },
+      {
+        level: "info",
+        module: "xxx",
+        msg: "Info2",
+      },
+    ]);
+  });
 });

@@ -27,9 +27,13 @@ export interface WithLogger extends LoggerInterface<WithLogger> {
   Logger(): Logger;
 }
 
+export interface AsError {
+  AsError(): Error;
+}
+
 export interface Logger extends LoggerInterface<Logger> {
   With(): WithLogger;
 
-  Msg(...args: string[]): void;
+  Msg(...args: string[]): AsError;
   Flush(): Promise<void>;
 }

@@ -1,5 +1,5 @@
 // import { v4 } from "uuid";
-import { Level, Logger, WithLogger } from "./logger";
+import { AsError, Level, Logger, WithLogger } from "./logger";
 import { WebSysAbstraction } from "./web/web_sys_abstraction";
 import { SysAbstraction } from "./sys_abstraction";
 
@@ -199,21 +199,22 @@ export class LoggerImpl implements Logger {
     );
   }
 
-  _resetAttributes(fn: () => void): void {
-    fn();
+  _resetAttributes(fn: () => Error): Error {
+    const ret = fn();
     Object.keys(this._attributes).forEach((key) => {
       delete this._attributes[key];
     });
     Object.assign(this._attributes, this._withAttributes);
+    return ret;
   }
-  Msg(...args: string[]): void {
-    this._resetAttributes(() => {
+  Msg(...args: string[]): AsError {
+    const error = this._resetAttributes(() => {
+      let skipWrite = false;
       if (this._attributes["level"] === Level.DEBUG) {
         if (typeof this._attributes["module"] !== "string") {
-          return;
-        }
-        if (!this._logWriter.modules.has(this._attributes["module"])) {
-          return;
+          skipWrite = true;
+        } else if (!this._logWriter.modules.has(this._attributes["module"])) {
+          skipWrite = true;
         }
       }
       this._attributes["msg"] = args.join(" ");
@@ -223,9 +224,16 @@ export class LoggerImpl implements Logger {
       if (this._attributes["ts"] === "ETERNITY") {
         this.Timestamp();
       }
-      const encoded = encoder.encode(JSON.stringify(this._attributes) + "\n");
-      this._logWriter.write(encoded);
+      const str = JSON.stringify(this._attributes);
+      if (!skipWrite) {
+        const encoded = encoder.encode(str + "\n");
+        this._logWriter.write(encoded);
+      }
+      return new Error(str);
     });
+    return {
+      AsError: () => error,
+    };
   }
 }
 
