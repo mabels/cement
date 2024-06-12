@@ -5,7 +5,6 @@ it("array2stream", async () => {
   const as = array2stream([1, 2, 3]);
   let i = 0;
   const reader = as.getReader();
-  // eslint-disable-next-line no-constant-condition
   while (true) {
     const { done, value } = await reader.read();
     if (done) {
@@ -97,7 +96,7 @@ describe("test streaming through streamMap", () => {
     let lastfillCalls = 0;
     for (let i = 0; i < state.CollectorFn.mock.calls.length - 1 /*done*/; i++) {
       const { fillCalls, reBufferCalls, value } = state.CollectorFn.mock.calls[i][0];
-      expect(value![0]).toBe((i + 1) % 256);
+      expect(value?.[0]).toBe((i + 1) % 256);
       expect(fillCalls * state.sendChunkSize).toBeGreaterThanOrEqual(
         (fillCalls - lastfillCalls) * state.sendChunkSize + reBufferCalls * state.sendChunkSize,
       );

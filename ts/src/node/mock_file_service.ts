@@ -33,7 +33,9 @@ export class MockFileService extends NodeFileService {
         write(chunk) {
           fc.content = fc.content + decoder.decode(chunk);
         },
-        close() {},
+        close() {
+          // do nothing
+        },
         abort() {
           throw new Error("not implemented");
         },

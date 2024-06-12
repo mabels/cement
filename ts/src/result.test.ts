@@ -26,6 +26,7 @@ it("ResultErr", () => {
   expect(() => result.unwrap()).toThrow();
 });
 
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 class xResult {}
 it("is Result", () => {
   expect(Result.Is(Result.Ok(1))).toBe(true);

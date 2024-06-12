@@ -11,7 +11,10 @@ export type Duration = number;
 
 export enum TimeUnits {
   Microsecond = 1,
+  // eslint-disable-next-line @typescript-eslint/prefer-literal-enum-member
   Second = 1000 * Microsecond,
+  // eslint-disable-next-line @typescript-eslint/prefer-literal-enum-member
   Minute = 60 * Second,
+  // eslint-disable-next-line @typescript-eslint/prefer-literal-enum-member
   Hour = 60 * Minute,
 }

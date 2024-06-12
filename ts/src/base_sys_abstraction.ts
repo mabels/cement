@@ -59,7 +59,7 @@ export function TimeFactory(timeMode: TimeMode): Time {
 
 export class RandomService {
   readonly _mode: RandomMode;
-  _step: number = 0;
+  _step = 0;
   constructor(mode: RandomMode) {
     this._mode = mode;
   }
@@ -80,7 +80,7 @@ export class RandomService {
 
 export class IdService {
   readonly _mode: IDMode;
-  _step: number = 0;
+  _step = 0;
   constructor(mode?: IDMode) {
     if (!mode) {
       mode = IDMode.UUID;

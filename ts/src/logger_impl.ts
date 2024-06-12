@@ -15,8 +15,8 @@ export interface LevelHandler {
 }
 
 export class LevelHandlerImpl implements LevelHandler {
-  readonly _globalLevels: Set<Level> = new Set([Level.INFO, Level.ERROR, Level.WARN]);
-  readonly _modules: Map<string, Set<Level>> = new Map();
+  readonly _globalLevels = new Set<Level>([Level.INFO, Level.ERROR, Level.WARN]);
+  readonly _modules = new Map<string, Set<Level>>();
   enableLevel(level: Level, ...modules: string[]): void {
     if (modules.length == 0) {
       this._globalLevels.add(level);
@@ -84,7 +84,7 @@ const levelSingleton = new LevelHandlerImpl();
 
 export class LogWriter {
   readonly _out: WritableStream<Uint8Array>;
-  readonly _toFlush: Array<() => Promise<void>> = [];
+  readonly _toFlush: (() => Promise<void>)[] = [];
 
   constructor(out: WritableStream<Uint8Array>) {
     this._out = out;
@@ -110,7 +110,7 @@ export class LogWriter {
 
   _flushIsRunning = false;
   _flushDoneFns = Array<() => void>();
-  _flush(toFlush: Array<() => Promise<void>> | undefined = undefined, done?: () => void): void {
+  _flush(toFlush: (() => Promise<void>)[] | undefined = undefined, done?: () => void): void {
     if (done) {
       this._flushDoneFns.push(done);
     }
@@ -132,8 +132,8 @@ export class LogWriter {
     }
 
     // console.log(">>>Msg:", this._toFlush.length)
-    const my = this._toFlush.shift()!;
-    my().finally(() => {
+    const my = this._toFlush.shift();
+    my?.().finally(() => {
       // console.log("<<<Msg:", this._toFlush.length)
       this._flush(this._toFlush);
     });
@@ -286,6 +286,7 @@ export class LoggerImpl implements Logger {
   _resetAttributes(fn: () => Error): Error {
     const ret = fn();
     Object.keys(this._attributes).forEach((key) => {
+      // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
       delete this._attributes[key];
     });
     Object.assign(this._attributes, this._withAttributes);

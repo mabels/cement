@@ -27,7 +27,6 @@ export function streamMap<T, U>(s: ReadableStream<T>, sm: StreamMap<T, U>): Read
 export async function devnull<T>(a: ReadableStream<T>): Promise<number> {
   const reader = a.getReader();
   let cnt = 0;
-  // eslint-disable-next-line no-constant-condition
   while (true) {
     const { done } = await reader.read();
     if (done) {
@@ -55,7 +54,6 @@ export function array2stream<T>(a: T[]): ReadableStream<T> {
 export async function stream2array<T>(a: ReadableStream<T>): Promise<T[]> {
   const ret: T[] = [];
   const reader = a.getReader();
-  // eslint-disable-next-line no-constant-condition
   while (true) {
     const { done, value } = await reader.read();
     if (done) {

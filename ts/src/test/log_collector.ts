@@ -7,8 +7,9 @@ class LogWriter implements WritableStreamDefaultWriter<Uint8Array> {
   ready: Promise<undefined> = Promise.resolve(undefined);
 
   constructor() {
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    this._resolveClosed = () => {};
+    this._resolveClosed = () => {
+      // do nothing
+    };
     this.closed = new Promise((resolve) => {
       this._resolveClosed = resolve;
     });

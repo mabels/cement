@@ -40,21 +40,21 @@ function exitHandler(errCode: number, larg: string, done: () => void) {
 }
 
 it("just-exit", (done) => {
-  exec("ts-node src/test/test-exit-handler.ts exit24", exitHandler(24, "exit24", done));
+  exec("tsx src/test/test-exit-handler.ts exit24", exitHandler(24, "exit24", done));
 });
 
 it("throw", (done) => {
-  exec("ts-node src/test/test-exit-handler.ts throw", exitHandler(19, "throw", done));
+  exec("tsx src/test/test-exit-handler.ts throw", exitHandler(19, "throw", done));
 });
 
 it("via sigint", (done) => {
-  exec("ts-node src/test/test-exit-handler.ts sigint", exitHandler(2, "sigint", done));
+  exec("tsx src/test/test-exit-handler.ts sigint", exitHandler(2, "sigint", done));
 });
 
 it("via sigterm", (done) => {
-  exec("ts-node src/test/test-exit-handler.ts sigterm", exitHandler(9, "sigterm", done));
+  exec("tsx src/test/test-exit-handler.ts sigterm", exitHandler(9, "sigterm", done));
 });
 
 it("via sigquit", (done) => {
-  exec("ts-node src/test/test-exit-handler.ts sigquit", exitHandler(3, "sigquit", done));
+  exec("tsx src/test/test-exit-handler.ts sigquit", exitHandler(3, "sigquit", done));
 });

@@ -82,7 +82,7 @@ describe("test streaming through rebuffer", () => {
     let lastfillCalls = 0;
     for (let i = 0; i < state.CollectorFn.mock.calls.length - 1 /*done*/; i++) {
       const { fillCalls, reBufferCalls, value } = state.CollectorFn.mock.calls[i][0];
-      expect(value![0]).toBe(~~((reBufferSize * i) / state.sendChunkSize) % 256);
+      expect(value?.[0]).toBe(~~((reBufferSize * i) / state.sendChunkSize) % 256);
       expect(fillCalls * state.sendChunkSize).toBeGreaterThanOrEqual(
         (fillCalls - lastfillCalls) * state.sendChunkSize + reBufferCalls * reBufferSize,
       );

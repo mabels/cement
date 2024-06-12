@@ -3,7 +3,7 @@ export class Future<T> {
   #resolveFn: (value: T) => void = () => {
     throw new Error("This Promise is not working as expected.");
   };
-  #rejectFn: (reason: any) => void = () => {
+  #rejectFn: (reason: unknown) => void = () => {
     throw new Error("This Promise is not working as expected.");
   };
 
@@ -21,7 +21,7 @@ export class Future<T> {
   resolve(value: T) {
     this.#resolveFn(value);
   }
-  reject(reason: any) {
+  reject(reason: unknown) {
     this.#rejectFn(reason);
   }
 }

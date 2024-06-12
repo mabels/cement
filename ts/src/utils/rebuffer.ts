@@ -18,10 +18,9 @@ function reChunk(cs: Uint8Array[], chunkSize: number): ReChunkResult {
   cs[cs.length - 1] = last.subarray(0, chunkSize - lastOfs);
   const chunk = new Uint8Array(chunkSize);
   let ofs = 0;
-  for (let i = 0; i < cs.length; i++) {
-    // console.log("reChunk:for", i, ofs, chunk.length, cs[i].length)
-    chunk.set(cs[i], ofs);
-    ofs += cs[i].length;
+  for (const c of cs) {
+    chunk.set(c, ofs);
+    ofs += c.length;
   }
   return { rest, chunk };
 }

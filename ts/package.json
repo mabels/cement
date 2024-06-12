@@ -2,7 +2,8 @@
   "name": "@adviser/cement",
   "version": "0.0.0",
   "description": "better try/catch/finally handling",
-  "main": "index.js",
+  "xmain": "index.js",
+  "type": "module",
   "scripts": {
     "clean": "rm -rf dist node_modules",
     "build": "pnpm run build:js",
@@ -11,8 +12,8 @@
     "test:js": "jest",
     "pubdir": "pnpm run build; rm -rf pubdir ; mkdir -p pubdir; cp -pr ../.gitignore package.json ../README.md ../LICENSE pubdir/; cd dist ; cp -pr . ../pubdir/",
     "presmoke": "pnpm run pubdir ; cd pubdir ; pnpm pack",
-    "smoke": "cd smoke; rm -f package.json; pnpm init ; pnpm install -f ../pubdir/adviser-cement-*.tgz; npx ts-node ./smoke.ts",
-    "lint": "eslint . --ext .ts",
+    "smoke": "cd smoke; rm -f package.json; pnpm init ; pnpm install -f ../pubdir/adviser-cement-*.tgz; npx tsx ./smoke.ts",
+    "lint": "eslint .",
     "prettier": "prettier ."
   },
   "keywords": [],
@@ -25,13 +26,14 @@
   "devDependencies": {
     "@types/jest": "^29.5.12",
     "@types/node": "^20.12.3",
-    "@typescript-eslint/eslint-plugin": "^6.21.0",
-    "@typescript-eslint/parser": "^6.21.0",
-    "eslint": "^8.57.0",
+    "@typescript-eslint/eslint-plugin": "^7.13.0",
+    "@typescript-eslint/parser": "^7.13.0",
+    "eslint": "^9.4.0",
     "jest": "^29.7.0",
     "prettier": "^3.2.5",
     "ts-jest": "^29.1.2",
-    "ts-node": "^10.9.2",
+    "tsx": "^4.15.2",
+    "typescript-eslint": "^7.13.0",
     "typescript": "^5.4.3"
   },
   "engines": {

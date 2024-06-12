@@ -18,7 +18,7 @@ export function MockLogger(params?: {
   if (typeof params?.moduleName === "string") {
     modNames = [params?.moduleName];
   } else if (Array.isArray(params?.moduleName)) {
-    modNames = [...params!.moduleName, ...modNames];
+    modNames = [...params.moduleName, ...modNames];
   }
   const logger = new LoggerImpl({
     out: lc,
