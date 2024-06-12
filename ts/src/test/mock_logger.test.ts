@@ -1,3 +1,5 @@
+import { Level } from "../logger";
+import { LoggerImpl } from "../logger_impl";
 import { MockLogger } from "./mock_logger";
 
 describe("logger", () => {
@@ -46,5 +48,14 @@ describe("logger", () => {
       { level: "debug", bla1: "blub1", msg: "hello1", module: "test" },
       { level: "debug", bla2: "blub2", msg: "hello2", module: "wurst" },
     ]);
+  });
+
+  it("global Check", async () => {
+    const g1 = new LoggerImpl().EnableLevel(Level.DEBUG) as LoggerImpl;
+    const g2 = new LoggerImpl();
+    const g3 = g1.With().Module("X").Logger() as LoggerImpl;
+    expect(g1._levelHandler).toBe(g2._levelHandler);
+    expect(g1._levelHandler).toBe(g3._levelHandler);
+    expect((g1._levelHandler as any)._globalLevels.has(Level.DEBUG)).toBeTruthy();
   });
 });

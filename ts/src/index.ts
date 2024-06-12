@@ -7,3 +7,4 @@ export * from "./test/log_collector";
 export * from "./test/mock_logger";
 export * from "./result";
 export * from "./option";
+export * from "./future";

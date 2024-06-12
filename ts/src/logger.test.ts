@@ -413,4 +413,15 @@ describe("TestLogger", () => {
       },
     ]);
   });
+
+  it("global Check", async () => {
+    const g1 = new LoggerImpl().EnableLevel(Level.DEBUG) as LoggerImpl;
+    const g2 = new LoggerImpl();
+    const g3 = g2.With().Module("X").Logger() as LoggerImpl;
+    expect(g1._levelHandler).toBe(g2._levelHandler);
+    expect(g1._levelHandler).toBe(g3._levelHandler);
+    expect((g1._levelHandler as any)._globalLevels.has(Level.DEBUG)).toBeTruthy();
+    expect((g2._levelHandler as any)._globalLevels.has(Level.DEBUG)).toBeTruthy();
+    expect((g3._levelHandler as any)._globalLevels.has(Level.DEBUG)).toBeTruthy();
+  });
 });

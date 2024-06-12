@@ -322,6 +322,7 @@ class WithLoggerBuilder implements WithLogger {
   Logger(): Logger {
     Object.assign(this._li._withAttributes, this._li._attributes);
     // console.log("WithLoggerBuilder.Logger", this._li._id, this._li._withAttributes);
+    console.log(`Logger:${JSON.stringify([...(this._li._levelHandler as LevelHandlerImpl)._globalLevels])}`);
     return this._li;
   }
 
