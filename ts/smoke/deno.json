@@ -1,0 +1,7 @@
+{
+   "imports": {
+      "@adviser/cement": "./node_modules/@adviser/cement/index.js",
+      "@adviser/cement/web": "./node_modules/@adviser/cement/web/index.js",
+      "@adviser/cement/node": "./node_modules/@adviser/cement/node/index.js"
+   }
+}
