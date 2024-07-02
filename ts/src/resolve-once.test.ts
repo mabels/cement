@@ -47,4 +47,35 @@ describe("resolve-once", () => {
     expect(diff).toBeGreaterThanOrEqual(100);
     expect(diff).toBeLessThan(150);
   });
+
+  it("throws", async () => {
+    const once = new ResolveOnce<number>();
+    const reallyOnce = jest.fn(async () => {
+      return new Promise<number>((rs, rj) => {
+        setTimeout(() => {
+          rj(new Error("nope"));
+        }, 100);
+      });
+    });
+    const fn = () => once.once(async () => reallyOnce());
+    const start = Date.now();
+    await new Promise((rs) => {
+      for (let i = 0; i < 100; i++) {
+        fn()
+          .then(() => {
+            fail("should not happen");
+          })
+          .catch((e) => {
+            expect(e).toEqual(new Error("nope"));
+            expect(reallyOnce).toHaveBeenCalledTimes(1);
+            if (i === 99) {
+              rs(undefined);
+            }
+          });
+      }
+    });
+    const diff = Date.now() - start;
+    expect(diff).toBeGreaterThanOrEqual(100);
+    expect(diff).toBeLessThan(150);
+  });
 });
