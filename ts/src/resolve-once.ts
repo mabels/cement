@@ -3,7 +3,8 @@ import { Future } from "./future";
 export class ResolveOnce<T> {
   _onceDone = false;
   readonly _onceFutures: Future<T>[] = [];
-  _onceOk?: T;
+  _onceOk = false;
+  _onceValue?: T;
   _onceError?: Error;
 
   get ready() {
@@ -16,7 +17,8 @@ export class ResolveOnce<T> {
         return Promise.reject(this._onceError);
       }
       if (this._onceOk) {
-        return Promise.resolve(this._onceOk);
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        return Promise.resolve(this._onceValue!);
       }
       throw new Error("impossible");
     }
@@ -26,9 +28,11 @@ export class ResolveOnce<T> {
       return future.asPromise();
     }
     try {
-      this._onceOk = await fn();
+      this._onceValue = await fn();
+      this._onceOk = true;
       this._onceDone = true;
-      this._onceFutures.slice(1).forEach((f) => f.resolve(this._onceOk as T));
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      this._onceFutures.slice(1).forEach((f) => f.resolve(this._onceValue!));
       this._onceFutures.length = 0;
     } catch (e) {
       this._onceError = e as Error;

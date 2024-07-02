@@ -48,6 +48,30 @@ describe("resolve-once", () => {
     expect(diff).toBeLessThan(150);
   });
 
+  it("works with void", async () => {
+    const once = new ResolveOnce<void>();
+    const reallyOnce = jest.fn(async () => {
+      return new Promise<void>((resolve) => {
+        setTimeout(() => {
+          resolve();
+        }, 100);
+      });
+    });
+    const fn = () => once.once(async () => reallyOnce());
+    const start = Date.now();
+    expect(
+      await Promise.all(
+        Array(100)
+          .fill(fn)
+          .map((fn) => fn()),
+      ),
+    ).toEqual(Array(100).fill(undefined));
+    expect(reallyOnce).toHaveBeenCalledTimes(1);
+    const diff = Date.now() - start;
+    expect(diff).toBeGreaterThanOrEqual(100);
+    expect(diff).toBeLessThan(150);
+  });
+
   it("throws", async () => {
     const once = new ResolveOnce<number>();
     const reallyOnce = jest.fn(async () => {
