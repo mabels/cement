@@ -82,6 +82,8 @@ export class LevelHandlerImpl implements LevelHandler {
 
 const levelSingleton = new LevelHandlerImpl();
 
+// globalThis[Symbol("levelSingleton")] = new LevelHandlerImpl()
+
 export class LogWriter {
   readonly _out: WritableStream<Uint8Array>;
   readonly _toFlush: (() => Promise<void>)[] = [];
