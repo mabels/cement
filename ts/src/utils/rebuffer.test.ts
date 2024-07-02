@@ -1,5 +1,6 @@
 import { rebuffer, rebufferArray } from "./rebuffer";
 import { streamingTestState, receiveFromStream, sendToStream } from "./stream_test_helper";
+import { vi as jest } from "vitest";
 
 it("rechunk empty", async () => {
   const chunks = await rebufferArray([], 10);

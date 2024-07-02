@@ -20,26 +20,27 @@ export class ResolveOnce<T> {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         return Promise.resolve(this._onceValue!);
       }
-      throw new Error("impossible");
+      throw new Error("ResolveOnce.once impossible");
     }
     const future = new Future<T>();
     this._onceFutures.push(future);
-    if (this._onceFutures.length > 1) {
-      return future.asPromise();
+    if (this._onceFutures.length === 1) {
+      fn()
+        .then((value) => {
+          this._onceValue = value;
+          this._onceOk = true;
+          this._onceDone = true;
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          this._onceFutures.forEach((f) => f.resolve(this._onceValue!));
+          this._onceFutures.length = 0;
+        })
+        .catch((e) => {
+          this._onceError = e as Error;
+          this._onceDone = true;
+          this._onceFutures.forEach((f) => f.reject(this._onceError));
+          this._onceFutures.length = 0;
+        });
     }
-    try {
-      this._onceValue = await fn();
-      this._onceOk = true;
-      this._onceDone = true;
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      this._onceFutures.slice(1).forEach((f) => f.resolve(this._onceValue!));
-      this._onceFutures.length = 0;
-    } catch (e) {
-      this._onceError = e as Error;
-      this._onceDone = true;
-      this._onceFutures.slice(1).forEach((f) => f.reject(this._onceError));
-      this._onceFutures.length = 0;
-    }
-    return this.once(fn);
+    return future.asPromise();
   }
 }

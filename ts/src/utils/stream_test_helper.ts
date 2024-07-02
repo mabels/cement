@@ -1,8 +1,16 @@
+import { Mock } from "vitest";
+
+interface mockValue {
+  done: boolean;
+  value: Uint8Array | undefined;
+  fillCalls: number;
+  reBufferCalls: number;
+}
 export interface streamingTestState {
   readonly sendChunks: number;
   readonly sendChunkSize: number;
   fillCalls: number;
-  CollectorFn: jest.Mock<void, [{ done: boolean; value: Uint8Array | undefined; fillCalls: number; reBufferCalls: number }]>;
+  CollectorFn: Mock<mockValue[], void>;
 }
 
 export async function receiveFromStream(reb: ReadableStream<Uint8Array>, state: streamingTestState) {

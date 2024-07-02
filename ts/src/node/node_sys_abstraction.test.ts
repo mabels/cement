@@ -39,22 +39,32 @@ function exitHandler(errCode: number, larg: string, done: () => void) {
   };
 }
 
-it("just-exit", (done) => {
-  exec("tsx src/test/test-exit-handler.ts exit24", exitHandler(24, "exit24", done));
+it("just-exit", () => {
+  return new Promise<void>((done) => {
+    exec("tsx src/test/test-exit-handler.ts exit24", exitHandler(24, "exit24", done));
+  });
 });
 
-it("throw", (done) => {
-  exec("tsx src/test/test-exit-handler.ts throw", exitHandler(19, "throw", done));
+it("throw", () => {
+  return new Promise<void>((done) => {
+    exec("tsx src/test/test-exit-handler.ts throw", exitHandler(19, "throw", done));
+  });
 });
 
-it("via sigint", (done) => {
-  exec("tsx src/test/test-exit-handler.ts sigint", exitHandler(2, "sigint", done));
+it("via sigint", () => {
+  return new Promise<void>((done) => {
+    exec("tsx src/test/test-exit-handler.ts sigint", exitHandler(2, "sigint", done));
+  });
 });
 
-it("via sigterm", (done) => {
-  exec("tsx src/test/test-exit-handler.ts sigterm", exitHandler(9, "sigterm", done));
+it("via sigterm", () => {
+  return new Promise<void>((done) => {
+    exec("tsx src/test/test-exit-handler.ts sigterm", exitHandler(9, "sigterm", done));
+  });
 });
 
-it("via sigquit", (done) => {
-  exec("tsx src/test/test-exit-handler.ts sigquit", exitHandler(3, "sigquit", done));
+it("via sigquit", () => {
+  return new Promise<void>((done) => {
+    exec("tsx src/test/test-exit-handler.ts sigquit", exitHandler(3, "sigquit", done));
+  });
 });

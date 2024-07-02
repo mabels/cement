@@ -1,5 +1,6 @@
 import { receiveFromStream, sendToStream, streamingTestState } from "./stream_test_helper";
 import { array2stream, devnull, stream2array, streamMap } from "./stream_map";
+import { vi as jest } from "vitest";
 
 it("array2stream", async () => {
   const as = array2stream([1, 2, 3]);
