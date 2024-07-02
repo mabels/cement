@@ -8,3 +8,4 @@ export * from "./test/mock_logger";
 export * from "./result";
 export * from "./option";
 export * from "./future";
+export * from "./resolve-once";
