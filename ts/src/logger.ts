@@ -27,6 +27,34 @@ export interface LoggerInterface<R> {
   Dur(key: string, nsec: number): R;
   Uint64(key: string, value: number): R;
 }
+
+export function IsLogger(obj: unknown): obj is Logger {
+  return (
+    typeof obj === "object" &&
+    [
+      "Module",
+      "EnableLevel",
+      "DisableLevel",
+      "SetDebug",
+      "Str",
+      "Error",
+      "Warn",
+      "Debug",
+      "Log",
+      "WithLevel",
+      "Err",
+      "Info",
+      "Timestamp",
+      "Any",
+      "Dur",
+      "Uint64",
+    ]
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .map((fn) => typeof (obj as any)[fn] === "function")
+      .reduce((a, b) => a && b, true)
+  );
+}
+
 export interface WithLogger extends LoggerInterface<WithLogger> {
   Logger(): Logger;
 }

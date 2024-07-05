@@ -1,7 +1,7 @@
 import { LevelHandlerImpl, LoggerImpl } from "./logger_impl";
 import { LogCollector } from "./test/log_collector";
 
-import { Logger, Level } from "./logger";
+import { Logger, Level, IsLogger } from "./logger";
 import { TimeMode } from "./sys_abstraction";
 import { WebSysAbstraction } from "./web/web_sys_abstraction";
 import { TimeFactory } from "./base_sys_abstraction";
@@ -414,7 +414,7 @@ describe("TestLogger", () => {
     ]);
   });
 
-  it("global Check", async () => {
+  it("global Check", () => {
     const g1 = new LoggerImpl().EnableLevel(Level.DEBUG) as LoggerImpl;
     const g2 = new LoggerImpl();
     const g3 = g2.With().Module("X").Logger() as LoggerImpl;
@@ -423,5 +423,17 @@ describe("TestLogger", () => {
     expect((g1._levelHandler as LevelHandlerImpl)._globalLevels.has(Level.DEBUG)).toBeTruthy();
     expect((g2._levelHandler as LevelHandlerImpl)._globalLevels.has(Level.DEBUG)).toBeTruthy();
     expect((g3._levelHandler as LevelHandlerImpl)._globalLevels.has(Level.DEBUG)).toBeTruthy();
+  });
+
+  it("isLogger", () => {
+    const log = new LoggerImpl();
+    expect(IsLogger(log)).toBeTruthy();
+    expect(
+      IsLogger({
+        Info: () => log.Info(),
+        Flush: () => log.Flush(),
+        With: () => log.With(),
+      }),
+    ).toBeFalsy();
   });
 });
