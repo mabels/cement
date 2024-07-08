@@ -11,6 +11,14 @@ export class ResolveOnce<T> {
     return this._onceDone;
   }
 
+  reset() {
+    this._onceDone = false;
+    this._onceOk = false;
+    this._onceValue = undefined;
+    this._onceError = undefined;
+    this._onceFutures.length = 0;
+  }
+
   async once(fn: () => Promise<T>): Promise<T> {
     if (this._onceDone) {
       if (this._onceError) {

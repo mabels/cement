@@ -175,4 +175,21 @@ describe("resolve-once", () => {
         .map((_, i) => i),
     );
   });
+
+  it("reset", async () => {
+    const once = new ResolveOnce<number>();
+
+    const orderFn = jest.fn(async () => 42);
+    once.once(orderFn);
+    once.once(orderFn);
+    once.once(orderFn);
+    once.reset();
+    once.once(orderFn);
+    once.once(orderFn);
+    once.reset();
+    once.once(orderFn);
+    once.once(orderFn);
+    once.reset();
+    expect(orderFn).toHaveBeenCalledTimes(3);
+  });
 });
