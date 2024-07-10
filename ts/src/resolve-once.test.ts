@@ -222,4 +222,32 @@ describe("resolve-once", () => {
     expect(b_orderFn).toHaveBeenCalledTimes(1);
     expect(b_orderFn).toHaveBeenCalledWith("b");
   });
+
+  it("keyed asyncGet", async () => {
+    const keyed = new KeyedResolvOnce<number>();
+    const a_orderFn = jest.fn(async (key) => key);
+    const b_orderFn = jest.fn(async (key) => key);
+    await Promise.all([
+      keyed
+        .asyncGet(async () => {
+          await new Promise((resolve) => setTimeout(resolve, 100));
+          return "a";
+        })
+        .then((resolveOnce) => {
+          resolveOnce.once(a_orderFn);
+        }),
+      keyed
+        .asyncGet(async () => {
+          await new Promise((resolve) => setTimeout(resolve, 50));
+          return "b";
+        })
+        .then((resolveOnce) => {
+          resolveOnce.once(b_orderFn);
+        }),
+    ]);
+    expect(a_orderFn).toHaveBeenCalledTimes(1);
+    expect(a_orderFn).toHaveBeenCalledWith("a");
+    expect(b_orderFn).toHaveBeenCalledTimes(1);
+    expect(b_orderFn).toHaveBeenCalledWith("b");
+  });
 });

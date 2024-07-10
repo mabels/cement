@@ -601,4 +601,17 @@ describe("TestLogger", () => {
       },
     ]);
   });
+
+  it("str", async () => {
+    const log = logger;
+    log.Error().Str("1", undefined).Msg("1");
+    await log.Flush();
+    expect(logCollector.Logs()).toEqual([
+      {
+        "1": "--Falsy--",
+        level: "error",
+        msg: "1",
+      },
+    ]);
+  });
 });

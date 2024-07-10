@@ -62,6 +62,10 @@ export class ResolveOnce<T, C = void> {
 export class KeyedResolvOnce<T, K = string> {
   private readonly _map = new Map<K, ResolveOnce<T, K>>();
 
+  async asyncGet(key: () => Promise<K>): Promise<ResolveOnce<T, K>> {
+    return this.get(await key());
+  }
+
   get(key: K | (() => K)): ResolveOnce<T, K> {
     if (typeof key === "function") {
       key = (key as () => K)();

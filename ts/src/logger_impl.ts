@@ -24,11 +24,10 @@ function resolveLogValue(val: JsonRecord): Record<string, Serialized> {
   return ret;
 }
 
-function logValue(val: Serialized | FnSerialized | JsonRecord): LogValue {
-  if (typeof val === "function") {
-    return new LogValue(val);
-  }
+function logValue(val: Serialized | FnSerialized | JsonRecord | undefined | null): LogValue {
   switch (typeof val) {
+    case "function":
+      return new LogValue(val);
     case "string":
       return new LogValue(() => val.toString());
     case "number":
@@ -38,6 +37,9 @@ function logValue(val: Serialized | FnSerialized | JsonRecord): LogValue {
     case "object":
       return new LogValue(() => JSON.stringify(val));
     default:
+      if (!val) {
+        return new LogValue(() => "--Falsy--");
+      }
       throw new Error(`Invalid type:${typeof val}`);
   }
 }
@@ -310,7 +312,7 @@ export class LoggerImpl implements Logger {
     return this;
   }
 
-  Str(key: string, value: string): Logger {
+  Str(key: string, value?: string): Logger {
     this._attributes[key] = logValue(value);
     return this;
   }
@@ -415,7 +417,7 @@ class WithLoggerBuilder implements WithLogger {
     return this;
   }
 
-  Str(key: string, value: string): WithLogger {
+  Str(key: string, value?: string): WithLogger {
     this._li.Str(key, value);
     return this;
   }
