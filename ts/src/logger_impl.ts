@@ -1,11 +1,48 @@
 // import { v4 } from "uuid";
-import { AsError, Level, Logger, WithLogger } from "./logger";
+import { AsError, FnSerialized, Level, Logger, Serialized, WithLogger } from "./logger";
 import { WebSysAbstraction } from "./web/web_sys_abstraction";
 import { SysAbstraction } from "./sys_abstraction";
+import { Result } from "./result";
 
 const encoder = new TextEncoder();
 
-type JsonRecord = Record<string, string | number | boolean | unknown>;
+class LogValue {
+  constructor(readonly fn: FnSerialized) {}
+  value(): Serialized {
+    return this.fn();
+  }
+}
+
+function resolveLogValue(val: JsonRecord): Record<string, Serialized> {
+  const ret: Record<string, Serialized> = {};
+  Object.keys(val).forEach((key) => {
+    const v = val[key];
+    if (v instanceof LogValue) {
+      ret[key] = v.value();
+    }
+  });
+  return ret;
+}
+
+function logValue(val: Serialized | FnSerialized | JsonRecord): LogValue {
+  if (typeof val === "function") {
+    return new LogValue(val);
+  }
+  switch (typeof val) {
+    case "string":
+      return new LogValue(() => val.toString());
+    case "number":
+      return new LogValue(() => val);
+    case "boolean":
+      return new LogValue(() => val);
+    case "object":
+      return new LogValue(() => JSON.stringify(val));
+    default:
+      throw new Error(`Invalid type:${typeof val}`);
+  }
+}
+
+type JsonRecord = Record<string, LogValue>;
 
 export interface LevelHandler {
   enableLevel(level: Level, ...modules: string[]): void;
@@ -199,8 +236,8 @@ export class LoggerImpl implements Logger {
   }
 
   Module(key: string): Logger {
-    this._attributes["module"] = key;
-    this._withAttributes["module"] = key;
+    this._attributes["module"] = logValue(key);
+    this._withAttributes["module"] = logValue(key);
     return this;
   }
   SetDebug(...modules: (string | string[])[]): Logger {
@@ -210,58 +247,89 @@ export class LoggerImpl implements Logger {
   }
 
   Timestamp(): Logger {
-    this._attributes["ts"] = this._sys.Time().Now().toISOString();
+    this._attributes["ts"] = logValue(this._sys.Time().Now().toISOString());
     return this;
   }
   Warn(): Logger {
-    this._attributes["level"] = Level.WARN;
+    this._attributes["level"] = logValue(Level.WARN);
     return this;
   }
   Log(): Logger {
     return this;
   }
   Debug(): Logger {
-    this._attributes["level"] = Level.DEBUG;
+    this._attributes["level"] = logValue(Level.DEBUG);
     return this;
   }
   Error(): Logger {
-    this._attributes["level"] = Level.ERROR;
+    this._attributes["level"] = logValue(Level.ERROR);
     return this;
   }
   Info(): Logger {
-    this._attributes["level"] = Level.INFO;
+    this._attributes["level"] = logValue(Level.INFO);
     return this;
   }
   Err(err: unknown): Logger {
     if (err instanceof Error) {
-      this._attributes["error"] = err.message;
+      this._attributes["error"] = logValue(err.message);
     } else {
-      this._attributes["error"] = "" + err;
+      this._attributes["error"] = logValue("" + err);
     }
     return this;
   }
   WithLevel(l: Level): Logger {
-    this._attributes["level"] = l;
+    this._attributes["level"] = logValue(l);
+    return this;
+  }
+
+  Ref(key: string, action: { toString: () => string } | FnSerialized): Logger {
+    if (typeof action === "function") {
+      this._attributes[key] = logValue(action as FnSerialized);
+    } else if (typeof action.toString === "function") {
+      this._attributes[key] = logValue(() => action.toString());
+    } else {
+      this._attributes[key] = logValue("INVALID REF");
+    }
+    return this;
+  }
+  Bool(key: string, value: unknown): Logger {
+    this._attributes[key] = logValue(!!value);
+    return this;
+  }
+  Result<T>(key: string, res: Result<T, Error>): Logger {
+    if (res.isOk()) {
+      this._attributes[key] = logValue(res.Ok() as Serialized);
+    } else {
+      this.Err(res.Err());
+    }
+    return this;
+  }
+
+  Url(url: URL, key = "url"): Logger {
+    this.Ref(key, () => url.toString());
     return this;
   }
 
   Str(key: string, value: string): Logger {
-    this._attributes[key] = value;
+    this._attributes[key] = logValue(value);
     return this;
   }
 
   Any(key: string, value: string | number | boolean | JsonRecord): Logger {
-    this._attributes[key] = value;
+    this._attributes[key] = logValue(value);
     return this;
   }
   Dur(key: string, nsec: number): Logger {
-    this._attributes[key] = `${nsec}ms`;
+    this._attributes[key] = logValue(`${nsec}ms`);
     // new Intl.DurationFormat("en", { style: "narrow" }).format(nsec);
     return this;
   }
   Uint64(key: string, value: number): Logger {
-    this._attributes[key] = value;
+    this._attributes[key] = logValue(value);
     return this;
+  }
+  Int(key: string, value: number): Logger {
+    return this.Uint64(key, value);
   }
 
   async Flush(): Promise<void> {
@@ -296,15 +364,16 @@ export class LoggerImpl implements Logger {
   }
   Msg(...args: string[]): AsError {
     const error = this._resetAttributes(() => {
-      const doWrite = this._levelHandler.isEnabled(this._attributes["level"], this._attributes["module"]);
-      this._attributes["msg"] = args.join(" ");
-      if (typeof this._attributes["msg"] === "string" && !this._attributes["msg"].trim().length) {
+      const doWrite = this._levelHandler.isEnabled(this._attributes["level"]?.value(), this._attributes["module"]?.value());
+      this._attributes["msg"] = logValue(args.join(" "));
+      const msg = this._attributes["msg"].value();
+      if (typeof msg === "string" && !msg.trim().length) {
         delete this._attributes["msg"];
       }
-      if (this._attributes["ts"] === "ETERNITY") {
+      if (this._attributes["ts"]?.value() === "ETERNITY") {
         this.Timestamp();
       }
-      const str = JSON.stringify(this._attributes);
+      const str = JSON.stringify(resolveLogValue(this._attributes));
       if (doWrite) {
         const encoded = encoder.encode(str + "\n");
         this._logWriter.write(encoded);
@@ -322,6 +391,7 @@ class WithLoggerBuilder implements WithLogger {
   constructor(li: LoggerImpl) {
     this._li = li;
   }
+
   Logger(): Logger {
     Object.assign(this._li._withAttributes, this._li._attributes);
     return this._li;
@@ -347,6 +417,27 @@ class WithLoggerBuilder implements WithLogger {
 
   Str(key: string, value: string): WithLogger {
     this._li.Str(key, value);
+    return this;
+  }
+
+  Ref(key: string, action: Serialized | FnSerialized): WithLogger {
+    this._li.Ref(key, action);
+    return this;
+  }
+  Bool(key: string, value: unknown): WithLogger {
+    this._li.Bool(key, value);
+    return this;
+  }
+  Result<T>(key: string, res: Result<T, Error>): WithLogger {
+    this._li.Result(key, res);
+    return this;
+  }
+  Url(url: URL, key?: string): WithLogger {
+    this._li.Url(url, key);
+    return this;
+  }
+  Int(key: string, value: number): WithLogger {
+    this._li.Int(key, value);
     return this;
   }
 
@@ -381,7 +472,7 @@ class WithLoggerBuilder implements WithLogger {
     return this;
   }
   Timestamp(): WithLogger {
-    this._li._attributes["ts"] = "ETERNITY";
+    this._li._attributes["ts"] = logValue("ETERNITY");
     return this;
   }
   Any(key: string, value: JsonRecord): WithLogger {

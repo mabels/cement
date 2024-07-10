@@ -1,3 +1,5 @@
+import { Result } from "./result";
+
 export enum Level {
   WARN = "warn",
   DEBUG = "debug",
@@ -5,6 +7,8 @@ export enum Level {
   ERROR = "error",
 }
 
+export type Serialized = string | number | boolean;
+export type FnSerialized = () => Serialized;
 export interface LoggerInterface<R> {
   Module(key: string): R;
   // if modules is empty, set for all Levels
@@ -13,7 +17,12 @@ export interface LoggerInterface<R> {
 
   SetDebug(...modules: (string | string[])[]): R;
 
-  Str(key: string, value: string): R;
+  Ref(key: string, action: { toString: () => string } | FnSerialized): R;
+  Result<T>(key: string, res: Result<T>): R;
+  // default key url
+  Url(url: URL, key?: string): R;
+
+  Str(key: string, value?: string): R;
   Error(): R;
   Warn(): R;
   Debug(): R;
@@ -26,6 +35,8 @@ export interface LoggerInterface<R> {
   Any(key: string, value: unknown): R;
   Dur(key: string, nsec: number): R;
   Uint64(key: string, value: number): R;
+  Int(key: string, value: number): R;
+  Bool(key: string, value: unknown): R;
 }
 
 export function IsLogger(obj: unknown): obj is Logger {

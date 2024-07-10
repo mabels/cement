@@ -5,6 +5,7 @@ import { Logger, Level, IsLogger } from "./logger";
 import { TimeMode } from "./sys_abstraction";
 import { WebSysAbstraction } from "./web/web_sys_abstraction";
 import { TimeFactory } from "./base_sys_abstraction";
+import { Result } from "./result";
 
 describe("TestLogger", () => {
   let logCollector: LogCollector;
@@ -435,5 +436,169 @@ describe("TestLogger", () => {
         With: () => log.With(),
       }),
     ).toBeFalsy();
+  });
+
+  it("bool", async () => {
+    const log = logger;
+    log.Info().Bool("true", true).Msg("1");
+    log.Info().Bool("false", false).Msg("2");
+    log.Info().Bool("true", "wurst").Msg("3");
+    log.Info().Bool("false", null).Msg("4");
+    await log.Flush();
+    expect(logCollector.Logs()).toEqual([
+      {
+        level: "info",
+        msg: "1",
+        true: true,
+      },
+      {
+        false: false,
+        level: "info",
+        msg: "2",
+      },
+      {
+        level: "info",
+        msg: "3",
+        true: true,
+      },
+      {
+        false: false,
+        level: "info",
+        msg: "4",
+      },
+    ]);
+  });
+
+  it("int", async () => {
+    const log = logger;
+    log.Info().Int("1", 1).Msg("1");
+    log.Info().Int("2", 2).Msg("2");
+    log.Info().Int("3", 3).Msg("3");
+    log.Info().Int("4", 4).Msg("4");
+    await log.Flush();
+    expect(logCollector.Logs()).toEqual([
+      {
+        "1": 1,
+        level: "info",
+        msg: "1",
+      },
+      {
+        "2": 2,
+        level: "info",
+        msg: "2",
+      },
+      {
+        "3": 3,
+        level: "info",
+        msg: "3",
+      },
+      {
+        "4": 4,
+        level: "info",
+        msg: "4",
+      },
+    ]);
+  });
+
+  it("int", async () => {
+    const log = logger;
+    log.Info().Int("1", 1).Msg("1");
+    log.Info().Int("2", 2).Msg("2");
+    log.Info().Int("3", 3).Msg("3");
+    log.Info().Int("4", 4).Msg("4");
+    await log.Flush();
+    expect(logCollector.Logs()).toEqual([
+      {
+        "1": 1,
+        level: "info",
+        msg: "1",
+      },
+      {
+        "2": 2,
+        level: "info",
+        msg: "2",
+      },
+      {
+        "3": 3,
+        level: "info",
+        msg: "3",
+      },
+      {
+        "4": 4,
+        level: "info",
+        msg: "4",
+      },
+    ]);
+  });
+
+  it("ref", async () => {
+    const log = logger;
+    let value = 4711;
+    const fn = () => "" + value++;
+    log.Info().Ref("1", { toString: fn }).Msg("1");
+    log.Info().Ref("2", { toString: fn }).Msg("2");
+    log.Info().Ref("3", fn).Msg("3");
+    log.Info().Ref("4", fn).Msg("4");
+    await log.Flush();
+    expect(logCollector.Logs()).toEqual([
+      {
+        "1": "4711",
+        level: "info",
+        msg: "1",
+      },
+      {
+        "2": "4712",
+        level: "info",
+        msg: "2",
+      },
+      {
+        "3": "4713",
+        level: "info",
+        msg: "3",
+      },
+      {
+        "4": "4714",
+        level: "info",
+        msg: "4",
+      },
+    ]);
+  });
+  it("result", async () => {
+    const log = logger;
+    log.Info().Result("res.ok", Result.Ok(4711)).Msg("1");
+    log.Info().Result("res.err", Result.Err("Error")).Msg("2");
+    await log.Flush();
+    expect(logCollector.Logs()).toEqual([
+      {
+        level: "info",
+        msg: "1",
+        "res.ok": 4711,
+      },
+      {
+        error: "Error",
+        level: "info",
+        msg: "2",
+      },
+    ]);
+  });
+  it("url", async () => {
+    const log = logger;
+    const url = new URL("http://localhost:8080");
+    log.Info().Url(url).Msg("1");
+    url.searchParams.set("test", "1");
+    log.Info().Url(url).Msg("2");
+    await log.Flush();
+    expect(logCollector.Logs()).toEqual([
+      {
+        level: "info",
+        msg: "1",
+        url: "http://localhost:8080/",
+      },
+      {
+        level: "info",
+        msg: "2",
+        url: "http://localhost:8080/?test=1",
+      },
+    ]);
   });
 });
