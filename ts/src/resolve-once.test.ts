@@ -206,4 +206,20 @@ describe("resolve-once", () => {
       keyed.reset();
     }
   });
+
+  it("keyed with pass ctx", async () => {
+    const keyed = new KeyedResolvOnce<number>();
+    const a_orderFn = jest.fn(async (key) => key);
+    const b_orderFn = jest.fn(async (key) => key);
+    await Promise.all([
+      keyed.get("a").once(a_orderFn),
+      keyed.get(() => "a").once(a_orderFn),
+      keyed.get("b").once(b_orderFn),
+      keyed.get(() => "b").once(b_orderFn),
+    ]);
+    expect(a_orderFn).toHaveBeenCalledTimes(1);
+    expect(a_orderFn).toHaveBeenCalledWith("a");
+    expect(b_orderFn).toHaveBeenCalledTimes(1);
+    expect(b_orderFn).toHaveBeenCalledWith("b");
+  });
 });

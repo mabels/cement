@@ -1,11 +1,17 @@
 import { Future } from "./future";
 
-export class ResolveOnce<T> {
+export class ResolveOnce<T, C = void> {
   _onceDone = false;
   readonly _onceFutures: Future<T>[] = [];
   _onceOk = false;
   _onceValue?: T;
   _onceError?: Error;
+
+  readonly ctx: C;
+
+  constructor(ctx?: C) {
+    this.ctx = ctx as C;
+  }
 
   get ready() {
     return this._onceDone;
@@ -19,7 +25,7 @@ export class ResolveOnce<T> {
     this._onceFutures.length = 0;
   }
 
-  async once(fn: () => Promise<T>): Promise<T> {
+  async once(fn: (c: C) => Promise<T>): Promise<T> {
     if (this._onceDone) {
       if (this._onceError) {
         return Promise.reject(this._onceError);
@@ -33,7 +39,7 @@ export class ResolveOnce<T> {
     const future = new Future<T>();
     this._onceFutures.push(future);
     if (this._onceFutures.length === 1) {
-      fn()
+      fn(this.ctx)
         .then((value) => {
           this._onceValue = value;
           this._onceOk = true;
@@ -53,16 +59,16 @@ export class ResolveOnce<T> {
   }
 }
 
-export class KeyedResolvOnce<T> {
-  private readonly _map = new Map<string, ResolveOnce<T>>();
+export class KeyedResolvOnce<T, K = string> {
+  private readonly _map = new Map<K, ResolveOnce<T, K>>();
 
-  get(key: string | (() => string)): ResolveOnce<T> {
+  get(key: K | (() => K)): ResolveOnce<T, K> {
     if (typeof key === "function") {
-      key = key();
+      key = (key as () => K)();
     }
     let resolveOnce = this._map.get(key);
     if (!resolveOnce) {
-      resolveOnce = new ResolveOnce<T>();
+      resolveOnce = new ResolveOnce<T, K>(key);
       this._map.set(key, resolveOnce);
     }
     return resolveOnce;
