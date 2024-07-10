@@ -40,3 +40,8 @@ it("WithoutResult", () => {
   a1.a = 1;
   expect(a1.a).toEqual(1);
 });
+
+// this is a wish --- look into the declaration of Promise.resolve
+// it("Result.OK with void", () => {
+//   const result = Result.Ok();
+// })

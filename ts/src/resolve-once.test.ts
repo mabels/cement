@@ -1,4 +1,4 @@
-import { ResolveOnce } from "./resolve-once";
+import { KeyedResolvOnce, ResolveOnce } from "./resolve-once";
 import { vi as jest } from "vitest";
 
 describe("resolve-once", () => {
@@ -178,7 +178,6 @@ describe("resolve-once", () => {
 
   it("reset", async () => {
     const once = new ResolveOnce<number>();
-
     const orderFn = jest.fn(async () => 42);
     once.once(orderFn);
     once.once(orderFn);
@@ -192,4 +191,19 @@ describe("resolve-once", () => {
     once.reset();
     expect(orderFn).toHaveBeenCalledTimes(3);
   });
+
+  it("keyed", async () => {
+    const keyed = new KeyedResolvOnce<number>();
+    const a_orderFn = jest.fn(async () => 42);
+    const b_orderFn = jest.fn(async () => 42);
+    for (let i = 0; i < 5; i++) {
+      keyed.get("a").once(a_orderFn);
+      keyed.get(() => "a").once(a_orderFn);
+      keyed.get("b").once(b_orderFn);
+      keyed.get(() => "b").once(b_orderFn);
+      expect(a_orderFn).toHaveBeenCalledTimes(i+1);
+      expect(b_orderFn).toHaveBeenCalledTimes(i+1);
+      keyed.reset();
+    }
+  })
 });

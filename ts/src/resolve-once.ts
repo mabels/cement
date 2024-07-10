@@ -52,3 +52,24 @@ export class ResolveOnce<T> {
     return future.asPromise();
   }
 }
+
+export class KeyedResolvOnce<T> {
+  private readonly _map = new Map<string, ResolveOnce<T>>();
+
+  get(key: string|(() => string)): ResolveOnce<T> {
+    if (typeof key === "function") {
+      key = key();
+    }
+    let resolveOnce = this._map.get(key);
+    if (!resolveOnce) {
+      resolveOnce = new ResolveOnce<T>();
+      this._map.set(key, resolveOnce);
+    }
+    return resolveOnce;
+  }
+
+  reset() {
+    this._map.forEach((resolveOnce) => resolveOnce.reset());
+    this._map.clear();
+  }
+}
