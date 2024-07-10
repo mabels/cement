@@ -201,9 +201,9 @@ describe("resolve-once", () => {
       keyed.get(() => "a").once(a_orderFn);
       keyed.get("b").once(b_orderFn);
       keyed.get(() => "b").once(b_orderFn);
-      expect(a_orderFn).toHaveBeenCalledTimes(i+1);
-      expect(b_orderFn).toHaveBeenCalledTimes(i+1);
+      expect(a_orderFn).toHaveBeenCalledTimes(i + 1);
+      expect(b_orderFn).toHaveBeenCalledTimes(i + 1);
       keyed.reset();
     }
-  })
+  });
 });

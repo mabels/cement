@@ -56,7 +56,7 @@ export class ResolveOnce<T> {
 export class KeyedResolvOnce<T> {
   private readonly _map = new Map<string, ResolveOnce<T>>();
 
-  get(key: string|(() => string)): ResolveOnce<T> {
+  get(key: string | (() => string)): ResolveOnce<T> {
     if (typeof key === "function") {
       key = key();
     }
