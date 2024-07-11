@@ -1,4 +1,4 @@
-import { KeyedResolvOnce, ResolveOnce } from "./resolve-once";
+import { KeyedResolvOnce, ResolveOnce, ResolveSeq } from "./resolve-once";
 import { vi as jest } from "vitest";
 
 describe("resolve-once", () => {
@@ -249,5 +249,37 @@ describe("resolve-once", () => {
     expect(a_orderFn).toHaveBeenCalledWith("a");
     expect(b_orderFn).toHaveBeenCalledTimes(1);
     expect(b_orderFn).toHaveBeenCalledWith("b");
+  });
+
+  function shuffle<T>(array: T[]) {
+    let currentIndex = array.length;
+
+    // While there remain elements to shuffle...
+    while (currentIndex != 0) {
+      // Pick a remaining element...
+      const randomIndex = Math.floor(Math.random() * currentIndex);
+      currentIndex--;
+
+      // And swap it with the current element.
+      [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+    }
+    return array;
+  }
+
+  it("ResolveSeq", async () => {
+    const seq = new ResolveSeq<number>();
+    let order = 0;
+    const actions = Array(10)
+      .fill(0)
+      .map((_, i) => {
+        return seq.add(async () => {
+          await new Promise((resolve) => setTimeout(resolve, i * 3));
+          expect(order++).toBe(i);
+          return i;
+        });
+      });
+    const ret = await Promise.all(shuffle(actions));
+    expect(ret.length).toBe(10);
+    expect(order).toBe(10);
   });
 });

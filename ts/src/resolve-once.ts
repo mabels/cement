@@ -1,5 +1,38 @@
 import { Future } from "./future";
 
+interface ResolveSeqItem<T, C> {
+  future: Future<T>;
+  fn: (c: C) => Promise<T>;
+}
+
+export class ResolveSeq<T, C = void> {
+  readonly ctx: C;
+  constructor(ctx?: C) {
+    this.ctx = ctx as C;
+  }
+  reset() {
+    /* noop */
+  }
+  async _step(item?: ResolveSeqItem<T, C> | undefined) {
+    if (!item) {
+      // done
+      return;
+    }
+    item
+      .fn(this.ctx)
+      .then((value) => item.future.resolve(value))
+      .catch((e) => item.future.reject(e as Error))
+      .finally(() => this._step(this._seqFutures.shift()));
+  }
+  readonly _seqFutures: ResolveSeqItem<T, C>[] = [];
+  async add(fn: (c: C) => Promise<T>): Promise<T> {
+    const future = new Future<T>();
+    this._seqFutures.push({ future, fn });
+    this._step(this._seqFutures.shift());
+    return future.asPromise();
+  }
+}
+
 export class ResolveOnce<T, C = void> {
   _onceDone = false;
   readonly _onceFutures: Future<T>[] = [];
@@ -50,8 +83,11 @@ export class ResolveOnce<T, C = void> {
         })
         .catch((e) => {
           this._onceError = e as Error;
+          this._onceOk = false;
+          this._onceValue = undefined;
           this._onceDone = true;
-          this._onceFutures.forEach((f) => f.reject(this._onceError));
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          this._onceFutures.forEach((f) => f.reject(this._onceError!));
           this._onceFutures.length = 0;
         });
     }
@@ -59,27 +95,44 @@ export class ResolveOnce<T, C = void> {
   }
 }
 
-export class KeyedResolvOnce<T, K = string> {
-  private readonly _map = new Map<K, ResolveOnce<T, K>>();
+export class Keyed<T extends { reset: () => void }, K = string> {
+  private readonly _map = new Map<K, T>();
 
-  async asyncGet(key: () => Promise<K>): Promise<ResolveOnce<T, K>> {
+  readonly factory: (key: K) => T;
+  constructor(factory: (key: K) => T) {
+    this.factory = factory;
+  }
+
+  async asyncGet(key: () => Promise<K>): Promise<T> {
     return this.get(await key());
   }
 
-  get(key: K | (() => K)): ResolveOnce<T, K> {
+  get(key: K | (() => K)): T {
     if (typeof key === "function") {
       key = (key as () => K)();
     }
-    let resolveOnce = this._map.get(key);
-    if (!resolveOnce) {
-      resolveOnce = new ResolveOnce<T, K>(key);
-      this._map.set(key, resolveOnce);
+    let keyed = this._map.get(key);
+    if (!keyed) {
+      keyed = this.factory(key);
+      this._map.set(key, keyed);
     }
-    return resolveOnce;
+    return keyed;
   }
 
   reset() {
-    this._map.forEach((resolveOnce) => resolveOnce.reset());
+    this._map.forEach((keyed) => keyed.reset());
     this._map.clear();
+  }
+}
+
+export class KeyedResolvOnce<T, K = string> extends Keyed<ResolveOnce<T, K>, K> {
+  constructor() {
+    super((key) => new ResolveOnce<T, K>(key));
+  }
+}
+
+export class KeyedResolvSeq<T, K = string> extends Keyed<ResolveSeq<T, K>, K> {
+  constructor() {
+    super((key) => new ResolveSeq<T, K>(key));
   }
 }
