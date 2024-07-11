@@ -310,6 +310,19 @@ export class LoggerImpl implements Logger {
     return this;
   }
 
+  Len(value: unknown, key = "len"): Logger {
+    if (Array.isArray(value)) {
+      this._attributes[key] = logValue(() => value.length);
+    } else if (typeof value === "string") {
+      this._attributes[key] = logValue(() => value.length);
+    } else if (typeof value === "object" && value !== null) {
+      this._attributes[key] = logValue(() => Object.keys(value).length);
+    } else {
+      this.Int(key, -1);
+    }
+    return this;
+  }
+
   Url(url: URL, key = "url"): Logger {
     this.Ref(key, () => url.toString());
     return this;
@@ -432,6 +445,11 @@ class WithLoggerBuilder implements WithLogger {
 
   Str(key: string, value?: string): WithLogger {
     this._li.Str(key, value);
+    return this;
+  }
+
+  Len(value: unknown, key?: string): WithLogger {
+    this._li.Len(value, key);
     return this;
   }
 

@@ -614,4 +614,80 @@ describe("TestLogger", () => {
       },
     ]);
   });
+
+  it("len", async () => {
+    const log = logger;
+    for (const key of [undefined, "key"]) {
+      log.Info().Len(undefined, key).Msg("undefined");
+      log.Info().Len(null, key).Msg("null");
+      log
+        .Info()
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .Len(true as any, key)
+        .Msg("bool");
+      log
+        .Info()
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .Len(1 as any, key)
+        .Msg("number");
+
+      log.Info().Len("string", key).Msg("string");
+      log
+        .Info()
+        .Len(new Uint8Array([1, 2]), key)
+        .Msg("uint8array");
+      log
+        .Info()
+        .Len(Array.from([1, 2]), key)
+        .Msg("Array");
+      log.Info().Len({ a: 1 }, key).Msg("object");
+    }
+    await log.Flush();
+    expect(logCollector.Logs()).toEqual(
+      Array.from(["len", "key"])
+        .map((key) => [
+          {
+            [key]: -1,
+            level: "info",
+            msg: "undefined",
+          },
+          {
+            [key]: -1,
+            level: "info",
+            msg: "null",
+          },
+          {
+            [key]: -1,
+            level: "info",
+            msg: "bool",
+          },
+          {
+            [key]: -1,
+            level: "info",
+            msg: "number",
+          },
+          {
+            [key]: 6,
+            level: "info",
+            msg: "string",
+          },
+          {
+            [key]: 2,
+            level: "info",
+            msg: "uint8array",
+          },
+          {
+            [key]: 2,
+            level: "info",
+            msg: "Array",
+          },
+          {
+            [key]: 1,
+            level: "info",
+            msg: "object",
+          },
+        ])
+        .flat(),
+    );
+  });
 });

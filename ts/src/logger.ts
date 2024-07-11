@@ -21,6 +21,8 @@ export interface LoggerInterface<R> {
   Result<T>(key: string, res: Result<T>): R;
   // default key url
   Url(url: URL, key?: string): R;
+  // len
+  Len(value: object | { length: number } | string | undefined | null, key?: string): R;
 
   Str(key: string, value?: string): R;
   Error(): R;
