@@ -249,6 +249,9 @@ export class LoggerImpl implements Logger {
   }
 
   Timestamp(): Logger {
+    // this is called with .call from _produceError where this
+    // this is crafted to have _sys and _attributes
+    // CAUTION so done use other ref from this
     this._attributes["ts"] = logValue(this._sys.Time().Now().toISOString());
     return this;
   }
@@ -355,7 +358,7 @@ export class LoggerImpl implements Logger {
     );
   }
 
-  _resetAttributes(fn: () => Error): Error {
+  _resetAttributes(fn: () => () => string): () => string {
     const ret = fn();
     Object.keys(this._attributes).forEach((key) => {
       // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
@@ -364,26 +367,36 @@ export class LoggerImpl implements Logger {
     Object.assign(this._attributes, this._withAttributes);
     return ret;
   }
+  _produceError(attr: JsonRecord, ...args: string[]): string {
+    attr["msg"] = logValue(args.join(" "));
+    const msg = attr["msg"].value();
+    if (typeof msg === "string" && !msg.trim().length) {
+      delete attr["msg"];
+    }
+    if (attr["ts"]?.value() === "ETERNITY") {
+      // hacky but it works
+      this.Timestamp.call({
+        _sys: this._sys,
+        _attributes: attr,
+      });
+    }
+    return JSON.stringify(resolveLogValue(attr));
+  }
+
   Msg(...args: string[]): AsError {
-    const error = this._resetAttributes(() => {
+    const fnError = this._resetAttributes(() => {
       const doWrite = this._levelHandler.isEnabled(this._attributes["level"]?.value(), this._attributes["module"]?.value());
-      this._attributes["msg"] = logValue(args.join(" "));
-      const msg = this._attributes["msg"].value();
-      if (typeof msg === "string" && !msg.trim().length) {
-        delete this._attributes["msg"];
-      }
-      if (this._attributes["ts"]?.value() === "ETERNITY") {
-        this.Timestamp();
-      }
-      const str = JSON.stringify(resolveLogValue(this._attributes));
+      let fnRet = () => this._produceError({ ...this._attributes }, ...args);
       if (doWrite) {
+        const str = this._produceError({ ...this._attributes }, ...args);
         const encoded = encoder.encode(str + "\n");
         this._logWriter.write(encoded);
+        fnRet = () => str;
       }
-      return new Error(str);
+      return fnRet;
     });
     return {
-      AsError: () => error,
+      AsError: () => new Error(fnError()),
     };
   }
 }
