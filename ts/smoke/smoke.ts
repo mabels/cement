@@ -12,7 +12,7 @@ import { LoggerImpl, Result, Option, Level } from "@adviser/cement";
     .EnableLevel(Level.DEBUG)
     .With()
     .Str("runtime", globalThis.Deno ? "Deno" : "Node")
-    .Str("version", process?.version || globalThis.Deno.version.deno)
+    .Str("version", (typeof process == 'object') ? process?.version : globalThis.Deno.version.deno)
     .Logger();
   {
     const sys = NodeSysAbstraction();
