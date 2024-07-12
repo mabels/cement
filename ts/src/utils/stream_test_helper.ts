@@ -10,7 +10,7 @@ export interface streamingTestState {
   readonly sendChunks: number;
   readonly sendChunkSize: number;
   fillCalls: number;
-  CollectorFn: Mock<mockValue[], void>;
+  CollectorFn: Mock<(mv: mockValue) => void>;
 }
 
 export async function receiveFromStream(reb: ReadableStream<Uint8Array>, state: streamingTestState) {

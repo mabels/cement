@@ -7,6 +7,7 @@ import {
   WrapperSysAbstractionParams,
 } from "../base_sys_abstraction";
 import { NodeFileService } from "./node_file_service";
+import { envImpl } from "../sys_env";
 
 export class ExitServiceImpl implements ExitService {
   constructor() {
@@ -81,7 +82,7 @@ export class NodeSystemService implements SystemService {
   }
 
   Env() {
-    return process.env as Record<string, string>;
+    return envImpl;
   }
 
   Args() {

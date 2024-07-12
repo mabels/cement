@@ -1,4 +1,5 @@
 import { FileService } from "./file_service";
+import { Env } from "./sys_env";
 import { Time } from "./time";
 
 export enum TimeMode {
@@ -35,7 +36,7 @@ export function String2TimeMode(s?: string): TimeMode {
 export type VoidFunc = () => void | Promise<void>;
 
 export interface SystemService {
-  Env(): Record<string, string>;
+  Env(): Env;
   Args(): string[];
   OnExit(hdl: VoidFunc): VoidFunc;
   Exit(code: number): void;

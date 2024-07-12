@@ -1,6 +1,7 @@
 import { BaseSysAbstraction, WrapperSysAbstraction, WrapperSysAbstractionParams } from "../base_sys_abstraction";
 import { FileService, NamedWritableStream } from "../file_service";
 import { SysAbstraction, SystemService, VoidFunc } from "../sys_abstraction";
+import { envImpl } from "../sys_env";
 
 class WebFileService implements FileService {
   get baseDir(): string {
@@ -49,8 +50,8 @@ class WebFileService implements FileService {
 }
 
 class WebSystemService implements SystemService {
-  Env(): Record<string, string> {
-    throw new Error("Env-Method not implemented.");
+  Env() {
+    return envImpl;
   }
   Args(): string[] {
     throw new Error("Args-Method not implemented.");
