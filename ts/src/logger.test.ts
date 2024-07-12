@@ -690,4 +690,29 @@ describe("TestLogger", () => {
         .flat(),
     );
   });
+
+  it("wildcard debug", async () => {
+    const m1 = logger.With().Module("m1").Logger();
+    const m2 = logger.With().Module("m2").Logger();
+
+    m1.Debug().Msg("m1");
+    m2.Debug().Msg("m2");
+
+    logger.SetDebug("*");
+    m1.Debug().Msg("m3");
+    m2.Debug().Msg("m4");
+    await logger.Flush();
+    expect(logCollector.Logs()).toEqual([
+      {
+        level: "debug",
+        module: "m1",
+        msg: "m3",
+      },
+      {
+        level: "debug",
+        module: "m2",
+        msg: "m4",
+      },
+    ]);
+  });
 });

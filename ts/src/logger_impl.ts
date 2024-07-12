@@ -88,7 +88,7 @@ export class LevelHandlerImpl implements LevelHandler {
       const parts = m
         .split(",")
         .map((s) => s.trim())
-        .filter((s) => s.length > 0);
+        .filter((s) => s.length);
       for (const p of parts) {
         fnAction(p);
       }
@@ -105,13 +105,19 @@ export class LevelHandlerImpl implements LevelHandler {
   }
   isEnabled(ilevel: unknown, module: unknown): boolean {
     const level = ilevel as Level; // what if it's not a level?
-    if (module !== undefined) {
-      const levels = this._modules.get(module as string);
+    if (typeof module === "string") {
+      const levels = this._modules.get(module);
       if (levels && levels.has(level)) {
         return true;
       }
     }
-    if (level === undefined) {
+    const wlevel = this._modules.get("*");
+    if (wlevel && typeof level === "string") {
+      if (wlevel.has(level)) {
+        return true;
+      }
+    }
+    if (typeof level !== "string") {
       // this is a plain log
       return true;
     }
@@ -242,9 +248,9 @@ export class LoggerImpl implements Logger {
     this._withAttributes["module"] = logValue(key);
     return this;
   }
+  // if the string is "*" it will enable for all modules
   SetDebug(...modules: (string | string[])[]): Logger {
     this._levelHandler.setDebug(...modules);
-
     return this;
   }
 
