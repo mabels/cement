@@ -715,4 +715,30 @@ describe("TestLogger", () => {
       },
     ]);
   });
+  it("setDebug could receive anything", () => {
+    function c(u: unknown): string {
+      return u as string;
+    }
+    logger.SetDebug(c(1), c(true), c(null), c(undefined), "", "test ", "test1, ,test2,,test3,,,more", [
+      c(2),
+      c(true),
+      c(null),
+      c(undefined),
+      "",
+      " testx",
+      "test1x , , test2x,, test3x ,,,morex",
+    ]);
+    expect(Array.from(((logger as LoggerImpl)._levelHandler as LevelHandlerImpl)._modules.keys())).toEqual([
+      "test",
+      "test1",
+      "test2",
+      "test3",
+      "more",
+      "testx",
+      "test1x",
+      "test2x",
+      "test3x",
+      "morex",
+    ]);
+  });
 });

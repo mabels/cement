@@ -85,6 +85,9 @@ export class LevelHandlerImpl implements LevelHandler {
 
   forModules(level: Level, fnAction: (p: string) => void, ...modules: (string | string[])[]): void {
     for (const m of modules.flat()) {
+      if (typeof m !== "string") {
+        continue;
+      }
       const parts = m
         .split(",")
         .map((s) => s.trim())
