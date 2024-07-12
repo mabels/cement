@@ -65,20 +65,29 @@ class DenoEnvActions implements EnvActions {
 }
 
 class BrowserEnvActions extends DenoEnvActions {
-  static getEnv(sym: symbol) {
-    const browser = globalThis as unknown as Record<symbol, Map<string, string>>;
+  static globalBEA(sym: symbol) {
+    const browser = globalThis as unknown as Record<symbol, BrowserEnvActions>;
     if (typeof browser === "object" && typeof browser[sym] === "object") {
-      return browser[sym];
+      return { map: browser[sym]._map, finalize: () => browser[sym]._map };
     }
-    browser[sym] = new Map();
-    return browser[sym];
+    const map = new Map<string, string>();
+    return {
+      map,
+      finalize: (bea: BrowserEnvActions) => {
+        browser[sym] = bea;
+        return map;
+      },
+    };
   }
 
+  readonly _map: Map<string, string>;
   constructor(opts: Partial<EnvFactoryOpts>) {
+    const { map, finalize } = BrowserEnvActions.globalBEA(Symbol.for(opts.symbol || "CP_ENV"));
     // not perfect the globalThis will be polluted
     // also in the case it is not need.
     // better we have a lazy init
-    super(opts, BrowserEnvActions.getEnv(Symbol.for(opts.symbol || "CP_ENV")));
+    super(opts, map);
+    this._map = finalize(this);
   }
   use(): boolean {
     return true;
