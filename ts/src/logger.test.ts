@@ -1,7 +1,7 @@
 import { LevelHandlerImpl, LoggerImpl } from "./logger_impl";
 import { LogCollector } from "./test/log_collector";
 
-import { Logger, Level, IsLogger } from "./logger";
+import { Logger, Level, IsLogger, logValue } from "./logger";
 import { TimeMode } from "./sys_abstraction";
 import { WebSysAbstraction } from "./web/web_sys_abstraction";
 import { TimeFactory } from "./base_sys_abstraction";
@@ -739,6 +739,74 @@ describe("TestLogger", () => {
       "test2x",
       "test3x",
       "morex",
+    ]);
+  });
+  it("setDebug could receive anything", async () => {
+    logger
+      .Error()
+      .Any("sock", {
+        m: 1,
+        nested: {
+          m: 2,
+          mfn: logValue(() => 23),
+        },
+        mfn: logValue(() => 19),
+      })
+      .Msg("1");
+    await logger.Flush();
+    expect(logCollector.Logs()).toEqual([
+      {
+        level: "error",
+        msg: "1",
+        sock: {
+          m: 1,
+          mfn: 19,
+          nested: {
+            m: 2,
+            mfn: 23,
+          },
+        },
+      },
+    ]);
+  });
+
+  it("self-ref", async () => {
+    const nested: Record<string, unknown> = {
+      m: 2,
+      mfn: logValue(() => 23),
+    };
+    nested.flat = nested;
+    nested.layer = {
+      jo: 4,
+      boom: nested,
+    };
+    logger
+      .Error()
+      .Any("sock", {
+        m: 1,
+        nested: nested,
+        mfn: logValue(() => 19),
+      })
+      .Msg("1");
+    await logger.Flush();
+    expect(logCollector.Logs()).toEqual([
+      {
+        level: "error",
+        msg: "1",
+        sock: {
+          m: 1,
+          mfn: 19,
+          nested: {
+            m: 2,
+            mfn: 23,
+            flat: "...",
+            layer: {
+              jo: 4,
+              boom: "...",
+            },
+          },
+        },
+      },
     ]);
   });
 });

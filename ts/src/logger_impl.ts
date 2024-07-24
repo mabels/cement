@@ -1,50 +1,21 @@
 // import { v4 } from "uuid";
-import { AsError, FnSerialized, Level, Logger, Serialized, WithLogger } from "./logger";
+import { AsError, FnSerialized, LogSerializable, Level, Logger, logValue, Serialized, WithLogger, removeSelfRef } from "./logger";
 import { WebSysAbstraction } from "./web/web_sys_abstraction";
 import { SysAbstraction } from "./sys_abstraction";
 import { Result } from "./result";
 
 const encoder = new TextEncoder();
 
-class LogValue {
-  constructor(readonly fn: FnSerialized) {}
-  value(): Serialized {
-    return this.fn();
-  }
-}
-
-function resolveLogValue(val: JsonRecord): Record<string, Serialized> {
-  const ret: Record<string, Serialized> = {};
-  Object.keys(val).forEach((key) => {
-    const v = val[key];
-    if (v instanceof LogValue) {
-      ret[key] = v.value();
-    }
-  });
-  return ret;
-}
-
-function logValue(val: Serialized | FnSerialized | JsonRecord | undefined | null): LogValue {
-  switch (typeof val) {
-    case "function":
-      return new LogValue(val);
-    case "string":
-      return new LogValue(() => val.toString());
-    case "number":
-      return new LogValue(() => val);
-    case "boolean":
-      return new LogValue(() => val);
-    case "object":
-      return new LogValue(() => JSON.stringify(val));
-    default:
-      if (!val) {
-        return new LogValue(() => "--Falsy--");
-      }
-      throw new Error(`Invalid type:${typeof val}`);
-  }
-}
-
-type JsonRecord = Record<string, LogValue>;
+// function resolveLogValue(val: LogSerializable): Record<string, Serialized> {
+//   const ret: Record<string, Serialized> = {};
+//   Object.keys(val).forEach((key) => {
+//     const v = val[key];
+//     if (v instanceof LogValue) {
+//       ret[key] = v.value();
+//     }
+//   });
+//   return ret;
+// }
 
 export interface LevelHandler {
   enableLevel(level: Level, ...modules: string[]): void;
@@ -195,13 +166,13 @@ export interface LoggerImplParams {
   readonly out?: WritableStream<Uint8Array>;
   readonly logWriter?: LogWriter;
   readonly sys?: SysAbstraction;
-  readonly withAttributes?: JsonRecord;
+  readonly withAttributes?: LogSerializable;
   readonly levelHandler?: LevelHandler;
 }
 export class LoggerImpl implements Logger {
   readonly _sys: SysAbstraction;
-  readonly _attributes: JsonRecord = {};
-  readonly _withAttributes: JsonRecord;
+  readonly _attributes: LogSerializable = {};
+  readonly _withAttributes: LogSerializable;
   readonly _logWriter: LogWriter;
   readonly _levelHandler: LevelHandler;
   // readonly _id: string = "logger-" + Math.random().toString(36)
@@ -343,7 +314,7 @@ export class LoggerImpl implements Logger {
     return this;
   }
 
-  Any(key: string, value: string | number | boolean | JsonRecord): Logger {
+  Any(key: string, value?: string | number | boolean | LogSerializable): Logger {
     this._attributes[key] = logValue(value);
     return this;
   }
@@ -390,7 +361,7 @@ export class LoggerImpl implements Logger {
     Object.assign(this._attributes, this._withAttributes);
     return ret;
   }
-  _produceError(attr: JsonRecord, ...args: string[]): string {
+  _produceError(attr: LogSerializable, ...args: string[]): string {
     attr["msg"] = logValue(args.join(" "));
     const msg = attr["msg"].value();
     if (typeof msg === "string" && !msg.trim().length) {
@@ -403,7 +374,7 @@ export class LoggerImpl implements Logger {
         _attributes: attr,
       });
     }
-    return JSON.stringify(resolveLogValue(attr));
+    return JSON.stringify(attr, removeSelfRef());
   }
 
   Msg(...args: string[]): AsError {
@@ -411,7 +382,7 @@ export class LoggerImpl implements Logger {
       const doWrite = this._levelHandler.isEnabled(this._attributes["level"]?.value(), this._attributes["module"]?.value());
       let fnRet = () => this._produceError({ ...this._attributes }, ...args);
       if (doWrite) {
-        const str = this._produceError({ ...this._attributes }, ...args);
+        const str = fnRet();
         const encoded = encoder.encode(str + "\n");
         this._logWriter.write(encoded);
         fnRet = () => str;
@@ -518,7 +489,7 @@ class WithLoggerBuilder implements WithLogger {
     this._li._attributes["ts"] = logValue("ETERNITY");
     return this;
   }
-  Any(key: string, value: JsonRecord): WithLogger {
+  Any(key: string, value: LogSerializable): WithLogger {
     this._li.Any(key, value);
     return this;
   }

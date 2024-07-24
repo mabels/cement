@@ -9,6 +9,51 @@ export enum Level {
 
 export type Serialized = string | number | boolean;
 export type FnSerialized = () => Serialized;
+
+export class LogValue {
+  constructor(readonly fn: FnSerialized) {}
+  value(): Serialized {
+    return this.fn();
+  }
+  toJSON(): Serialized {
+    return this.value();
+  }
+}
+
+export type LogSerializable = Record<string, LogValue>;
+
+export function removeSelfRef(): (key: unknown, val: unknown) => unknown {
+  const cache = new Set();
+  return function (key: unknown, value: unknown) {
+    if (typeof value === "object" && value !== null) {
+      // Duplicate reference found, discard key
+      if (cache.has(value)) return "...";
+      cache.add(value);
+    }
+    return value;
+  };
+}
+
+export function logValue(val: Serialized | FnSerialized | LogSerializable | undefined | null): LogValue {
+  switch (typeof val) {
+    case "function":
+      return new LogValue(val);
+    case "string":
+      return new LogValue(() => val.toString());
+    case "number":
+      return new LogValue(() => val);
+    case "boolean":
+      return new LogValue(() => val);
+    case "object":
+      return new LogValue(() => JSON.parse(JSON.stringify(val, removeSelfRef())));
+    default:
+      if (!val) {
+        return new LogValue(() => "--Falsy--");
+      }
+      throw new Error(`Invalid type:${typeof val}`);
+  }
+}
+
 export interface LoggerInterface<R> {
   Module(key: string): R;
   // if modules is empty, set for all Levels
