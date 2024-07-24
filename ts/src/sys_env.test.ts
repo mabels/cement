@@ -1,7 +1,8 @@
-import { EnvImpl, envImpl } from "./sys_env";
+import { BrowserEnvActions, EnvImpl, envFactory } from "./sys_env";
 
 describe("sys_env", () => {
   let key: string;
+  const envImpl = envFactory();
   beforeEach(() => {
     key = `key-${Math.random()}`;
   });
@@ -11,15 +12,15 @@ describe("sys_env", () => {
     expect(envImpl.get(key)).toBe("value");
     envImpl.set(key);
     expect(envImpl.get(key)).toBe("value");
-    envImpl.del(key);
+    envImpl.delete(key);
     expect(envImpl.get(key)).toBeUndefined();
   });
   it("preset", () => {
-    const env = new EnvImpl({
+    const env = new EnvImpl(new BrowserEnvActions({}), {
       presetEnv: new Map([[key, "value"]]),
     });
     expect(env.get(key)).toBe("value");
-    env.del(key);
+    env.delete(key);
     expect(env.get(key)).toBeUndefined();
   });
   it("onSet wild card", () => {
@@ -30,7 +31,7 @@ describe("sys_env", () => {
     expect(fn.mock.calls.map((i) => i[1])).toEqual(envImpl.keys().map((i) => envImpl.get(i)));
   });
   it("onSet filter", () => {
-    const env = new EnvImpl({
+    const env = new EnvImpl(new BrowserEnvActions({}), {
       presetEnv: new Map([[key, "value"]]),
     });
     const fn = vi.fn();
@@ -40,7 +41,7 @@ describe("sys_env", () => {
     env.set(key, "value2");
     expect(fn).toBeCalledTimes(2);
     expect(fn.mock.calls[1]).toEqual([key, "value2"]);
-    env.del(key);
+    env.delete(key);
     expect(fn).toBeCalledTimes(3);
     expect(fn.mock.calls[2]).toEqual([key, undefined]);
   });

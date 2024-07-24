@@ -1,11 +1,10 @@
 import { KeyedResolvOnce, ResolveOnce, ResolveSeq } from "./resolve-once";
-import { vi as jest } from "vitest";
 
 describe("resolve-once", () => {
   it("sequence", async () => {
     const once = new ResolveOnce<number>();
 
-    const reallyOnce = jest.fn(async () => {
+    const reallyOnce = vi.fn(async () => {
       return new Promise<number>((resolve) => {
         setTimeout(() => {
           resolve(42);
@@ -27,7 +26,7 @@ describe("resolve-once", () => {
   });
   it("parallel", async () => {
     const once = new ResolveOnce<number>();
-    const reallyOnce = jest.fn(async () => {
+    const reallyOnce = vi.fn(async () => {
       return new Promise<number>((resolve) => {
         setTimeout(() => {
           resolve(42);
@@ -51,7 +50,7 @@ describe("resolve-once", () => {
 
   it("works with void", async () => {
     const once = new ResolveOnce<void>();
-    const reallyOnce = jest.fn(async () => {
+    const reallyOnce = vi.fn(async () => {
       return new Promise<void>((resolve) => {
         setTimeout(() => {
           resolve();
@@ -75,7 +74,7 @@ describe("resolve-once", () => {
 
   it("throws", async () => {
     const once = new ResolveOnce<number>();
-    const reallyOnce = jest.fn(async () => {
+    const reallyOnce = vi.fn(async () => {
       return new Promise<number>((rs, rj) => {
         setTimeout(() => {
           rj(new Error("nope"));
@@ -106,7 +105,7 @@ describe("resolve-once", () => {
 
   it("preserves order", async () => {
     const once = new ResolveOnce<number>();
-    const reallyOnce = jest.fn(async () => {
+    const reallyOnce = vi.fn(async () => {
       return new Promise<number>((resolve) => {
         setTimeout(() => {
           resolve(42);
@@ -139,7 +138,7 @@ describe("resolve-once", () => {
 
   it("preserves call order to resolv order", async () => {
     const once = new ResolveOnce<number>();
-    const reallyOnce = jest.fn(async () => {
+    const reallyOnce = vi.fn(async () => {
       return new Promise<number>((resolve) => {
         setTimeout(() => {
           resolve(42);
@@ -147,7 +146,7 @@ describe("resolve-once", () => {
       });
     });
     const start = Date.now();
-    const orderFn = jest.fn();
+    const orderFn = vi.fn();
     const fns = Array(100)
       .fill(0)
       .map((_, i) => {
@@ -178,7 +177,7 @@ describe("resolve-once", () => {
 
   it("reset", async () => {
     const once = new ResolveOnce<number>();
-    const orderFn = jest.fn(async () => 42);
+    const orderFn = vi.fn(async () => 42);
     once.once(orderFn);
     once.once(orderFn);
     once.once(orderFn);
@@ -194,8 +193,8 @@ describe("resolve-once", () => {
 
   it("keyed", async () => {
     const keyed = new KeyedResolvOnce<number>();
-    const a_orderFn = jest.fn(async () => 42);
-    const b_orderFn = jest.fn(async () => 42);
+    const a_orderFn = vi.fn(async () => 42);
+    const b_orderFn = vi.fn(async () => 42);
     for (let i = 0; i < 5; i++) {
       keyed.get("a").once(a_orderFn);
       keyed.get(() => "a").once(a_orderFn);
@@ -209,8 +208,8 @@ describe("resolve-once", () => {
 
   it("keyed with pass ctx", async () => {
     const keyed = new KeyedResolvOnce<number>();
-    const a_orderFn = jest.fn(async (key) => key);
-    const b_orderFn = jest.fn(async (key) => key);
+    const a_orderFn = vi.fn(async (key) => key);
+    const b_orderFn = vi.fn(async (key) => key);
     await Promise.all([
       keyed.get("a").once(a_orderFn),
       keyed.get(() => "a").once(a_orderFn),
@@ -225,8 +224,8 @@ describe("resolve-once", () => {
 
   it("keyed asyncGet", async () => {
     const keyed = new KeyedResolvOnce<number>();
-    const a_orderFn = jest.fn(async (key) => key);
-    const b_orderFn = jest.fn(async (key) => key);
+    const a_orderFn = vi.fn(async (key) => key);
+    const b_orderFn = vi.fn(async (key) => key);
     await Promise.all([
       keyed
         .asyncGet(async () => {
@@ -281,5 +280,37 @@ describe("resolve-once", () => {
     const ret = await Promise.all(shuffle(actions));
     expect(ret.length).toBe(10);
     expect(order).toBe(10);
+  });
+
+  it("with promise", async () => {
+    const once = new ResolveOnce<number>();
+    let val = 42;
+    const fn = async () => {
+      return new Promise<number>((resolve) => {
+        setTimeout(() => {
+          resolve(val++);
+        }, 10);
+      });
+    };
+    expect(await once.once(fn)).toBe(42);
+    expect(await once.once(fn)).toBe(42);
+  });
+
+  it("without promise", () => {
+    const once = new ResolveOnce<number>();
+    let val = 42;
+    const fn = () => val++;
+    expect(once.once(fn)).toBe(42);
+    expect(once.once(fn)).toBe(42);
+  });
+
+  it("without promise but exception", () => {
+    const once = new ResolveOnce<number>();
+    let val = 42;
+    const fn = () => {
+      throw new Error(`nope ${val++}`);
+    };
+    expect(() => once.once(fn)).toThrowError("nope 42");
+    expect(() => once.once(fn)).toThrowError("nope 42");
   });
 });

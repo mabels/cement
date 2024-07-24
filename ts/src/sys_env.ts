@@ -1,9 +1,14 @@
-export interface EnvActions {
+import { ResolveOnce } from "./resolve-once";
+
+export interface EnvMap {
   get(key: string): string | undefined;
   set(key: string, value?: string): void;
-  del(key: string): void;
+  delete(key: string): void;
   keys(): string[];
-  use(): boolean;
+}
+export interface EnvActions extends EnvMap {
+  active(): boolean;
+  register(env: Env): Env;
 }
 
 class NodeEnvActions implements EnvActions {
@@ -13,84 +18,96 @@ class NodeEnvActions implements EnvActions {
   constructor(opts: Partial<EnvFactoryOpts>) {
     // do nothing
   }
-  use(): boolean {
+
+  register(env: Env): Env {
+    return env;
+  }
+
+  active(): boolean {
     return typeof this.#node === "object" && typeof this.#node.process === "object" && typeof this.#node.process.env === "object";
   }
-  readonly #env = this.use() ? process.env : {};
+  readonly _env = this.active() ? this.#node.process.env : {};
   keys(): string[] {
-    return Object.keys(this.#env);
+    return Object.keys(this._env);
   }
   get(key: string): string | undefined {
-    return this.#env[key];
+    return this._env[key];
   }
   set(key: string, value?: string): void {
     if (value) {
-      this.#env[key] = value;
+      this._env[key] = value;
     }
   }
-  del(key: string): void {
+  delete(key: string): void {
     // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-    delete this.#env[key];
+    delete this._env[key];
   }
 }
 
 class DenoEnvActions implements EnvActions {
   readonly #deno = globalThis as unknown as { Deno: { env: Map<string, string> } };
 
-  readonly #env: Map<string, string>;
-  constructor(opts: Partial<EnvFactoryOpts>, env?: Map<string, string>) {
-    if (env) {
-      this.#env = env;
-    } else {
-      this.#env = this.use() ? this.#deno.Deno.env : new Map();
-    }
+  get _env(): Map<string, string> {
+    return this.#deno.Deno.env;
   }
-  use(): boolean {
+
+  // eslint-disable-next-line @typescript-eslint/no-useless-constructor, @typescript-eslint/no-unused-vars
+  constructor(opts: Partial<EnvFactoryOpts>) {
+    // do nothing
+  }
+
+  register(env: Env): Env {
+    return env;
+  }
+  active(): boolean {
     return typeof this.#deno === "object" && typeof this.#deno.Deno === "object" && typeof this.#deno.Deno.env === "object";
   }
   keys(): string[] {
-    return Array.from(this.#env.keys());
+    return Array.from(this._env.keys());
   }
   get(key: string): string | undefined {
-    return this.#env.get(key);
+    return this._env.get(key);
   }
   set(key: string, value?: string): void {
     if (value) {
-      this.#env.set(key, value);
+      this._env.set(key, value);
     }
   }
-  del(key: string): void {
-    this.#env.delete(key);
+  delete(key: string): void {
+    this._env.delete(key);
   }
 }
 
-class BrowserEnvActions extends DenoEnvActions {
-  static globalBEA(sym: symbol) {
-    const browser = globalThis as unknown as Record<symbol, BrowserEnvActions>;
-    if (typeof browser === "object" && typeof browser[sym] === "object") {
-      return { map: browser[sym]._map, finalize: () => browser[sym]._map };
-    }
-    const map = new Map<string, string>();
-    return {
-      map,
-      finalize: (bea: BrowserEnvActions) => {
-        browser[sym] = bea;
-        return map;
-      },
-    };
+export class BrowserEnvActions implements EnvActions {
+  readonly env = new Map<string, string>();
+  readonly opts: Partial<EnvFactoryOpts>;
+  constructor(opts: Partial<EnvFactoryOpts>) {
+    this.opts = opts;
   }
 
-  readonly _map: Map<string, string>;
-  constructor(opts: Partial<EnvFactoryOpts>) {
-    const { map, finalize } = BrowserEnvActions.globalBEA(Symbol.for(opts.symbol || "CP_ENV"));
-    // not perfect the globalThis will be polluted
-    // also in the case it is not need.
-    // better we have a lazy init
-    super(opts, map);
-    this._map = finalize(this);
+  get(key: string): string | undefined {
+    return this.env.get(key);
   }
-  use(): boolean {
-    return true;
+  set(key: string, value?: string): void {
+    if (value) {
+      this.env.set(key, value);
+    }
+  }
+  delete(key: string): void {
+    this.env.delete(key);
+  }
+  keys(): string[] {
+    return Array.from(this.env.keys());
+  }
+  active(): boolean {
+    return true; // that should work on every runtime
+  }
+
+  register(env: Env): Env {
+    const sym = Symbol.for(this.opts.symbol || "CP_ENV");
+    const browser = globalThis as unknown as Record<symbol, Env>;
+    browser[sym] = env;
+    return env;
   }
 }
 
@@ -99,46 +116,50 @@ interface EnvFactoryOpts {
   readonly presetEnv: Map<string, string>;
 }
 
-function envFactory(opts: Partial<EnvFactoryOpts> = {}): EnvActions {
-  const found = [new NodeEnvActions(opts), new DenoEnvActions(opts), new BrowserEnvActions(opts)].find((env) => env.use());
-  if (!found) {
-    throw new Error("SysContainer:envFactory: no env available");
-  }
-  return found;
-}
-
 type OnSetFn = (key: string, value?: string) => void;
 export interface OnSetItem {
   readonly filter: Set<string>;
   readonly fn: OnSetFn;
 }
 
-export interface Env extends Omit<EnvActions, "use"> {
+export interface Env extends EnvMap {
   onSet(fn: OnSetFn, ...filter: string[]): void;
 }
 
+const _envFactory = new ResolveOnce<Env>();
+export function envFactory(opts: Partial<Omit<EnvFactoryOpts, "action">> = {}): Env {
+  return _envFactory.once(() => {
+    const found = [new NodeEnvActions(opts), new DenoEnvActions(opts), new BrowserEnvActions(opts)].find((env) => env.active());
+    if (!found) {
+      throw new Error("SysContainer:envFactory: no env available");
+    }
+    const ret = new EnvImpl(found, opts);
+    found.register(ret);
+    return ret;
+  });
+}
+
 export class EnvImpl implements Env {
-  readonly #envImpl: EnvActions;
-  constructor(opts: Partial<EnvFactoryOpts> = {}) {
-    this.#envImpl = envFactory(opts);
-    // do nothing
-    this.#updatePresets(opts.presetEnv);
+  readonly _map: EnvMap;
+  constructor(map: EnvMap, opts: Partial<EnvFactoryOpts> = {}) {
+    this._map = map;
+    this._updatePresets(opts.presetEnv);
   }
-  #updatePresets(presetEnv?: Map<string, string>): void {
+  _updatePresets(presetEnv?: Map<string, string>): void {
     if (!presetEnv) {
       return;
     }
     for (const [key, value] of presetEnv) {
-      this.#envImpl.set(key, value);
+      this._map.set(key, value);
     }
   }
-  #applyOnSet(onSet: OnSetItem[], key?: string, value?: string): void {
+  _applyOnSet(onSet: OnSetItem[], key?: string, value?: string): void {
     onSet.forEach((item) => {
       let keys: string[] = [];
       if (key) {
         keys = [key];
       } else {
-        keys = this.#envImpl.keys();
+        keys = this._map.keys();
       }
       keys
         .filter((k) => {
@@ -154,7 +175,7 @@ export class EnvImpl implements Env {
           let v;
           if (!key && !value) {
             // init
-            v = this.#envImpl.get(k);
+            v = this._map.get(k);
           } else if (key && !value) {
             // del
             v = undefined;
@@ -166,30 +187,30 @@ export class EnvImpl implements Env {
         });
     });
   }
-  readonly #onSet: OnSetItem[] = [];
+  readonly _onSet: OnSetItem[] = [];
   keys(): string[] {
-    return this.#envImpl.keys();
+    return this._map.keys();
   }
   // filter is not set all sets passed
   onSet(fn: OnSetFn, ...filter: string[]): void {
     const item: OnSetItem = { filter: new Set(filter), fn };
-    this.#onSet.push(item);
-    this.#applyOnSet([item]);
+    this._onSet.push(item);
+    this._applyOnSet([item]);
   }
   get(key: string): string | undefined {
-    return this.#envImpl.get(key);
+    return this._map.get(key);
   }
   set(key: string, value?: string): void {
     if (!value) {
       return;
     }
-    this.#envImpl.set(key, value);
-    this.#applyOnSet(this.#onSet, key, value);
+    this._map.set(key, value);
+    this._applyOnSet(this._onSet, key, value);
   }
-  del(key: string): void {
-    this.#envImpl.del(key);
-    this.#applyOnSet(this.#onSet, key);
+  delete(key: string): void {
+    this._map.delete(key);
+    this._applyOnSet(this._onSet, key);
   }
 }
 
-export const envImpl = new EnvImpl();
+// export const envImpl = new EnvImpl();

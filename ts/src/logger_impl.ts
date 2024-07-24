@@ -150,6 +150,7 @@ export class LogWriter {
         await writer.write(encoded);
         await writer.releaseLock();
       } catch (err) {
+        // eslint-disable-next-line no-console
         console.error("Chunk error:", err);
       }
       // console.log("<<<My:", val)

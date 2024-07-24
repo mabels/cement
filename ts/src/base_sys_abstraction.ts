@@ -123,6 +123,7 @@ export class BaseSysAbstraction {
     write(chunk) {
       return new Promise((resolve) => {
         const decoded = decoder.decode(chunk);
+        // eslint-disable-next-line no-console
         console.log(decoded.trimEnd());
         resolve();
       });
@@ -132,6 +133,7 @@ export class BaseSysAbstraction {
     write(chunk) {
       return new Promise((resolve) => {
         const decoded = decoder.decode(chunk);
+        // eslint-disable-next-line no-console
         console.error(decoded.trimEnd());
         resolve();
       });

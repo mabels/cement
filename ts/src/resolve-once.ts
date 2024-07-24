@@ -33,17 +33,18 @@ export class ResolveSeq<T, C = void> {
   }
 }
 
-export class ResolveOnce<T, C = void> {
+export class ResolveOnce<T, CTX = void> {
   _onceDone = false;
   readonly _onceFutures: Future<T>[] = [];
   _onceOk = false;
   _onceValue?: T;
   _onceError?: Error;
+  _isPromise = false;
 
-  readonly ctx: C;
+  readonly ctx: CTX;
 
-  constructor(ctx?: C) {
-    this.ctx = ctx as C;
+  constructor(ctx?: CTX) {
+    this.ctx = ctx as CTX;
   }
 
   get ready() {
@@ -58,40 +59,68 @@ export class ResolveOnce<T, C = void> {
     this._onceFutures.length = 0;
   }
 
-  async once(fn: (c: C) => Promise<T>): Promise<T> {
+  // T extends Option<infer U> ? U : T
+  once<R>(fn: (c: CTX) => R): R {
     if (this._onceDone) {
       if (this._onceError) {
-        return Promise.reject(this._onceError);
+        if (this._isPromise) {
+          return Promise.reject(this._onceError) as unknown as R;
+        } else {
+          throw this._onceError;
+        }
       }
       if (this._onceOk) {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        return Promise.resolve(this._onceValue!);
+        if (this._isPromise) {
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          return Promise.resolve(this._onceValue!) as unknown as R;
+        } else {
+          return this._onceValue as unknown as R;
+        }
       }
       throw new Error("ResolveOnce.once impossible");
     }
     const future = new Future<T>();
     this._onceFutures.push(future);
     if (this._onceFutures.length === 1) {
-      fn(this.ctx)
-        .then((value) => {
-          this._onceValue = value;
-          this._onceOk = true;
-          this._onceDone = true;
+      const okFn = (value: T) => {
+        this._onceValue = value;
+        this._onceOk = true;
+        this._onceDone = true;
+        if (this._isPromise) {
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           this._onceFutures.forEach((f) => f.resolve(this._onceValue!));
-          this._onceFutures.length = 0;
-        })
-        .catch((e) => {
-          this._onceError = e as Error;
-          this._onceOk = false;
-          this._onceValue = undefined;
-          this._onceDone = true;
+        }
+        this._onceFutures.length = 0;
+      };
+      const catchFn = (e: Error) => {
+        this._onceError = e as Error;
+        this._onceOk = false;
+        this._onceValue = undefined;
+        this._onceDone = true;
+        if (this._isPromise) {
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           this._onceFutures.forEach((f) => f.reject(this._onceError!));
-          this._onceFutures.length = 0;
-        });
+        }
+        this._onceFutures.length = 0;
+      };
+      try {
+        const ret = fn(this.ctx);
+        if (typeof (ret as Promise<T>).then === "function") {
+          this._isPromise = true;
+          (ret as Promise<T>).then(okFn).catch(catchFn);
+        } else {
+          okFn(ret as unknown as T);
+        }
+      } catch (e) {
+        catchFn(e as Error);
+      }
     }
-    return future.asPromise();
+    if (this._isPromise) {
+      return future.asPromise() as unknown as R;
+    } else {
+      // abit funky but i don't want to impl the return just once
+      return this.once(fn);
+    }
   }
 }
 

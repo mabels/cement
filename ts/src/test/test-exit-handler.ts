@@ -4,6 +4,7 @@
   const my = sa.NodeSysAbstraction();
 
   const larg = process.argv[process.argv.length - 1];
+  // eslint-disable-next-line no-console
   console.log(
     JSON.stringify({
       larg,
@@ -13,6 +14,7 @@
 
   my.System().OnExit(async () => {
     await my.Time().Sleep(100);
+    // eslint-disable-next-line no-console
     console.log(
       JSON.stringify({
         larg,
@@ -23,6 +25,7 @@
   });
   my.System().OnExit(async () => {
     await my.Time().Sleep(200);
+    // eslint-disable-next-line no-console
     console.log(
       JSON.stringify({
         larg,

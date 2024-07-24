@@ -7,7 +7,7 @@ import {
   WrapperSysAbstractionParams,
 } from "../base_sys_abstraction";
 import { NodeFileService } from "./node_file_service";
-import { envImpl } from "../sys_env";
+import { envFactory } from "../sys_env";
 
 export class ExitServiceImpl implements ExitService {
   constructor() {
@@ -68,6 +68,7 @@ export class ExitServiceImpl implements ExitService {
         process.exit(code);
       })
       .catch((err) => {
+        // eslint-disable-next-line no-console
         console.error("ExitService: failed to handle exit", err);
         process.exit(code);
       });
@@ -82,7 +83,7 @@ export class NodeSystemService implements SystemService {
   }
 
   Env() {
-    return envImpl;
+    return envFactory();
   }
 
   Args() {
