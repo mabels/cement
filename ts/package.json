@@ -49,14 +49,14 @@
   "homepage": "https://github.com/mabels/cement#readme",
   "devDependencies": {
     "@types/node": "^20.14.9",
-    "@typescript-eslint/eslint-plugin": "^7.16.0",
-    "@typescript-eslint/parser": "^7.16.0",
+    "@typescript-eslint/eslint-plugin": "^7.16.1",
+    "@typescript-eslint/parser": "^7.16.1",
     "eslint": "^9.6.0",
     "prettier": "^3.2.5",
     "tsup": "^8.1.0",
     "tsx": "^4.16.0",
     "typescript": "^5.5.0",
-    "typescript-eslint": "^7.16.0",
+    "typescript-eslint": "^7.16.1",
     "vitest": "^2.0.2"
   },
   "engines": {
