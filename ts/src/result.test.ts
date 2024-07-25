@@ -28,9 +28,24 @@ it("ResultErr", () => {
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 class xResult {}
+class fakeResult {
+  is_ok() {
+    return true;
+  }
+  is_err() {
+    return false;
+  }
+  unwrap() {
+    return 1;
+  }
+  unwrap_err() {
+    throw new Error("Result is Ok");
+  }
+}
 it("is Result", () => {
   expect(Result.Is(Result.Ok(1))).toBe(true);
   expect(Result.Is(Result.Err("xxx"))).toEqual(true);
+  expect(Result.Is(new fakeResult())).toBe(true);
   expect(Result.Is(new xResult())).toBe(false);
 });
 

@@ -9,7 +9,17 @@ export abstract class Result<T, E = Error> {
     return new ResultError(t);
   }
   static Is<T>(t: unknown): t is Result<T> {
-    return t instanceof Result;
+    if (!t) {
+      return false;
+    }
+    if (t instanceof Result) {
+      return true;
+    }
+    const rt = t as Result<T>;
+    if ([typeof rt.is_ok, typeof rt.is_err, typeof rt.unwrap, typeof rt.unwrap_err].every((x) => x === "function")) {
+      return true;
+    }
+    return false;
   }
 
   isOk(): boolean {
