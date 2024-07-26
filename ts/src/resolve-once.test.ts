@@ -267,19 +267,24 @@ describe("resolve-once", () => {
 
   it("ResolveSeq", async () => {
     const seq = new ResolveSeq<number>();
-    let order = 0;
+    let enter = 0;
+    let leave = 0;
     const actions = Array(10)
       .fill(0)
       .map((_, i) => {
         return seq.add(async () => {
+          expect(enter++).toBe(i);
           await new Promise((resolve) => setTimeout(resolve, i * 3));
-          expect(order++).toBe(i);
+          await new Promise((resolve) => setTimeout(resolve, i * 2));
+          expect(leave++).toBe(i);
+          expect(leave).toBe(enter);
           return i;
-        });
+        }, i);
       });
     const ret = await Promise.all(shuffle(actions));
     expect(ret.length).toBe(10);
-    expect(order).toBe(10);
+    expect(enter).toBe(10);
+    expect(leave).toBe(10);
   });
 
   it("with promise", async () => {

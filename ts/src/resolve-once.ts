@@ -1,8 +1,9 @@
 import { Future } from "./future";
 
 interface ResolveSeqItem<T, C> {
-  future: Future<T>;
-  fn: (c: C) => Promise<T>;
+  readonly future: Future<T>;
+  readonly fn: (c: C) => Promise<T>;
+  readonly id?: number;
 }
 
 export class ResolveSeq<T, C = void> {
@@ -22,13 +23,18 @@ export class ResolveSeq<T, C = void> {
       .fn(this.ctx)
       .then((value) => item.future.resolve(value))
       .catch((e) => item.future.reject(e as Error))
-      .finally(() => this._step(this._seqFutures.shift()));
+      .finally(() => {
+        this._seqFutures.shift();
+        this._step(this._seqFutures[0]);
+      });
   }
   readonly _seqFutures: ResolveSeqItem<T, C>[] = [];
-  async add(fn: (c: C) => Promise<T>): Promise<T> {
+  async add(fn: (c: C) => Promise<T>, id?: number): Promise<T> {
     const future = new Future<T>();
-    this._seqFutures.push({ future, fn });
-    this._step(this._seqFutures.shift());
+    this._seqFutures.push({ future, fn, id });
+    if (this._seqFutures.length === 1) {
+      this._step(this._seqFutures[0]);
+    }
     return future.asPromise();
   }
 }
