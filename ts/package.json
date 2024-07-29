@@ -48,7 +48,7 @@
   },
   "homepage": "https://github.com/mabels/cement#readme",
   "devDependencies": {
-    "@types/node": "^20.14.9",
+    "@types/node": "^22.0.0",
     "@typescript-eslint/eslint-plugin": "^7.16.1",
     "@typescript-eslint/parser": "^7.16.1",
     "eslint": "^9.6.0",
