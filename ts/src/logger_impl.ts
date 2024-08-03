@@ -1,8 +1,23 @@
 // import { v4 } from "uuid";
-import { AsError, FnSerialized, LogSerializable, Level, Logger, logValue, Serialized, WithLogger, removeSelfRef } from "./logger";
+import {
+  AsError,
+  FnSerialized,
+  LogSerializable,
+  Level,
+  Logger,
+  logValue,
+  Serialized,
+  WithLogger,
+  removeSelfRef,
+  Sized,
+  Lengthed,
+  LogValue,
+  asyncLogValue,
+} from "./logger";
 import { WebSysAbstraction } from "./web/web_sys_abstraction";
 import { SysAbstraction } from "./sys_abstraction";
 import { Result } from "./result";
+import { URI } from "./uri";
 
 const encoder = new TextEncoder();
 
@@ -162,6 +177,37 @@ export class LogWriter {
   }
 }
 
+function getLen(value: unknown): LogValue {
+  if (Array.isArray(value)) {
+    return logValue(() => value.length);
+  } else if (typeof value === "string") {
+    return logValue(() => value.length);
+  } else if (typeof value === "object" && value !== null) {
+    if (typeof (value as Sized).size === "number") {
+      return logValue(() => (value as Sized).size);
+    } else if (typeof (value as Lengthed).length === "number") {
+      return logValue(() => (value as Lengthed).length);
+    }
+    return logValue(() => Object.keys(value).length);
+  }
+  return logValue(() => -1);
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function hash(value: unknown): string {
+  // const hasher = createHash("sha256");
+  // hasher.update(JSON.stringify(value, removeSelfRef()));
+  // return hasher.digest("hex");
+  return "not implemented";
+}
+
+function toLogValue(lop: LogValue | Promise<LogValue>): LogValue | undefined {
+  if (lop && typeof (lop as Promise<LogValue>).then === "function") {
+    throw new Error("async logValue Not implemented");
+  }
+  return lop as LogValue;
+}
+
 export interface LoggerImplParams {
   readonly out?: WritableStream<Uint8Array>;
   readonly logWriter?: LogWriter;
@@ -292,19 +338,16 @@ export class LoggerImpl implements Logger {
   }
 
   Len(value: unknown, key = "len"): Logger {
-    if (Array.isArray(value)) {
-      this._attributes[key] = logValue(() => value.length);
-    } else if (typeof value === "string") {
-      this._attributes[key] = logValue(() => value.length);
-    } else if (typeof value === "object" && value !== null) {
-      this._attributes[key] = logValue(() => Object.keys(value).length);
-    } else {
-      this.Int(key, -1);
-    }
+    this._attributes[key] = getLen(value);
     return this;
   }
 
-  Url(url: URL, key = "url"): Logger {
+  Hash(value: unknown, key = "hash"): Logger {
+    this._attributes[key] = asyncLogValue(async () => `${getLen(value).value()}:${await hash(value)}`);
+    return this;
+  }
+
+  Url(url: URL | URI | string, key = "url"): Logger {
     this.Ref(key, () => url.toString());
     return this;
   }
@@ -367,7 +410,7 @@ export class LoggerImpl implements Logger {
     if (typeof msg === "string" && !msg.trim().length) {
       delete attr["msg"];
     }
-    if (attr["ts"]?.value() === "ETERNITY") {
+    if (toLogValue(attr["ts"])?.value() === "ETERNITY") {
       // hacky but it works
       this.Timestamp.call({
         _sys: this._sys,
@@ -379,7 +422,10 @@ export class LoggerImpl implements Logger {
 
   Msg(...args: string[]): AsError {
     const fnError = this._resetAttributes(() => {
-      const doWrite = this._levelHandler.isEnabled(this._attributes["level"]?.value(), this._attributes["module"]?.value());
+      const doWrite = this._levelHandler.isEnabled(
+        toLogValue(this._attributes["level"])?.value(),
+        toLogValue(this._attributes["module"])?.value(),
+      );
       let fnRet = () => this._produceError({ ...this._attributes }, ...args);
       if (doWrite) {
         const str = fnRet();
@@ -431,6 +477,11 @@ class WithLoggerBuilder implements WithLogger {
 
   Len(value: unknown, key?: string): WithLogger {
     this._li.Len(value, key);
+    return this;
+  }
+
+  Hash(value: unknown, key?: string): WithLogger {
+    this._li.Hash(value, key);
     return this;
   }
 

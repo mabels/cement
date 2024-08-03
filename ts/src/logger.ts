@@ -1,4 +1,5 @@
 import { Result } from "./result";
+import { URI } from "./uri";
 
 export enum Level {
   WARN = "warn",
@@ -20,7 +21,7 @@ export class LogValue {
   }
 }
 
-export type LogSerializable = Record<string, LogValue>;
+export type LogSerializable = Record<string, LogValue | Promise<LogValue>>;
 
 export function removeSelfRef(): (key: unknown, val: unknown) => unknown {
   const cache = new Set();
@@ -32,6 +33,12 @@ export function removeSelfRef(): (key: unknown, val: unknown) => unknown {
     }
     return value;
   };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function asyncLogValue(val: () => Promise<Serialized>): Promise<LogValue> {
+  // return Promise.resolve(logValue(val));
+  throw new Error("Not implemented");
 }
 
 export function logValue(val: Serialized | FnSerialized | LogSerializable | undefined | null): LogValue {
@@ -54,6 +61,14 @@ export function logValue(val: Serialized | FnSerialized | LogSerializable | unde
   }
 }
 
+export interface Sized {
+  size: number;
+}
+export interface Lengthed {
+  length: number;
+}
+export type SizeOrLength = Sized | Lengthed;
+
 export interface LoggerInterface<R> {
   Module(key: string): R;
   // if modules is empty, set for all Levels
@@ -65,9 +80,11 @@ export interface LoggerInterface<R> {
   Ref(key: string, action: { toString: () => string } | FnSerialized): R;
   Result<T>(key: string, res: Result<T>): R;
   // default key url
-  Url(url: URL, key?: string): R;
+  Url(url: URL | URI | string, key?: string): R;
   // len
-  Len(value: object | { length: number } | string | undefined | null, key?: string): R;
+  Len(value: unknown, key?: string): R;
+
+  Hash(value: unknown, key?: string): R;
 
   Str(key: string, value?: string): R;
   Error(): R;

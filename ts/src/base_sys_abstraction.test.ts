@@ -1,11 +1,19 @@
 import { NodeSysAbstraction } from "./node/node_sys_abstraction";
+import { runtimeFn } from "./runtime";
 import { IDMode, TimeMode, RandomMode } from "./sys_abstraction";
 import { WebSysAbstraction } from "./web/web_sys_abstraction";
 
-for (const abstraction of [
-  { name: "NodeSysAbstraction", fn: NodeSysAbstraction },
-  { name: "WebSysAbstraction", fn: WebSysAbstraction },
-]) {
+const abstractions = [];
+
+if (runtimeFn().isNodeIsh) {
+  abstractions.push({ name: "NodeSysAbstraction", fn: NodeSysAbstraction });
+}
+
+if (runtimeFn().isBrowser) {
+  abstractions.push({ name: "WebSysAbstraction", fn: WebSysAbstraction });
+}
+
+for (const abstraction of abstractions) {
   describe(abstraction.name, () => {
     it("IdService UUID", () => {
       const sys = abstraction.fn();

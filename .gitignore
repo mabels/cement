@@ -8,3 +8,4 @@
 **/smoke/generated/
 **/smoke/pnpm-lock.yaml
 **/smoke/package.json
+**/__screenshots__/
