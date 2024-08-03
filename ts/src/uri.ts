@@ -93,7 +93,7 @@ export class BuildURI {
     return this._url.toString();
   }
 
-  build(): URI {
+  URI(): URI {
     return URI.from(this._url);
   }
 }
