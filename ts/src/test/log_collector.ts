@@ -27,7 +27,9 @@ class LogWriter implements WritableStreamDefaultWriter<Uint8Array> {
     // do nothing
   }
   write(chunk?: Uint8Array): Promise<void> {
-    chunk && this._bufferArr.push(chunk);
+    if (chunk) {
+      this._bufferArr.push(chunk);
+    }
     return Promise.resolve(undefined);
   }
 }

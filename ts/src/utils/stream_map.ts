@@ -8,7 +8,9 @@ export function streamMap<T, U>(s: ReadableStream<T>, sm: StreamMap<T, U>): Read
     async pull(controller) {
       const { done, value } = await state.reader.read();
       if (done) {
-        state.streamMap.Close && state.streamMap.Close();
+        if (state.streamMap.Close) {
+          state.streamMap.Close();
+        }
         controller.close();
         return;
       }

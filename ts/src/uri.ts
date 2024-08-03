@@ -11,6 +11,7 @@ function ensureURLWithDefaultProto(url: string | URL, defaultProtocol: string): 
   if (typeof url === "string") {
     try {
       return new URL(url);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
       return new URL(`${defaultProtocol}//${url}`);
     }

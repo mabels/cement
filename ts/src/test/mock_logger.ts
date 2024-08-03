@@ -28,7 +28,9 @@ export function MockLogger(params?: {
     .With()
     .Module(modNames[0])
     .Logger();
-  !params?.disableDebug && logger.SetDebug(...modNames);
+  if (!params?.disableDebug) {
+    logger.SetDebug(...modNames);
+  }
   return {
     logCollector: lc,
     logger,

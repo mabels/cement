@@ -1,4 +1,5 @@
 import { Result, WithoutResult } from "./result";
+// import { it } from "vitest/globals";
 
 it("ResultOk", () => {
   const result = Result.Ok(1);
@@ -54,6 +55,7 @@ it("WithoutResult", () => {
   const a1: Partial<WithoutResult<typeof result>> = {};
   a1.a = 1;
   expect(a1.a).toEqual(1);
+  expect(result.Ok().a).toEqual(1);
 });
 
 // this is a wish --- look into the declaration of Promise.resolve
