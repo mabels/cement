@@ -76,12 +76,20 @@ export class BuildURI {
     return this;
   }
 
+  defParam(key: string, str: string) {
+    if (!this._url.searchParams.has(key)) {
+      this._url.searchParams.set(key, str);
+    }
+    return this;
+  }
+
   setParam(key: string, str: string) {
     this._url.searchParams.set(key, str);
     return this;
   }
 
   toString(): string {
+    this._url.searchParams.sort();
     return this._url.toString();
   }
 
@@ -92,10 +100,26 @@ export class BuildURI {
 
 export type CoerceURI = string | URL | URI | NullOrUndef;
 
+export function isURI(value: unknown): value is URI {
+  return value instanceof URI || (!!value && typeof (value as URI).asURL === "function") || false;
+}
+
 // non mutable URL Implementation
 export class URI {
   // if no protocol is provided, default to file:
-  static from(strURLUri: CoerceURI, defaultProtocol = "file:"): URI {
+  static merge(into: CoerceURI, from: CoerceURI, defaultProtocol = "file:"): URI {
+    const intoUrl = URI.from(into, defaultProtocol);
+    const fromUrl = URI.from(from, defaultProtocol);
+    for (const [key, value] of fromUrl._url.searchParams) {
+      if (!intoUrl._url.searchParams.has(key)) {
+        intoUrl._url.searchParams.set(key, value);
+      }
+    }
+    return intoUrl;
+  }
+
+  // if no protocol is provided, default to file:
+  static from(strURLUri?: CoerceURI, defaultProtocol = "file:"): URI {
     switch (typeof falsy2undef(strURLUri)) {
       case "undefined":
         return new URI(new URL(`${defaultProtocol}//`));
@@ -179,6 +203,7 @@ export class URI {
   }
 
   toString(): string {
+    this._url.searchParams.sort();
     return this._url.toString();
   }
 }

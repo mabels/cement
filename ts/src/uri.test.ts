@@ -1,4 +1,4 @@
-import { BuildURI, URI } from "./uri";
+import { BuildURI, isURI, URI } from "./uri";
 
 describe("BuildURI", () => {
   let uri: BuildURI;
@@ -7,12 +7,26 @@ describe("BuildURI", () => {
     uri.hostname("example");
     uri.setParam("key", "value");
   });
+
   it("toString", () => {
     expect(uri.toString()).toBe("http://example/?key=value");
   });
 
   it("build", () => {
     expect(uri.build().toString()).toBe("http://example/?key=value");
+  });
+
+  it("defParam", () => {
+    uri.defParam("key", "value2");
+    uri.defParam("key2", "value2");
+    expect(uri.toString()).toBe("http://example/?key=value&key2=value2");
+  });
+
+  it("searchParams sorted in toString", () => {
+    uri.setParam("z", "value");
+    uri.setParam("a", "value");
+    uri.setParam("m", "value");
+    expect(uri.toString()).toBe("http://example/?a=value&key=value&m=value&z=value");
   });
 });
 
@@ -52,5 +66,31 @@ describe("URI", () => {
 
   it("toString", () => {
     expect(URI.from("blix://example.com?key=value").toString()).toBe("blix://example.com?key=value");
+  });
+
+  it("searchParams sorted in toString", () => {
+    expect(URI.from("blix://example.com?z=value&a=value&m=value").toString()).toBe("blix://example.com?a=value&m=value&z=value");
+  });
+  it("searchParams sorted in asURL", () => {
+    expect(URI.from("blix://example.com?z=value&a=value&m=value").asURL().toString()).toBe(
+      "blix://example.com?a=value&m=value&z=value",
+    );
+  });
+
+  it("merge", () => {
+    expect(URI.merge("blix://example.com?key=value", "murk://bla.com?key=from&z=value").toString()).toBe(
+      "blix://example.com?key=value&z=value",
+    );
+  });
+
+  it("isURI real", () => {
+    expect(isURI(URI.from())).toBe(true);
+  });
+  it("isURI fake", () => {
+    expect(
+      isURI({
+        asURL: () => new URL("http://example.com"),
+      }),
+    ).toBe(true);
   });
 });
