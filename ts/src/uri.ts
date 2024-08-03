@@ -90,10 +90,12 @@ export class BuildURI {
   }
 }
 
+export type CoerceURI = string | URL | URI | NullOrUndef;
+
 // non mutable URL Implementation
 export class URI {
   // if no protocol is provided, default to file:
-  static from(strURLUri: string | URL | URI | NullOrUndef, defaultProtocol = "file:"): URI {
+  static from(strURLUri: CoerceURI, defaultProtocol = "file:"): URI {
     switch (typeof falsy2undef(strURLUri)) {
       case "undefined":
         return new URI(new URL(`${defaultProtocol}//`));
