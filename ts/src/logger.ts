@@ -46,7 +46,18 @@ export function logValue(val: Serialized | FnSerialized | LogSerializable | unde
     case "function":
       return new LogValue(val);
     case "string":
-      return new LogValue(() => val.toString());
+      return new LogValue(() => {
+        try {
+          const ret = JSON.parse(val);
+          if (typeof ret === "object" && ret !== null) {
+            return ret;
+          }
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (e) {
+          // do nothing
+        }
+        return val.toString();
+      });
     case "number":
       return new LogValue(() => val);
     case "boolean":

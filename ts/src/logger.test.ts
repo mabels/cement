@@ -770,6 +770,25 @@ describe("TestLogger", () => {
     ]);
   });
 
+  it("don't serialize json on string", async () => {
+    logger
+      .Error()
+      .Err(new Error(JSON.stringify({ o: { h: 1 } })))
+      .Str("sock", JSON.stringify({ a: { h: 1 } }))
+      .Str("bla", '{a":1}')
+      .Msg("1");
+    await logger.Flush();
+    expect(logCollector.Logs()).toEqual([
+      {
+        level: "error",
+        error: { o: { h: 1 } },
+        msg: "1",
+        sock: { a: { h: 1 } },
+        bla: '{a":1}',
+      },
+    ]);
+  });
+
   it("self-ref", async () => {
     const nested: Record<string, unknown> = {
       m: 2,
