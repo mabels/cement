@@ -13,7 +13,7 @@ describe("BuildURI", () => {
   });
 
   it("build", () => {
-    expect(uri.build().toString()).toBe("http://example/?key=value");
+    expect(uri.URI().toString()).toBe("http://example/?key=value");
   });
 
   it("defParam", () => {
