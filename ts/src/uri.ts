@@ -20,10 +20,31 @@ function ensureURLWithDefaultProto(url: string | URL, defaultProtocol: string): 
   }
 }
 
+function from<T>(fac: (url: URL) => T, strURLUri: CoerceURI | undefined, defaultProtocol: string): T {
+  switch (typeof falsy2undef(strURLUri)) {
+    case "undefined":
+      return fac(new URL(`${defaultProtocol}//`));
+    case "string":
+      return fac(ensureURLWithDefaultProto(strURLUri as string, defaultProtocol));
+    case "object":
+      if (strURLUri instanceof URI) {
+        return fac(new URL(strURLUri._url.toString()));
+      } else if (strURLUri instanceof URL) {
+        return fac(new URL(strURLUri.toString()));
+      }
+      throw new Error(`unknown object type: ${strURLUri}`);
+    default:
+      throw new Error(`Invalid argument: ${typeof strURLUri}`);
+  }
+}
+
 export class BuildURI {
   private _url: URL;
-  constructor(url: URL) {
+  private constructor(url: URL) {
     this._url = url;
+  }
+  static from(strURLUri?: CoerceURI, defaultProtocol = "file:"): BuildURI {
+    return from((url) => new BuildURI(url), strURLUri, defaultProtocol);
   }
 
   hostname(h: string) {
@@ -120,21 +141,7 @@ export class URI {
 
   // if no protocol is provided, default to file:
   static from(strURLUri?: CoerceURI, defaultProtocol = "file:"): URI {
-    switch (typeof falsy2undef(strURLUri)) {
-      case "undefined":
-        return new URI(new URL(`${defaultProtocol}//`));
-      case "string":
-        return new URI(ensureURLWithDefaultProto(strURLUri as string, defaultProtocol));
-      case "object":
-        if (strURLUri instanceof URI) {
-          return new URI(new URL(strURLUri._url.toString()));
-        } else if (strURLUri instanceof URL) {
-          return new URI(new URL(strURLUri.toString()));
-        }
-        throw new Error(`unknown object type: ${strURLUri}`);
-      default:
-        throw new Error(`Invalid argument: ${typeof strURLUri}`);
-    }
+    return from((url) => new URI(url), strURLUri, defaultProtocol);
   }
 
   readonly _url: URL;
@@ -143,7 +150,7 @@ export class URI {
   }
 
   build(): BuildURI {
-    return new BuildURI(this.asURL());
+    return BuildURI.from(this.asURL());
   }
 
   get hostname(): string {

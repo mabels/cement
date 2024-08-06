@@ -3,7 +3,7 @@ import { BuildURI, isURI, URI } from "./uri";
 describe("BuildURI", () => {
   let uri: BuildURI;
   beforeEach(() => {
-    uri = new BuildURI(new URL("http://example.com"));
+    uri = BuildURI.from(new URL("http://example.com"));
     uri.hostname("example");
     uri.setParam("key", "value");
   });
