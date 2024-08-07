@@ -1,4 +1,4 @@
-import { BuildURI, isURI, URI } from "./uri";
+import { BuildURI, URI } from "./uri";
 
 describe("BuildURI", () => {
   let uri: BuildURI;
@@ -84,12 +84,14 @@ describe("URI", () => {
   });
 
   it("isURI real", () => {
-    expect(isURI(URI.from())).toBe(true);
+    expect(URI.is(URI.from())).toBe(true);
   });
   it("isURI fake", () => {
     expect(
-      isURI({
+      URI.is({
         asURL: () => new URL("http://example.com"),
+        hasParam: () => false,
+        getParam: () => "",
       }),
     ).toBe(true);
   });

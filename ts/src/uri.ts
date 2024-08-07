@@ -20,6 +20,16 @@ function ensureURLWithDefaultProto(url: string | URL, defaultProtocol: string): 
   }
 }
 
+export function isURL(value: unknown): value is URL {
+  return (
+    value instanceof URL ||
+    (!!value &&
+      typeof (value as URL).searchParams === "object" &&
+      typeof (value as URL).searchParams.sort === "function" &&
+      typeof (value as URL).hash === "string")
+  );
+}
+
 function from<T>(fac: (url: URL) => T, strURLUri: CoerceURI | undefined, defaultProtocol: string): T {
   switch (typeof falsy2undef(strURLUri)) {
     case "undefined":
@@ -27,9 +37,11 @@ function from<T>(fac: (url: URL) => T, strURLUri: CoerceURI | undefined, default
     case "string":
       return fac(ensureURLWithDefaultProto(strURLUri as string, defaultProtocol));
     case "object":
-      if (strURLUri instanceof URI) {
+      if (BuildURI.is(strURLUri)) {
         return fac(new URL(strURLUri._url.toString()));
-      } else if (strURLUri instanceof URL) {
+      } else if (URI.is(strURLUri)) {
+        return fac(new URL(strURLUri._url.toString()));
+      } else if (isURL(strURLUri)) {
         return fac(new URL(strURLUri.toString()));
       }
       throw new Error(`unknown object type: ${strURLUri}`);
@@ -39,9 +51,16 @@ function from<T>(fac: (url: URL) => T, strURLUri: CoerceURI | undefined, default
 }
 
 export class BuildURI {
-  private _url: URL;
+  readonly _url: URL;
   private constructor(url: URL) {
     this._url = url;
+  }
+
+  static is(value: unknown): value is BuildURI {
+    return (
+      value instanceof BuildURI ||
+      (!!value && typeof (value as BuildURI).delParam === "function" && typeof (value as BuildURI).setParam === "function")
+    );
   }
   static from(strURLUri?: CoerceURI, defaultProtocol = "file:"): BuildURI {
     return from((url) => new BuildURI(url), strURLUri, defaultProtocol);
@@ -119,11 +138,7 @@ export class BuildURI {
   }
 }
 
-export type CoerceURI = string | URL | URI | NullOrUndef;
-
-export function isURI(value: unknown): value is URI {
-  return value instanceof URI || (!!value && typeof (value as URI).asURL === "function") || false;
-}
+export type CoerceURI = string | URL | URI | BuildURI | NullOrUndef;
 
 // non mutable URL Implementation
 export class URI {
@@ -137,6 +152,16 @@ export class URI {
       }
     }
     return intoUrl;
+  }
+
+  static is(value: unknown): value is URI {
+    return (
+      value instanceof URI ||
+      (!!value &&
+        typeof (value as URI).asURL === "function" &&
+        typeof (value as URI).getParam === "function" &&
+        typeof (value as URI).hasParam === "function")
+    );
   }
 
   // if no protocol is provided, default to file:
