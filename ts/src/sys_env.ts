@@ -111,7 +111,7 @@ export class BrowserEnvActions implements EnvActions {
   }
 }
 
-interface EnvFactoryOpts {
+export interface EnvFactoryOpts {
   readonly symbol: string; // default "CP_ENV" used by BrowserEnvActions
   readonly presetEnv: Map<string, string>;
 }
@@ -127,7 +127,7 @@ export interface Env extends EnvMap {
 }
 
 const _envFactory = new ResolveOnce<Env>();
-export function envFactory(opts: Partial<Omit<EnvFactoryOpts, "action">> = {}): Env {
+export function envFactory(opts: Partial<EnvFactoryOpts> = {}): Env {
   return _envFactory.once(() => {
     const found = [new NodeEnvActions(opts), new DenoEnvActions(opts), new BrowserEnvActions(opts)].find((env) => env.active());
     if (!found) {

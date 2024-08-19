@@ -1,5 +1,5 @@
 import { Result } from "./result";
-import { URI } from "./uri";
+import { CoerceURI } from "./uri";
 
 export enum Level {
   WARN = "warn",
@@ -91,7 +91,7 @@ export interface LoggerInterface<R> {
   Ref(key: string, action: { toString: () => string } | FnSerialized): R;
   Result<T>(key: string, res: Result<T>): R;
   // default key url
-  Url(url: URL | URI | string, key?: string): R;
+  Url(url: CoerceURI, key?: string): R;
   // len
   Len(value: unknown, key?: string): R;
 

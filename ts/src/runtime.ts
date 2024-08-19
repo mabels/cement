@@ -18,12 +18,13 @@ function isSet(value: string, ref: any = globalThis): boolean {
 }
 
 export function runtimeFn(): Runtime {
-  const isNodeIsh = isSet("process.versions.node");
-  const isDeno = isSet("Deno");
+  const isReactNative = isSet("navigator.product") && globalThis.navigator.product === "ReactNative";
+  const isNodeIsh = isSet("process.versions.node") && !isReactNative;
+  const isDeno = isSet("Deno") && !isReactNative;
   return {
     isNodeIsh,
-    isBrowser: !(isNodeIsh || isDeno),
+    isBrowser: !(isNodeIsh || isDeno) && !isReactNative,
     isDeno,
-    isReactNative: false,
+    isReactNative,
   };
 }

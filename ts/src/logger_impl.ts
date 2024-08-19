@@ -17,7 +17,7 @@ import {
 import { WebSysAbstraction } from "./web/web_sys_abstraction";
 import { SysAbstraction } from "./sys_abstraction";
 import { Result } from "./result";
-import { URI } from "./uri";
+import { CoerceURI, URI } from "./uri";
 
 const encoder = new TextEncoder();
 
@@ -347,8 +347,8 @@ export class LoggerImpl implements Logger {
     return this;
   }
 
-  Url(url: URL | URI | string, key = "url"): Logger {
-    this.Ref(key, () => url.toString());
+  Url(url: CoerceURI, key = "url"): Logger {
+    this.Ref(key, () => URI.from(url).toString());
     return this;
   }
 
