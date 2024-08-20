@@ -51,7 +51,7 @@ function from<T>(fac: (url: URL) => T, strURLUri: CoerceURI | undefined, default
 }
 
 export class BuildURI {
-  readonly _url: URL;
+  _url: URL; // pathname needs this
   private constructor(url: URL) {
     this._url = url;
   }
@@ -92,12 +92,20 @@ export class BuildURI {
   }
 
   protocol(p: string) {
-    this._url.protocol = p;
+    if (!p.endsWith(":")) {
+      p = `${p}:`;
+    }
+    const mySrc = this._url.toString();
+    const myDst = mySrc.replace(new RegExp(`^${this._url.protocol}`), `${p}`);
+    this._url = new URL(myDst);
     return this;
   }
 
   pathname(p: string) {
-    this._url.pathname = p;
+    const myp = this.URI().pathname;
+    const mySrc = this._url.toString();
+    const myDst = mySrc.replace(new RegExp(`^${this._url.protocol}//${myp}`), `${this._url.protocol}//${p}`);
+    this._url = new URL(myDst);
     return this;
   }
 
@@ -144,14 +152,16 @@ export type CoerceURI = string | URL | URI | BuildURI | NullOrUndef;
 export class URI {
   // if no protocol is provided, default to file:
   static merge(into: CoerceURI, from: CoerceURI, defaultProtocol = "file:"): URI {
-    const intoUrl = URI.from(into, defaultProtocol);
+    const intoUrl = BuildURI.from(into, defaultProtocol);
     const fromUrl = URI.from(from, defaultProtocol);
-    for (const [key, value] of fromUrl._url.searchParams) {
-      if (!intoUrl._url.searchParams.has(key)) {
-        intoUrl._url.searchParams.set(key, value);
-      }
+    intoUrl.protocol(fromUrl.protocol);
+    if (fromUrl.pathname.length > 0) {
+      intoUrl.pathname(fromUrl.pathname);
     }
-    return intoUrl;
+    for (const [key, value] of fromUrl.getParams) {
+      intoUrl.setParam(key, value);
+    }
+    return intoUrl.URI();
   }
 
   static is(value: unknown): value is URI {
@@ -215,6 +225,10 @@ export class URI {
 
   get host(): string {
     return this._url.host;
+  }
+
+  get getParams(): Iterable<[string, string]> {
+    return this._url.searchParams.entries();
   }
 
   hasParam(key: string): boolean {

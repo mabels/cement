@@ -78,9 +78,20 @@ describe("URI", () => {
   });
 
   it("merge", () => {
-    expect(URI.merge("blix://example.com?key=value", "murk://bla.com?key=from&z=value").toString()).toBe(
-      "blix://example.com?key=value&z=value",
+    expect(URI.merge("blix://example.com?key=value&into=4", "murk://bla/com?key=from&z=value").toString()).toBe(
+      "murk://bla/com?into=4&key=from&z=value",
     );
+  });
+
+  it("merge empty", () => {
+    expect(URI.merge("blix://example/com?key=value&into=4", "murk://?key=from&z=value").toString()).toBe(
+      "murk://example/com?into=4&key=from&z=value",
+    );
+  });
+
+  it("merge thing about", () => {
+    const result = URI.merge("./dist/what?byKey=4444", "murk://bla.com?key=from&z=value");
+    expect(result.toString()).toBe("murk://bla.com?byKey=4444&key=from&z=value");
   });
 
   it("isURI real", () => {
@@ -95,4 +106,11 @@ describe("URI", () => {
       }),
     ).toBe(true);
   });
+
+  // it("overrideparams", () => {
+  //   const uri = URI.from("partykit://localhost:1999?logname=alice&room=test&store=meta&storekey=%40partykit%3A%2F%2Flocalhost%3A1999%3Flogname%3Dalice%26room%3Dtest%26store%3Dmeta%26storkey%3DzTvTPEPQRWij8rfb3FrFqBm%3Ameta%40&storkey=zTvTPEPQRWij8rfb3FrFqBm&version=v0.1-partykit");
+  //   expect(uri.toString()).toBe("blix://example.com?key=value");
+  //   const my = uri.build().setParam("key", "value2").URI();
+  //   expect(my.toString()).toBe("blix://example.com?key=value2");
+  // })
 });
