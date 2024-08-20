@@ -89,6 +89,10 @@ describe("URI", () => {
     );
   });
 
+  it("from empty", () => {
+    expect(URI.merge(`file://./dist/tests/key.bag`, "").toString()).toBe("file://./dist/tests/key.bag");
+  });
+
   it("merge thing about", () => {
     const result = URI.merge("./dist/what?byKey=4444", "murk://bla.com?key=from&z=value");
     expect(result.toString()).toBe("murk://bla.com?byKey=4444&key=from&z=value");

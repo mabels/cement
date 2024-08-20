@@ -155,7 +155,8 @@ export class URI {
     const intoUrl = BuildURI.from(into, defaultProtocol);
     const fromUrl = URI.from(from, defaultProtocol);
     intoUrl.protocol(fromUrl.protocol);
-    if (fromUrl.pathname.length > 0) {
+    const fPath = fromUrl.pathname;
+    if (!(fPath.length === 0 || fPath === "/" || fPath === "./")) {
       intoUrl.pathname(fromUrl.pathname);
     }
     for (const [key, value] of fromUrl.getParams) {
