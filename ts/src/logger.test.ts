@@ -789,6 +789,34 @@ describe("TestLogger", () => {
     ]);
   });
 
+  it("see exposed Stack", async () => {
+    const e = new Error("test");
+    logger.Error().Err(e).Msg("1");
+    logger.SetExposeStack(true);
+    logger.Error().Err(e).Msg("2");
+    logger.SetExposeStack(false);
+    logger.Error().Err(e).Msg("3");
+    await logger.Flush();
+    expect(logCollector.Logs()).toEqual([
+      {
+        error: "test",
+        level: "error",
+        msg: "1",
+      },
+      {
+        error: "test",
+        level: "error",
+        msg: "2",
+        stack: e.stack?.split("\n").map((s) => s.trim()),
+      },
+      {
+        error: "test",
+        level: "error",
+        msg: "3",
+      },
+    ]);
+  });
+
   it("self-ref", async () => {
     const nested: Record<string, unknown> = {
       m: 2,

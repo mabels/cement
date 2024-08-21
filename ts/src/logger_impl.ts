@@ -35,6 +35,8 @@ const encoder = new TextEncoder();
 export interface LevelHandler {
   enableLevel(level: Level, ...modules: string[]): void;
   disableLevel(level: Level, ...modules: string[]): void;
+  setExposeStack(enable?: boolean): void;
+  isStackExposed: boolean;
   setDebug(...modules: (string | string[])[]): void;
   isEnabled(ilevel: unknown, module: unknown): boolean;
 }
@@ -42,6 +44,7 @@ export interface LevelHandler {
 export class LevelHandlerImpl implements LevelHandler {
   readonly _globalLevels = new Set<Level>([Level.INFO, Level.ERROR, Level.WARN]);
   readonly _modules = new Map<string, Set<Level>>();
+  isStackExposed = false;
   enableLevel(level: Level, ...modules: string[]): void {
     if (modules.length == 0) {
       this._globalLevels.add(level);
@@ -67,6 +70,10 @@ export class LevelHandlerImpl implements LevelHandler {
       },
       ...modules,
     );
+  }
+
+  setExposeStack(enable?: boolean): void {
+    this.isStackExposed = !!enable;
   }
 
   forModules(level: Level, fnAction: (p: string) => void, ...modules: (string | string[])[]): void {
@@ -255,6 +262,11 @@ export class LoggerImpl implements Logger {
     // console.log("LoggerImpl", this._id, this._attributes, this._withAttributes)
   }
 
+  SetExposeStack(enable?: boolean): Logger {
+    this._levelHandler.setExposeStack(enable);
+    return this;
+  }
+
   EnableLevel(level: Level, ...modules: string[]): Logger {
     this._levelHandler.enableLevel(level, ...modules);
     return this;
@@ -304,6 +316,9 @@ export class LoggerImpl implements Logger {
   Err(err: unknown): Logger {
     if (err instanceof Error) {
       this._attributes["error"] = logValue(err.message);
+      if (this._levelHandler.isStackExposed) {
+        this._attributes["stack"] = logValue(err.stack?.split("\n").map((s) => s.trim()));
+      }
     } else {
       this._attributes["error"] = logValue("" + err);
     }
@@ -450,6 +465,11 @@ class WithLoggerBuilder implements WithLogger {
   Logger(): Logger {
     Object.assign(this._li._withAttributes, this._li._attributes);
     return this._li;
+  }
+
+  SetExposeStack(enable?: boolean): WithLogger {
+    this._li._levelHandler.setExposeStack(enable);
+    return this;
   }
 
   EnableLevel(level: Level, ...modules: string[]): WithLogger {

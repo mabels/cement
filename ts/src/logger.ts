@@ -9,14 +9,14 @@ export enum Level {
 }
 
 export type Serialized = string | number | boolean;
-export type FnSerialized = () => Serialized;
+export type FnSerialized = () => Serialized | Serialized[];
 
 export class LogValue {
   constructor(readonly fn: FnSerialized) {}
-  value(): Serialized {
+  value(): Serialized | Serialized[] {
     return this.fn();
   }
-  toJSON(): Serialized {
+  toJSON(): Serialized | Serialized[] {
     return this.value();
   }
 }
@@ -41,7 +41,7 @@ export function asyncLogValue(val: () => Promise<Serialized>): Promise<LogValue>
   throw new Error("Not implemented");
 }
 
-export function logValue(val: Serialized | FnSerialized | LogSerializable | undefined | null): LogValue {
+export function logValue(val: Serialized | Serialized[] | FnSerialized | LogSerializable | undefined | null): LogValue {
   switch (typeof val) {
     case "function":
       return new LogValue(val);
@@ -87,6 +87,7 @@ export interface LoggerInterface<R> {
   DisableLevel(level: Level, ...modules: string[]): R;
 
   SetDebug(...modules: (string | string[])[]): R;
+  SetExposeStack(enable?: boolean): R;
 
   Ref(key: string, action: { toString: () => string } | FnSerialized): R;
   Result<T>(key: string, res: Result<T>): R;
