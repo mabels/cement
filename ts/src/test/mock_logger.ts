@@ -10,10 +10,11 @@ export interface MockLoggerReturn {
 
 export function MockLogger(params?: {
   readonly sys?: SysAbstraction;
+  readonly pass?: WritableStreamDefaultWriter<Uint8Array>;
   moduleName?: string | string[];
   readonly disableDebug?: boolean;
 }): MockLoggerReturn {
-  const lc = new LogCollector();
+  const lc = new LogCollector(params?.pass);
   let modNames = ["MockLogger"];
   if (typeof params?.moduleName === "string") {
     modNames = [params?.moduleName];

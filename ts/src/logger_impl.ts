@@ -18,6 +18,7 @@ import { WebSysAbstraction } from "./web/web_sys_abstraction";
 import { SysAbstraction } from "./sys_abstraction";
 import { Result } from "./result";
 import { CoerceURI, URI } from "./uri";
+import { runtimeFn } from "./runtime";
 
 const encoder = new TextEncoder();
 
@@ -125,7 +126,7 @@ const levelSingleton = new LevelHandlerImpl();
 
 // globalThis[Symbol("levelSingleton")] = new LevelHandlerImpl()
 
-export class LogWriter {
+export class LogWriterStream {
   readonly _out: WritableStream<Uint8Array>;
   readonly _toFlush: (() => Promise<void>)[] = [];
 
@@ -217,16 +218,90 @@ function toLogValue(lop: LogValue | Promise<LogValue>): LogValue | undefined {
 
 export interface LoggerImplParams {
   readonly out?: WritableStream<Uint8Array>;
-  readonly logWriter?: LogWriter;
+  readonly logWriter?: LogWriterStream;
   readonly sys?: SysAbstraction;
   readonly withAttributes?: LogSerializable;
   readonly levelHandler?: LevelHandler;
 }
+
+class ConsoleWriterStreamDefaultWriter implements WritableStreamDefaultWriter<Uint8Array> {
+  readonly desiredSize: number | null = null;
+  readonly decoder = new TextDecoder();
+
+  closed: Promise<undefined>;
+  ready: Promise<undefined>;
+  readonly _stream: ConsoleWriterStream;
+
+  constructor(private stream: ConsoleWriterStream) {
+    this._stream = stream;
+    this.ready = Promise.resolve(undefined);
+    this.closed = Promise.resolve(undefined);
+  }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
+  abort(reason?: any): Promise<void> {
+    throw new Error("Method not implemented.");
+  }
+  async close(): Promise<void> {
+    // noop
+  }
+  releaseLock(): void {
+    this._stream.locked = false;
+    this.ready = Promise.resolve(undefined);
+    this.closed = Promise.resolve(undefined);
+  }
+  async write(chunk?: Uint8Array | undefined): Promise<void> {
+    const str = this.decoder.decode(chunk).trimEnd();
+    let output = "log";
+    try {
+      const decode = JSON.parse(str);
+      output = decode.level;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (e) {
+      /* noop */
+    }
+    switch (output) {
+      case "error":
+        // eslint-disable-next-line no-console
+        console.error(str);
+        break;
+      case "warn":
+        // eslint-disable-next-line no-console
+        console.warn(str);
+        break;
+      default:
+        // eslint-disable-next-line no-console
+        console.log(str);
+    }
+  }
+}
+
+class ConsoleWriterStream implements WritableStream<Uint8Array> {
+  locked = false;
+  _writer?: WritableStreamDefaultWriter<Uint8Array>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
+  abort(reason?: any): Promise<void> {
+    throw new Error("Method not implemented.");
+  }
+  async close(): Promise<void> {
+    return;
+  }
+  getWriter(): WritableStreamDefaultWriter<Uint8Array> {
+    if (this.locked) {
+      throw new Error("Stream is locked");
+    }
+    this.locked = true;
+    if (!this._writer) {
+      this._writer = new ConsoleWriterStreamDefaultWriter(this);
+    }
+    return this._writer;
+  }
+}
+
 export class LoggerImpl implements Logger {
   readonly _sys: SysAbstraction;
   readonly _attributes: LogSerializable = {};
   readonly _withAttributes: LogSerializable;
-  readonly _logWriter: LogWriter;
+  readonly _logWriter: LogWriterStream;
   readonly _levelHandler: LevelHandler;
   // readonly _id: string = "logger-" + Math.random().toString(36)
 
@@ -243,9 +318,20 @@ export class LoggerImpl implements Logger {
       this._logWriter = params.logWriter;
     } else {
       if (!params.out) {
-        this._logWriter = new LogWriter(this._sys.Stdout());
+        const rt = runtimeFn();
+        let stream: WritableStream<Uint8Array>;
+        if (rt.isBrowser) {
+          stream = new ConsoleWriterStream();
+        } else {
+          if (rt.isNodeIsh || rt.isReactNative) {
+            stream = this._sys.Stdout();
+          } else {
+            throw new Error("No output defined for runtime");
+          }
+        }
+        this._logWriter = new LogWriterStream(stream);
       } else {
-        this._logWriter = new LogWriter(params.out);
+        this._logWriter = new LogWriterStream(params.out);
       }
     }
     if (!params.withAttributes) {

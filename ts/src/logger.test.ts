@@ -6,6 +6,7 @@ import { TimeMode } from "./sys_abstraction";
 import { WebSysAbstraction } from "./web/web_sys_abstraction";
 import { TimeFactory } from "./base_sys_abstraction";
 import { Result } from "./result";
+import { runtimeFn } from "./runtime";
 
 describe("TestLogger", () => {
   let logCollector: LogCollector;
@@ -815,6 +816,18 @@ describe("TestLogger", () => {
         msg: "3",
       },
     ]);
+  });
+
+  it("which writer for which runtime", async () => {
+    const logger = new LoggerImpl();
+    if (runtimeFn().isNodeIsh) {
+      expect(logger._logWriter._out instanceof WritableStream).toBeTruthy();
+      logger.Info().Msg("Running in Node");
+    }
+    if (runtimeFn().isBrowser) {
+      expect(logger._logWriter._out.constructor.name).toBe("ConsoleWriterStream");
+      logger.Info().Msg("Running in Browser");
+    }
   });
 
   it("self-ref", async () => {
