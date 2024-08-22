@@ -14,24 +14,14 @@ import {
   LogValue,
   asyncLogValue,
 } from "./logger";
-import { WebSysAbstraction } from "./web/web_sys_abstraction";
-import { SysAbstraction } from "./sys_abstraction";
+import { WebSysAbstraction } from "./web/web-sys-abstraction";
+import { SysAbstraction } from "./sys-abstraction";
 import { Result } from "./result";
 import { CoerceURI, URI } from "./uri";
 import { runtimeFn } from "./runtime";
+import { ConsoleWriterStream } from "./utils/console-write-stream";
 
 const encoder = new TextEncoder();
-
-// function resolveLogValue(val: LogSerializable): Record<string, Serialized> {
-//   const ret: Record<string, Serialized> = {};
-//   Object.keys(val).forEach((key) => {
-//     const v = val[key];
-//     if (v instanceof LogValue) {
-//       ret[key] = v.value();
-//     }
-//   });
-//   return ret;
-// }
 
 export interface LevelHandler {
   enableLevel(level: Level, ...modules: string[]): void;
@@ -123,8 +113,6 @@ export class LevelHandlerImpl implements LevelHandler {
 }
 
 const levelSingleton = new LevelHandlerImpl();
-
-// globalThis[Symbol("levelSingleton")] = new LevelHandlerImpl()
 
 export class LogWriterStream {
   readonly _out: WritableStream<Uint8Array>;
@@ -222,79 +210,6 @@ export interface LoggerImplParams {
   readonly sys?: SysAbstraction;
   readonly withAttributes?: LogSerializable;
   readonly levelHandler?: LevelHandler;
-}
-
-class ConsoleWriterStreamDefaultWriter implements WritableStreamDefaultWriter<Uint8Array> {
-  readonly desiredSize: number | null = null;
-  readonly decoder = new TextDecoder();
-
-  closed: Promise<undefined>;
-  ready: Promise<undefined>;
-  readonly _stream: ConsoleWriterStream;
-
-  constructor(private stream: ConsoleWriterStream) {
-    this._stream = stream;
-    this.ready = Promise.resolve(undefined);
-    this.closed = Promise.resolve(undefined);
-  }
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
-  abort(reason?: any): Promise<void> {
-    throw new Error("Method not implemented.");
-  }
-  async close(): Promise<void> {
-    // noop
-  }
-  releaseLock(): void {
-    this._stream.locked = false;
-    this.ready = Promise.resolve(undefined);
-    this.closed = Promise.resolve(undefined);
-  }
-  async write(chunk?: Uint8Array | undefined): Promise<void> {
-    const str = this.decoder.decode(chunk).trimEnd();
-    let output = "log";
-    try {
-      const decode = JSON.parse(str);
-      output = decode.level;
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (e) {
-      /* noop */
-    }
-    switch (output) {
-      case "error":
-        // eslint-disable-next-line no-console
-        console.error(str);
-        break;
-      case "warn":
-        // eslint-disable-next-line no-console
-        console.warn(str);
-        break;
-      default:
-        // eslint-disable-next-line no-console
-        console.log(str);
-    }
-  }
-}
-
-class ConsoleWriterStream implements WritableStream<Uint8Array> {
-  locked = false;
-  _writer?: WritableStreamDefaultWriter<Uint8Array>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
-  abort(reason?: any): Promise<void> {
-    throw new Error("Method not implemented.");
-  }
-  async close(): Promise<void> {
-    return;
-  }
-  getWriter(): WritableStreamDefaultWriter<Uint8Array> {
-    if (this.locked) {
-      throw new Error("Stream is locked");
-    }
-    this.locked = true;
-    if (!this._writer) {
-      this._writer = new ConsoleWriterStreamDefaultWriter(this);
-    }
-    return this._writer;
-  }
 }
 
 export class LoggerImpl implements Logger {

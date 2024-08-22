@@ -1,4 +1,4 @@
-import { BrowserEnvActions, EnvImpl, envFactory } from "./sys_env";
+import { BrowserEnvActions, EnvImpl, envFactory } from "@adviser/cement";
 
 describe("sys_env", () => {
   let key: string;

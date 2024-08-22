@@ -1,4 +1,4 @@
-import { array2stream, stream2array } from "./stream_map";
+import { array2stream, stream2array } from "./stream-map";
 
 interface ReChunkResult {
   readonly rest: Uint8Array;

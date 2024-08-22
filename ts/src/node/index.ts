@@ -1,3 +1,3 @@
-export * from "./node_file_service";
-export * from "./node_sys_abstraction";
-export * from "./mock_file_service";
+export * from "./node-file-service";
+export * from "./node-sys-abstraction";
+export * from "./mock-file-service";

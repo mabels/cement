@@ -1,4 +1,4 @@
-import { Result, WithoutResult } from "./result";
+import { Result, WithoutResult } from "@adviser/cement";
 // import { it } from "vitest/globals";
 
 it("ResultOk", () => {

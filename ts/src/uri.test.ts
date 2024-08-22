@@ -1,4 +1,4 @@
-import { BuildURI, URI } from "./uri";
+import { BuildURI, URI } from "@adviser/cement";
 
 describe("BuildURI", () => {
   let uri: BuildURI;

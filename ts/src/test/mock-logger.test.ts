@@ -1,5 +1,4 @@
-import { MockLogger } from "./mock_logger";
-import { LogWriterCollector } from "./log_collector";
+import { LogWriteStream, MockLogger } from "@adviser/cement";
 
 describe("logger", () => {
   it("with logcollector", async () => {
@@ -51,7 +50,7 @@ describe("logger", () => {
 
   it("tee in logcolletor", async () => {
     const lc2Buffer: Uint8Array[] = [];
-    const lc2 = new LogWriterCollector(lc2Buffer);
+    const lc2 = new LogWriteStream(lc2Buffer);
     const l = MockLogger({
       pass: lc2,
     });

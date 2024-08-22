@@ -1,11 +1,11 @@
-import type { MockFileService } from "./mock_file_service";
-import { runtimeFn } from "../runtime";
+import { runtimeFn } from "@adviser/cement";
+import { MockFileService } from "@adviser/cement/node";
 
 describe("MockFileService", () => {
   if (runtimeFn().isNodeIsh) {
     let MFS: MockFileService;
     beforeAll(async () => {
-      const { MockFileService } = await import("./mock_file_service");
+      const { MockFileService } = await import("./mock-file-service");
       MFS = new MockFileService();
     });
     it("writeFileString", async () => {

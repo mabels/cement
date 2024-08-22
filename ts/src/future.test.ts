@@ -1,4 +1,4 @@
-import { Future } from "./future";
+import { Future } from "@adviser/cement";
 
 it("Create Future Happy", async () => {
   const future = new Future();

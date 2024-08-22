@@ -1,4 +1,4 @@
-import { KeyedResolvOnce, ResolveOnce, ResolveSeq } from "./resolve-once";
+import { KeyedResolvOnce, ResolveOnce, ResolveSeq } from "@adviser/cement";
 
 describe("resolve-once", () => {
   it("sequence", async () => {

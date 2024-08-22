@@ -1,5 +1,5 @@
-import { FileService } from "./file_service";
-import { TimeMode, RandomMode, IDMode, SystemService, VoidFunc, SysAbstraction } from "./sys_abstraction";
+import { FileService } from "./file-service";
+import { TimeMode, RandomMode, IDMode, SystemService, VoidFunc, SysAbstraction } from "./sys-abstraction";
 import { Time } from "./time";
 
 export class SysTime extends Time {

@@ -1,7 +1,7 @@
 import { Logger } from "../logger";
-import { LevelHandlerImpl, LoggerImpl } from "../logger_impl";
-import { SysAbstraction } from "../sys_abstraction";
-import { LogCollector } from "./log_collector";
+import { LevelHandlerImpl, LoggerImpl } from "../logger-impl";
+import { SysAbstraction } from "../sys-abstraction";
+import { LogCollector } from "./log-write-stream";
 
 export interface MockLoggerReturn {
   readonly logger: Logger;

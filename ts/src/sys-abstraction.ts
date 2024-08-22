@@ -1,5 +1,5 @@
-import { FileService } from "./file_service";
-import { Env } from "./sys_env";
+import { FileService } from "./file-service";
+import { Env } from "./sys-env";
 import { Time } from "./time";
 
 export enum TimeMode {

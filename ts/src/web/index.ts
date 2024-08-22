@@ -1,1 +1,1 @@
-export * from "./web_sys_abstraction";
+export * from "./web-sys-abstraction";

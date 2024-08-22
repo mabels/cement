@@ -1,9 +1,7 @@
-import { receiveFromStream, sendToStream, streamingTestState } from "./stream_test_helper";
-import { array2stream, devnull, stream2array, streamMap } from "./stream_map";
-import { vi as jest } from "vitest";
+import { utils } from "@adviser/cement";
 
 it("array2stream", async () => {
-  const as = array2stream([1, 2, 3]);
+  const as = utils.array2stream([1, 2, 3]);
   let i = 0;
   const reader = as.getReader();
   while (true) {
@@ -16,7 +14,7 @@ it("array2stream", async () => {
 });
 
 it("stream2array", async () => {
-  const as = await stream2array(
+  const as = await utils.stream2array(
     new ReadableStream({
       start(controller) {
         controller.enqueue(1);
@@ -30,8 +28,8 @@ it("stream2array", async () => {
 });
 
 it("devnull", async () => {
-  const cnt = await devnull(
-    streamMap(array2stream([1, 2, 3]), {
+  const cnt = await utils.devnull(
+    utils.streamMap(utils.array2stream([1, 2, 3]), {
       Map: (i, idx) => (idx + 1) * 10 + i + 1,
     }),
   );
@@ -39,9 +37,9 @@ it("devnull", async () => {
 });
 
 it("stream_map", async () => {
-  const closeFn = jest.fn();
-  const s = await stream2array(
-    streamMap(array2stream([1, 2, 3]), {
+  const closeFn = vitest.fn();
+  const s = await utils.stream2array(
+    utils.streamMap(utils.array2stream([1, 2, 3]), {
       Map: (i, idx) => (idx + 1) * 10 + i + 1,
       Close: closeFn,
     }),
@@ -51,9 +49,9 @@ it("stream_map", async () => {
 });
 
 it("stream_map async", async () => {
-  const closeFn = jest.fn();
-  const s = await stream2array(
-    streamMap(array2stream([1, 2, 3]), {
+  const closeFn = vitest.fn();
+  const s = await utils.stream2array(
+    utils.streamMap(utils.array2stream([1, 2, 3]), {
       Map: (i, idx) => Promise.resolve((idx + 1) * 10 + i + 1),
       Close: closeFn,
     }),
@@ -63,8 +61,8 @@ it("stream_map async", async () => {
 });
 
 it("map types", async () => {
-  const oo = await stream2array(
-    streamMap(array2stream([1, 2, 3]), {
+  const oo = await utils.stream2array(
+    utils.streamMap(utils.array2stream([1, 2, 3]), {
       Map: (chunk, idx) => {
         return "[" + chunk + "/" + idx + "]";
       },
@@ -74,15 +72,15 @@ it("map types", async () => {
 });
 
 describe("test streaming through streamMap", () => {
-  const state: streamingTestState = {
+  const state: utils.streamingTestState = {
     sendChunks: 10000,
     sendChunkSize: 3,
     fillCalls: 0,
-    CollectorFn: jest.fn(),
+    CollectorFn: vitest.fn(),
   };
   it("does streamMap respect backpressure", async () => {
     const ts = new TransformStream<Uint8Array, Uint8Array>(undefined, undefined, { highWaterMark: 2 });
-    const reb = streamMap(ts.readable, {
+    const reb = utils.streamMap(ts.readable, {
       Map: (chunk) => {
         for (let i = 0; i < chunk.length; i++) {
           chunk[i] = (chunk[i] + 1) % 256;
@@ -90,7 +88,7 @@ describe("test streaming through streamMap", () => {
         return chunk;
       },
     });
-    await Promise.all([receiveFromStream(reb, state), sendToStream(ts.writable, state)]);
+    await Promise.all([utils.receiveFromStream(reb, state), utils.sendToStream(ts.writable, state)]);
 
     expect(state.CollectorFn).toBeCalledTimes(state.sendChunks + 1 /*done*/);
     expect(state.CollectorFn.mock.calls.slice(-1)[0][0].done).toBeTruthy();
