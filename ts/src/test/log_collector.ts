@@ -2,7 +2,7 @@ import { WritableStreamDefaultWriter } from "stream/web";
 import { Future } from "../future";
 
 export class LogWriterCollector implements WritableStreamDefaultWriter<Uint8Array> {
-  private readonly _bufferArr: Uint8Array[]
+  private readonly _bufferArr: Uint8Array[];
 
   constructor(bufferArr: Uint8Array[]) {
     this._bufferArr = bufferArr;
@@ -18,7 +18,7 @@ export class LogWriterCollector implements WritableStreamDefaultWriter<Uint8Arra
     throw new Error("Method not implemented.");
   }
   async close(): Promise<void> {
-    await this.closed
+    await this.closed;
     return Promise.resolve(undefined);
   }
   releaseLock(): void {
@@ -45,25 +45,31 @@ export class FanoutWriter implements WritableStreamDefaultWriter<Uint8Array> {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   abort(reason?: any): Promise<void> {
-    return Promise.all(this._writers.map((w) => w.abort(reason))).then(() => { /* do nothing */ });
+    return Promise.all(this._writers.map((w) => w.abort(reason))).then(() => {
+      /* do nothing */
+    });
   }
   close(): Promise<void> {
-    return Promise.all(this._writers.map((w) => w.close())).then(() => { /* do nothing */ });
+    return Promise.all(this._writers.map((w) => w.close())).then(() => {
+      /* do nothing */
+    });
   }
   releaseLock(): void {
-    this._writers.map((w) => w.releaseLock())
+    this._writers.map((w) => w.releaseLock());
   }
 
   write(chunk?: Uint8Array | undefined): Promise<void> {
-    return Promise.all(this._writers.map((w) => w.write(chunk))).then(() => { /* do nothing */ });
+    return Promise.all(this._writers.map((w) => w.write(chunk))).then(() => {
+      /* do nothing */
+    });
   }
 }
 
 export class LogCollector implements WritableStream<Uint8Array> {
   readonly locked: boolean = false;
-  private _writer?: FanoutWriter
-  private readonly _pass?: WritableStreamDefaultWriter<Uint8Array>
-  private readonly _bufferArr: Uint8Array[] = []
+  private _writer?: FanoutWriter;
+  private readonly _pass?: WritableStreamDefaultWriter<Uint8Array>;
+  private readonly _bufferArr: Uint8Array[] = [];
 
   constructor(pass?: WritableStreamDefaultWriter<Uint8Array>) {
     this._pass = pass;
