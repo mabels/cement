@@ -10,6 +10,8 @@ import {
   Result,
   runtimeFn,
   TimeMode,
+  BuildURI,
+  URI,
 } from "@adviser/cement";
 import { WebSysAbstraction } from "@adviser/cement/web";
 
@@ -873,5 +875,32 @@ describe("TestLogger", () => {
         },
       },
     ]);
+  });
+
+  it("serialize json as string", async () => {
+    const suri = "file://./doof?test=1";
+    const auri = JSON.stringify({ uri: suri });
+    const buri = BuildURI.from(suri);
+    const uri = URI.from(suri);
+    expect(JSON.stringify({ uri: buri })).toEqual(auri);
+    expect(JSON.stringify({ uri })).toEqual(auri);
+  });
+
+  it("emits attributes", async () => {
+    const log = logger
+      .With()
+      .Str("str", "a str")
+      .Ref("bla", () => "blub")
+      .Any("what", { a: 1 })
+      .Logger();
+    expect(log.Attributes()).toEqual({ str: "a str", what: { a: 1 }, bla: "blub" });
+
+    const tlog = log.With().Timestamp().Logger();
+    expect(tlog.Attributes()).toEqual({
+      str: "a str",
+      what: { a: 1 },
+      bla: "blub",
+      ts: "2021-01-31T23:00:01.000Z",
+    });
   });
 });

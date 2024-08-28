@@ -140,6 +140,9 @@ export class BuildURI {
     this._url.searchParams.sort();
     return this._url.toString();
   }
+  toJSON(): string {
+    return this.toString();
+  }
 
   URI(): URI {
     return URI.from(this._url);
@@ -252,5 +255,8 @@ export class URI {
   toString(): string {
     this._url.searchParams.sort();
     return this._url.toString();
+  }
+  toJSON(): string {
+    return this.toString();
   }
 }

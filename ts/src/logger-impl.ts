@@ -263,6 +263,18 @@ export class LoggerImpl implements Logger {
     // console.log("LoggerImpl", this._id, this._attributes, this._withAttributes)
   }
 
+  Attributes(): Record<string, unknown> {
+    return Array.from(Object.entries(this._attributes)).reduce(
+      (acc, [key, value]) => {
+        if (value instanceof LogValue) {
+          acc[key] = value.value();
+        }
+        return acc;
+      },
+      {} as Record<string, unknown>,
+    );
+  }
+
   SetExposeStack(enable?: boolean): Logger {
     this._levelHandler.setExposeStack(enable);
     return this;
@@ -289,10 +301,7 @@ export class LoggerImpl implements Logger {
   }
 
   Timestamp(): Logger {
-    // this is called with .call from _produceError where this
-    // this is crafted to have _sys and _attributes
-    // CAUTION so done use other ref from this
-    this._attributes["ts"] = logValue(this._sys.Time().Now().toISOString());
+    this._attributes["ts"] = logValue(() => this._sys.Time().Now().toISOString());
     return this;
   }
   Warn(): Logger {
@@ -426,13 +435,13 @@ export class LoggerImpl implements Logger {
     if (typeof msg === "string" && !msg.trim().length) {
       delete attr["msg"];
     }
-    if (toLogValue(attr["ts"])?.value() === "ETERNITY") {
-      // hacky but it works
-      this.Timestamp.call({
-        _sys: this._sys,
-        _attributes: attr,
-      });
-    }
+    // if (toLogValue(attr["ts"])?.value() === "ETERNITY") {
+    //   // hacky but it works
+    //   this.Timestamp.call({
+    //     _sys: this._sys,
+    //     _attributes: attr,
+    //   });
+    // }
     return JSON.stringify(attr, removeSelfRef());
   }
 
@@ -466,6 +475,10 @@ class WithLoggerBuilder implements WithLogger {
   Logger(): Logger {
     Object.assign(this._li._withAttributes, this._li._attributes);
     return this._li;
+  }
+
+  Attributes(): Record<string, unknown> {
+    return { ...this._li._attributes };
   }
 
   SetExposeStack(enable?: boolean): WithLogger {
@@ -558,7 +571,7 @@ class WithLoggerBuilder implements WithLogger {
     return this;
   }
   Timestamp(): WithLogger {
-    this._li._attributes["ts"] = logValue("ETERNITY");
+    this._li.Timestamp();
     return this;
   }
   Any(key: string, value: LogSerializable): WithLogger {

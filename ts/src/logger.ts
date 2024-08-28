@@ -86,6 +86,8 @@ export interface LoggerInterface<R> {
   EnableLevel(level: Level, ...modules: string[]): R;
   DisableLevel(level: Level, ...modules: string[]): R;
 
+  Attributes(): Record<string, unknown>;
+
   SetDebug(...modules: (string | string[])[]): R;
   SetExposeStack(enable?: boolean): R;
 
