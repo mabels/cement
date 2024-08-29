@@ -44,10 +44,16 @@ export class MutableURL extends URL {
 
   constructor(urlStr: string) {
     super("defect://does.not.exist");
-    // this._urlStr = urlStr
-    this._sysURL = new URL(urlStr);
-    this._protocol = this._sysURL.protocol;
-    this._hasHostpart = ["http:", "https:"].includes(this._protocol);
+    this._hasHostpart = ["http", "https"].includes(urlStr.split(":")[0]);
+    const prefix = this._hasHostpart ? "" : "cement-";
+    try {
+      this._sysURL = new URL(prefix + urlStr);
+    } catch (ie) {
+      const e = ie as Error;
+      e.message = `${e.message} for URL: ${urlStr}`;
+      throw e;
+    }
+    this._protocol = this._sysURL.protocol.replace(new RegExp("^cement-"), "");
     if (this._hasHostpart) {
       this._pathname = this._sysURL.pathname;
     } else {

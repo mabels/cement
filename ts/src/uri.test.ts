@@ -131,4 +131,8 @@ describe("URI", () => {
   it("MutableURL is instance of URL", () => {
     expect(new MutableURL("http://example.com") instanceof URL).toBe(true);
   });
+  it("file url", () => {
+    const uri = URI.from("file://fp?storagekey=zTvTPEPQRWij8rfb3FrFqBm");
+    expect(uri.pathname).toBe("fp");
+  });
 });
