@@ -10,9 +10,9 @@ export default defineConfig({
     globals: true,
     browser: {
       enabled: true,
-      headless: true,
+      headless: process.env.BROWSER === "safari" ? false : true,
       provider: "webdriverio",
-      name: "chrome", // browser name is required
+      name: process.env.BROWSER || "chrome", // browser name is required
     },
   },
 });

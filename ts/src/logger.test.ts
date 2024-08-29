@@ -12,6 +12,7 @@ import {
   TimeMode,
   BuildURI,
   URI,
+  MutableURL,
 } from "@adviser/cement";
 import { WebSysAbstraction } from "@adviser/cement/web";
 
@@ -591,7 +592,7 @@ describe("TestLogger", () => {
   });
   it("url", async () => {
     const log = logger;
-    const url = new URL("http://localhost:8080");
+    const url = new MutableURL("http://localhost:8080");
     log.Info().Url(url).Msg("1");
     url.searchParams.set("test", "1");
     log.Info().Url(url).Msg("2");

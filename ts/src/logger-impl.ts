@@ -531,7 +531,7 @@ class WithLoggerBuilder implements WithLogger {
     this._li.Result(key, res);
     return this;
   }
-  Url(url: URL, key?: string): WithLogger {
+  Url(url: CoerceURI, key?: string): WithLogger {
     this._li.Url(url, key);
     return this;
   }

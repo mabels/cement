@@ -1,9 +1,9 @@
-import { BuildURI, URI } from "@adviser/cement";
+import { BuildURI, MutableURL, URI } from "@adviser/cement";
 
 describe("BuildURI", () => {
   let uri: BuildURI;
   beforeEach(() => {
-    uri = BuildURI.from(new URL("http://example.com"));
+    uri = BuildURI.from(new MutableURL("http://example.com"));
     uri.hostname("example");
     uri.setParam("key", "value");
   });
@@ -43,7 +43,7 @@ describe("URI", () => {
     expect(URI.from("bla://example/com?key=value").toString()).toBe("bla://example/com?key=value");
   });
   it("from URL", () => {
-    expect(URI.from(new URL("blix://example.com?key=value")).toString()).toBe("blix://example.com?key=value");
+    expect(URI.from(new MutableURL("blix://example.com?key=value")).toString()).toBe("blix://example.com?key=value");
   });
   it("from URI", () => {
     expect(URI.from(URI.from("blix://example.com?key=value")).toString()).toBe("blix://example.com?key=value");
@@ -89,6 +89,10 @@ describe("URI", () => {
     );
   });
 
+  it("firefox file relative into", () => {
+    expect(URI.from("file://./dist/tests/key.bag").toString()).toBe("file://./dist/tests/key.bag");
+  });
+
   it("from empty", () => {
     expect(URI.merge(`file://./dist/tests/key.bag`, "").toString()).toBe("file://./dist/tests/key.bag");
   });
@@ -111,10 +115,20 @@ describe("URI", () => {
     ).toBe(true);
   });
 
-  // it("overrideparams", () => {
-  //   const uri = URI.from("partykit://localhost:1999?logname=alice&room=test&store=meta&storekey=%40partykit%3A%2F%2Flocalhost%3A1999%3Flogname%3Dalice%26room%3Dtest%26store%3Dmeta%26storkey%3DzTvTPEPQRWij8rfb3FrFqBm%3Ameta%40&storkey=zTvTPEPQRWij8rfb3FrFqBm&version=v0.1-partykit");
-  //   expect(uri.toString()).toBe("blix://example.com?key=value");
-  //   const my = uri.build().setParam("key", "value2").URI();
-  //   expect(my.toString()).toBe("blix://example.com?key=value2");
-  // })
+  it("safari has a different pathname behavior", () => {
+    // chrome -> new URL("indexdb://fp/?name=test&store=meta").pathname -> //fp/
+    // safari -> new URL("indexdb://fp/?name=test&store=meta").pathname -> /
+    const uri = URI.from("indexdb://fp/?name=test&store=meta");
+    expect(uri.pathname).toBe("fp/");
+  });
+
+  it("passing URL to fetch", async () => {
+    const uri = URI.from("https://jsonplaceholder.typicode.com/todos/1");
+    const res = await fetch(uri.asURL());
+    expect(res.status).toBeGreaterThan(199);
+  });
+
+  it("MutableURL is instance of URL", () => {
+    expect(new MutableURL("http://example.com") instanceof URL).toBe(true);
+  });
 });

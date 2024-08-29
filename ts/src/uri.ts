@@ -4,19 +4,19 @@ function falsy2undef<T>(value: T | NullOrUndef): T | undefined {
   return value === undefined || value === null ? undefined : value;
 }
 
-function ensureURLWithDefaultProto(url: string | URL, defaultProtocol: string): URL {
+function ensureURLWithDefaultProto(url: string | URL, defaultProtocol: string): MutableURL {
   if (!url) {
-    return new URL(`${defaultProtocol}//`);
+    return new MutableURL(`${defaultProtocol}//`);
   }
   if (typeof url === "string") {
     try {
-      return new URL(url);
+      return new MutableURL(url);
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
-      return new URL(`${defaultProtocol}//${url}`);
+      return new MutableURL(`${defaultProtocol}//${url}`);
     }
   } else {
-    return url;
+    return new MutableURL(url.toString());
   }
 }
 
@@ -30,19 +30,107 @@ export function isURL(value: unknown): value is URL {
   );
 }
 
-function from<T>(fac: (url: URL) => T, strURLUri: CoerceURI | undefined, defaultProtocol: string): T {
+// due to that the System URL class is has a strange behavior
+// on different platforms, we need to implement our own URL class
+export class MutableURL extends URL {
+  private readonly _sysURL: URL;
+  // private readonly _urlStr: string;
+
+  private _protocol: string;
+  private _pathname: string;
+  private _hasHostpart: boolean;
+
+  readonly hash: string;
+
+  constructor(urlStr: string) {
+    super("defect://does.not.exist");
+    // this._urlStr = urlStr
+    this._sysURL = new URL(urlStr);
+    this._protocol = this._sysURL.protocol;
+    this._hasHostpart = ["http:", "https:"].includes(this._protocol);
+    if (this._hasHostpart) {
+      this._pathname = this._sysURL.pathname;
+    } else {
+      this._pathname = urlStr.replace(new RegExp(`^${this._protocol}//`), "").replace(/[#?].*$/, "");
+    }
+    this.hash = this._sysURL.hash;
+  }
+
+  clone(): MutableURL {
+    return new MutableURL(this.toString());
+  }
+
+  get hostname(): string {
+    if (!this._hasHostpart) {
+      throw new Error("you can use hostname only if protocol is http or https");
+    }
+    return this._sysURL.hostname;
+  }
+
+  set hostname(h: string) {
+    if (!this._hasHostpart) {
+      throw new Error("you can use hostname only if protocol is http or https");
+    }
+    this._sysURL.hostname = h;
+  }
+
+  set pathname(p: string) {
+    this._pathname = p;
+  }
+
+  get pathname(): string {
+    return this._pathname;
+  }
+
+  get protocol(): string {
+    return this._protocol;
+  }
+
+  set protocol(p: string) {
+    if (!p.endsWith(":")) {
+      p = `${p}:`;
+    }
+    this._protocol = p;
+  }
+
+  get searchParams(): URLSearchParams {
+    return this._sysURL.searchParams;
+  }
+
+  toString(): string {
+    let search = "";
+    if (this._sysURL.searchParams.size) {
+      for (const [key, value] of Array.from(this._sysURL.searchParams.entries()).sort((a, b) => a[0].localeCompare(b[0]))) {
+        search += `${!search.length ? "?" : "&"}${key}=${encodeURIComponent(value)}`;
+      }
+    }
+    let hostpart = "";
+    if (this._hasHostpart) {
+      hostpart = this._sysURL.hostname;
+      if (this._sysURL.port) {
+        hostpart += `:${this._sysURL.port}`;
+      }
+      if (!this._pathname.startsWith("/")) {
+        hostpart += "/";
+      }
+    }
+    return `${this._protocol}//${hostpart}${this._pathname}${search}`;
+  }
+}
+
+function from<T>(fac: (url: MutableURL) => T, strURLUri: CoerceURI | undefined, defaultProtocol: string): T {
   switch (typeof falsy2undef(strURLUri)) {
     case "undefined":
-      return fac(new URL(`${defaultProtocol}//`));
+      return fac(new MutableURL(`${defaultProtocol}///`));
     case "string":
       return fac(ensureURLWithDefaultProto(strURLUri as string, defaultProtocol));
     case "object":
       if (BuildURI.is(strURLUri)) {
-        return fac(new URL(strURLUri._url.toString()));
+        return fac(new MutableURL(strURLUri._url.toString()));
       } else if (URI.is(strURLUri)) {
-        return fac(new URL(strURLUri._url.toString()));
+        return fac(new MutableURL(strURLUri._url.toString()));
       } else if (isURL(strURLUri)) {
-        return fac(new URL(strURLUri.toString()));
+        return fac(new MutableURL(strURLUri.toString()));
       }
       throw new Error(`unknown object type: ${strURLUri}`);
     default:
@@ -51,8 +139,8 @@ function from<T>(fac: (url: URL) => T, strURLUri: CoerceURI | undefined, default
 }
 
 export class BuildURI {
-  _url: URL; // pathname needs this
-  private constructor(url: URL) {
+  _url: MutableURL; // pathname needs this
+  private constructor(url: MutableURL) {
     this._url = url;
   }
 
@@ -71,53 +159,55 @@ export class BuildURI {
     return this;
   }
 
-  password(p: string) {
-    this._url.password = p;
-    return this;
-  }
+  // password(p: string) {
+  //   this._url.password = p;
+  //   return this;
+  // }
 
-  port(p: string) {
-    this._url.port = p;
-    return this;
-  }
+  // port(p: string) {
+  //   this._url.port = p;
+  //   return this;
+  // }
 
-  username(u: string) {
-    this._url.username = u;
-    return this;
-  }
+  // username(u: string) {
+  //   this._url.username = u;
+  //   return this;
+  // }
 
-  search(s: string) {
-    this._url.search = s;
-    return this;
-  }
+  // search(s: string) {
+  //   this._url.search = s;
+  //   return this;
+  // }
 
   protocol(p: string) {
-    if (!p.endsWith(":")) {
-      p = `${p}:`;
-    }
-    const mySrc = this._url.toString();
-    const myDst = mySrc.replace(new RegExp(`^${this._url.protocol}`), `${p}`);
-    this._url = new URL(myDst);
+    this._url.protocol = p;
+    // if (!p.endsWith(":")) {
+    //   p = `${p}:`;
+    // }
+    // const mySrc = this._url.toString();
+    // const myDst = mySrc.replace(new RegExp(`^${this._url.protocol}`), `${p}`);
+    // this._url = new URL(myDst);
     return this;
   }
 
   pathname(p: string) {
-    const myp = this.URI().pathname;
-    const mySrc = this._url.toString();
-    const myDst = mySrc.replace(new RegExp(`^${this._url.protocol}//${myp}`), `${this._url.protocol}//${p}`);
-    this._url = new URL(myDst);
+    // const myp = this.URI().pathname;
+    // const mySrc = this._url.toString();
+    // const myDst = mySrc.replace(new RegExp(`^${this._url.protocol}//${myp}`), `${this._url.protocol}//${p}`);
+    // this._url = new URL(myDst);
+    this._url.pathname = p;
     return this;
   }
 
-  hash(h: string) {
-    this._url.hash = h;
-    return this;
-  }
+  // hash(h: string) {
+  //   this._url.hash = h;
+  //   return this;
+  // }
 
-  host(h: string) {
-    this._url.host = h;
-    return this;
-  }
+  // host(h: string) {
+  //   this._url.host = h;
+  //   return this;
+  // }
 
   delParam(key: string) {
     this._url.searchParams.delete(key);
@@ -149,7 +239,7 @@ export class BuildURI {
   }
 }
 
-export type CoerceURI = string | URL | URI | BuildURI | NullOrUndef;
+export type CoerceURI = string | URI | MutableURL | BuildURI | NullOrUndef;
 
 // non mutable URL Implementation
 export class URI {
@@ -157,6 +247,7 @@ export class URI {
   static merge(into: CoerceURI, from: CoerceURI, defaultProtocol = "file:"): URI {
     const intoUrl = BuildURI.from(into, defaultProtocol);
     const fromUrl = URI.from(from, defaultProtocol);
+
     intoUrl.protocol(fromUrl.protocol);
     const fPath = fromUrl.pathname;
     if (!(fPath.length === 0 || fPath === "/" || fPath === "./")) {
@@ -183,34 +274,34 @@ export class URI {
     return from((url) => new URI(url), strURLUri, defaultProtocol);
   }
 
-  readonly _url: URL;
-  private constructor(url: URL) {
-    this._url = url;
+  readonly _url: MutableURL;
+  private constructor(url: MutableURL) {
+    this._url = url.clone();
   }
 
   build(): BuildURI {
-    return BuildURI.from(this.asURL());
+    return BuildURI.from(this._url);
   }
 
   get hostname(): string {
     return this._url.hostname;
   }
 
-  get password(): string {
-    return this._url.password;
-  }
+  // get password(): string {
+  //   return this._url.password;
+  // }
 
-  get port(): string {
-    return this._url.port;
-  }
+  // get port(): string {
+  //   return this._url.port;
+  // }
 
-  get username(): string {
-    return this._url.username;
-  }
+  // get username(): string {
+  //   return this._url.username;
+  // }
 
-  get search(): string {
-    return this._url.search;
-  }
+  // get search(): string {
+  //   return this._url.search;
+  // }
 
   get protocol(): string {
     return this._url.protocol;
@@ -223,13 +314,13 @@ export class URI {
       .replace(/\?.*$/, "");
   }
 
-  get hash(): string {
-    return this._url.hash;
-  }
+  // get hash(): string {
+  //   return this._url.hash;
+  // }
 
-  get host(): string {
-    return this._url.host;
-  }
+  // get host(): string {
+  //   return this._url.host;
+  // }
 
   get getParams(): Iterable<[string, string]> {
     return this._url.searchParams.entries();
@@ -243,17 +334,17 @@ export class URI {
   }
 
   clone(): URI {
-    return new URI(this.asURL());
+    return new URI(this._url);
   }
 
   asURL(): URL {
-    const url = new URL(this._url.toString());
-    url.searchParams.sort();
-    return url;
+    // const url = new URL(this._url.toString());
+    // url.searchParams.sort();
+    return this._url.clone() as unknown as URL;
   }
 
   toString(): string {
-    this._url.searchParams.sort();
+    // this._url.searchParams.sort();
     return this._url.toString();
   }
   toJSON(): string {
