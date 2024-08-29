@@ -896,11 +896,12 @@ describe("TestLogger", () => {
     expect(log.Attributes()).toEqual({ str: "a str", what: { a: 1 }, bla: "blub" });
 
     const tlog = log.With().Timestamp().Logger();
+    const refTime = WebSysAbstraction({ TimeMode: TimeMode.STEP }).Time();
     expect(tlog.Attributes()).toEqual({
       str: "a str",
       what: { a: 1 },
       bla: "blub",
-      ts: "2021-01-31T23:00:01.000Z",
+      ts: refTime.Now().toISOString(),
     });
   });
 });
