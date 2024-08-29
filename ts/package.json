@@ -52,6 +52,7 @@
     "@typescript-eslint/eslint-plugin": "^8.2.0",
     "@typescript-eslint/parser": "^8.2.0",
     "@vitest/browser": "^2.0.5",
+    "ts-essentials": "^10.0.2",
     "eslint": "^9.8.0",
     "prettier": "^3.2.5",
     "tsup": "^8.1.0",
@@ -65,8 +66,5 @@
   },
   "engines": {
     "node": ">=16"
-  },
-  "dependencies": {
-    "ts-essentials": "^10.0.2"
   }
 }
