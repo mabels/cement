@@ -27,11 +27,11 @@ jobs:
         with:
           deno-version: v1.x
 
-      - uses: pnpm/action-setup@v2
+      - uses: pnpm/action-setup@v4
         name: Install pnpm
         with:
           run_install: false
-          version: 8
+          version: 9
 
       - name: Patch Version ${{ env.GITHUB_REF }}
         run: |
