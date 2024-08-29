@@ -307,4 +307,8 @@ describe("metrics", () => {
       });
     });
   });
+  it("typed span promise or literal", async () => {
+    expect(trace.span("test", () => "1")).toBe("1");
+    expect(await trace.span("test", async () => 1)).toBe(1);
+  });
 });

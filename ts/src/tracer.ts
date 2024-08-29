@@ -157,7 +157,8 @@ export class TraceNode {
     return ctx;
   }
 
-  span<T = void>(inSpanId: string | TraceCtxParam, fn: (trace: TraceNode) => Promise<T> | T): Promise<T> | T {
+  // <V extends () => Promise<T> | T, T>(id: string, fn: V): ReturnType<V>
+  span<V extends (trace: TraceNode) => Promise<T> | T, T>(inSpanId: string | TraceCtxParam, fn: V): ReturnType<V> {
     let ctx: TraceCtx;
     if (typeof inSpanId === "string") {
       ctx = {
@@ -203,10 +204,10 @@ export class TraceNode {
           })
           .finally(() => {
             invokation.end = this.ctx.time.Now().getTime();
-          });
+          }) as ReturnType<V>;
       }
       invokation.end = this.ctx.time.Now().getTime();
-      return possiblePromise;
+      return possiblePromise as ReturnType<V>;
     } catch (e) {
       invokation.result = "error";
       invokation.end = this.ctx.time.Now().getTime();
