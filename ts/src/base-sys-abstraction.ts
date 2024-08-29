@@ -27,16 +27,24 @@ export class ConstTime extends Time {
 
 export class StepTime extends Time {
   _step: Date;
+  readonly _start: Date;
   constructor() {
     super();
     this._step = new ConstTime().Now();
+    this._start = this._step;
   }
-  Now() {
-    if (this._step.getTime() === 0) {
-      this._step = new ConstTime().Now();
-      return this._step;
+  Now(steps = 1): Date {
+    // if (this._step.getTime() === 0) {
+    //   this._step = new ConstTime().Now();
+    //   return this._step;
+    // }
+    for (let i = 0; steps > 0 && i < steps; i++) {
+      this._step = new Date(this._step.getTime() + 1000);
     }
-    this._step = new Date(this._step.getTime() + 1000);
+    if (steps < 1) {
+      this._step = new Date(this._start.getTime() + steps * -1000);
+    }
+    // this._step = new Date(this._step.getTime() + 1000);
     return this._step;
   }
   Sleep(duration: number): Promise<void> {

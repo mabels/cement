@@ -6,11 +6,13 @@ import { MockLogger } from "./test/mock-logger";
 
 describe("trace", () => {
   let time: Time;
+  let refTime: Time;
   let trace: TraceNode;
   const logger = MockLogger().logger.With().Module("trace").Str("value", "important").Logger();
   beforeEach(() => {
     time = WebSysAbstraction({ TimeMode: TimeMode.STEP }).Time();
     trace = TraceNode.root(time, logger);
+    refTime = WebSysAbstraction({ TimeMode: TimeMode.STEP }).Time();
   });
   it("a simple trace", () => {
     expect(
@@ -34,14 +36,15 @@ describe("trace", () => {
         },
         invokations: [
           {
-            end: 1612134006000,
+            start: refTime.Now().getTime(),
             result: "success",
-            start: 1612134001000,
+            end: refTime.Now(5).getTime(),
           },
         ],
       },
     ]);
     const layered = Array.from(trace.childs.get("test")?.childs.values() || []);
+    refTime = WebSysAbstraction({ TimeMode: TimeMode.STEP }).Time();
     expect(layered.map((v) => v.invokes())).toEqual([
       {
         ctx: {
@@ -51,9 +54,9 @@ describe("trace", () => {
         },
         invokations: [
           {
-            end: 1612134003000,
+            start: refTime.Now(2).getTime(),
             result: "success",
-            start: 1612134002000,
+            end: refTime.Now().getTime(),
           },
         ],
       },
@@ -65,9 +68,9 @@ describe("trace", () => {
         },
         invokations: [
           {
-            end: 1612134005000,
+            start: refTime.Now().getTime(),
             result: "success",
-            start: 1612134004000,
+            end: refTime.Now(1).getTime(),
           },
         ],
       },
@@ -104,9 +107,9 @@ describe("trace", () => {
         },
         invokations: [
           {
-            end: 1612134009000,
+            start: refTime.Now().getTime(),
             result: "success",
-            start: 1612134001000,
+            end: refTime.Now(8).getTime(),
           },
         ],
       },
@@ -121,9 +124,9 @@ describe("trace", () => {
         },
         invokations: [
           {
-            end: 1612134003000,
             result: "success",
-            start: 1612134002000,
+            start: refTime.Now(-2).getTime(),
+            end: refTime.Now().getTime(),
           },
         ],
       },
@@ -136,9 +139,9 @@ describe("trace", () => {
         },
         invokations: [
           {
-            end: 1612134008000,
+            start: refTime.Now().getTime(),
+            end: refTime.Now(4).getTime(),
             result: "success",
-            start: 1612134004000,
           },
         ],
       },
@@ -208,9 +211,9 @@ describe("trace", () => {
         },
         invokations: [
           {
-            end: 1612134023000,
+            start: refTime.Now(1).getTime(),
+            end: refTime.Now(22).getTime(),
             result: "success",
-            start: 1612134001000,
           },
         ],
       },
@@ -225,19 +228,19 @@ describe("trace", () => {
         },
         invokations: [
           {
-            end: 1612134003000,
+            start: refTime.Now(-2).getTime(),
+            end: refTime.Now().getTime(),
             result: "success",
-            start: 1612134002000,
           },
           {
-            end: 1612134010000,
+            start: refTime.Now(-9).getTime(),
+            end: refTime.Now().getTime(),
             result: "error",
-            start: 1612134009000,
           },
           {
-            end: 1612134017000,
+            start: refTime.Now(-16).getTime(),
+            end: refTime.Now().getTime(),
             result: "success",
-            start: 1612134016000,
           },
         ],
         metricRefs: {
@@ -252,19 +255,19 @@ describe("trace", () => {
         },
         invokations: [
           {
-            end: 1612134008000,
+            start: refTime.Now(-4).getTime(),
+            end: refTime.Now(4).getTime(),
             result: "error",
-            start: 1612134004000,
           },
           {
-            end: 1612134015000,
+            start: refTime.Now(-11).getTime(),
+            end: refTime.Now(4).getTime(),
             result: "success",
-            start: 1612134011000,
           },
           {
-            end: 1612134022000,
+            start: refTime.Now(-18).getTime(),
+            end: refTime.Now(4).getTime(),
             result: "error",
-            start: 1612134018000,
           },
         ],
         metricRefs: {
