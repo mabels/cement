@@ -61,7 +61,6 @@
     "typescript-eslint": "^8.2.0",
     "vite-tsconfig-paths": "^5.0.1",
     "vitest": "^2.0.5",
-    "wdio-safaridriver-service": "^2.1.1",
     "webdriverio": "^9.0.7"
   },
   "engines": {
