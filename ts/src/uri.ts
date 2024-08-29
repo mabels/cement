@@ -239,7 +239,7 @@ export class BuildURI {
   }
 }
 
-export type CoerceURI = string | URI | MutableURL | BuildURI | NullOrUndef;
+export type CoerceURI = string | URI | MutableURL | URL | BuildURI | NullOrUndef;
 
 // non mutable URL Implementation
 export class URI {

@@ -905,4 +905,27 @@ describe("TestLogger", () => {
       ts: refTime.Now().toISOString(),
     });
   });
+  it("Url could receive URL", async () => {
+    logger.Info().Url(new URL("http://localhost:8080")).Msg("1");
+    await logger.Flush();
+    expect(logCollector.Logs()).toEqual([
+      {
+        level: "info",
+        msg: "1",
+        url: "http://localhost:8080/",
+      },
+    ]);
+  });
+
+  it("Url could receive String", async () => {
+    logger.Info().Url("http://localhost:8080").Msg("1");
+    await logger.Flush();
+    expect(logCollector.Logs()).toEqual([
+      {
+        level: "info",
+        msg: "1",
+        url: "http://localhost:8080/",
+      },
+    ]);
+  });
 });
