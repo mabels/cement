@@ -1,8 +1,8 @@
 export abstract class Result<T, E = Error> {
-  static Ok<T>(t: T): Result<T, Error> {
+  static Ok<T = void>(t: T): Result<T, Error> {
     return new ResultOK(t);
   }
-  static Err<T extends Error = Error>(t: T | string): Result<never, T> {
+  static Err<T extends Error = Error>(t: T | string): Result<void, T> {
     if (typeof t === "string") {
       return new ResultError(new Error(t) as T);
     }
@@ -83,6 +83,21 @@ export class ResultError<T extends Error> extends Result<never, T> {
 }
 
 export type WithoutResult<T> = T extends Result<infer U> ? U : T;
+
+// type WithoutPromise<T> = T extends Promise<infer U> ? U : T;
+type WithResult<T> = T extends Promise<infer U> ? Promise<Result<U>> : Result<T>;
+
+export function exception2Result<FN extends () => Promise<T> | T, T>(fn: FN): WithResult<ReturnType<FN>> {
+  try {
+    const res = fn();
+    if (res instanceof Promise) {
+      return res.then((value) => Result.Ok(value)).catch((e) => Result.Err(e)) as WithResult<ReturnType<FN>>;
+    }
+    return Result.Ok(res) as WithResult<ReturnType<FN>>;
+  } catch (e) {
+    return Result.Err(e as Error) as WithResult<ReturnType<FN>>;
+  }
+}
 
 /*
 

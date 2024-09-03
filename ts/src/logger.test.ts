@@ -928,4 +928,22 @@ describe("TestLogger", () => {
       },
     ]);
   });
+
+  it("error could receive Result", async () => {
+    logger.Info().Error().Err(Result.Err("xxxxx")).Msg("1");
+    logger.Info().Error().Err(Result.Ok("yyyyy")).Msg("2");
+    await logger.Flush();
+    expect(logCollector.Logs()).toEqual([
+      {
+        error: "xxxxx",
+        level: "error",
+        msg: "1",
+      },
+      {
+        noerror: "yyyyy",
+        level: "error",
+        msg: "2",
+      },
+    ]);
+  });
 });

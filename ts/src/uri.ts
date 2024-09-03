@@ -1,3 +1,5 @@
+import { exception2Result, Result } from "./result";
+
 type NullOrUndef = null | undefined;
 
 function falsy2undef<T>(value: T | NullOrUndef): T | undefined {
@@ -44,16 +46,21 @@ export class MutableURL extends URL {
 
   constructor(urlStr: string) {
     super("defect://does.not.exist");
-    this._hasHostpart = ["http", "https"].includes(urlStr.split(":")[0]);
-    const prefix = this._hasHostpart ? "" : "cement-";
+    const partedURL = urlStr.split(":");
+    this._hasHostpart = protocols.has(partedURL[0]);
+    let hostPartUrl = ["http", ...partedURL.slice(1)].join(":");
+    if (!this._hasHostpart) {
+      const pathname = hostPartUrl.replace(/http:\/\/[/]*/, "").replace(/[#?].*$/, "");
+      hostPartUrl = hostPartUrl.replace(/http:\/\//, `http://localhost/${pathname}`);
+    }
     try {
-      this._sysURL = new URL(prefix + urlStr);
+      this._sysURL = new URL(hostPartUrl);
     } catch (ie) {
       const e = ie as Error;
       e.message = `${e.message} for URL: ${urlStr}`;
       throw e;
     }
-    this._protocol = this._sysURL.protocol.replace(new RegExp("^cement-"), "");
+    this._protocol = `${partedURL[0]}:`; // this._sysURL.protocol.replace(new RegExp("^cement-"), "");
     if (this._hasHostpart) {
       this._pathname = this._sysURL.pathname;
     } else {
@@ -66,16 +73,39 @@ export class MutableURL extends URL {
     return new MutableURL(this.toString());
   }
 
+  get host(): string {
+    if (!this._hasHostpart) {
+      throw new Error(
+        `you can use hostname only if protocol is ${this.toString()} ${JSON.stringify(Array.from(protocols.keys()))}`,
+      );
+    }
+    return this._sysURL.host;
+  }
+
+  get port(): string {
+    if (!this._hasHostpart) {
+      throw new Error(`you can use hostname only if protocol is ${JSON.stringify(Array.from(protocols.keys()))}`);
+    }
+    return this._sysURL.port;
+  }
+
+  set port(p: string) {
+    if (!this._hasHostpart) {
+      throw new Error(`you can use port only if protocol is ${JSON.stringify(Array.from(protocols.keys()))}`);
+    }
+    this._sysURL.port = p;
+  }
+
   get hostname(): string {
     if (!this._hasHostpart) {
-      throw new Error("you can use hostname only if protocol is http or https");
+      throw new Error(`you can use hostname only if protocol is ${JSON.stringify(Array.from(protocols.keys()))}`);
     }
     return this._sysURL.hostname;
   }
 
   set hostname(h: string) {
     if (!this._hasHostpart) {
-      throw new Error("you can use hostname only if protocol is http or https");
+      throw new Error(`you can use hostname only if protocol is ${JSON.stringify(Array.from(protocols.keys()))}`);
     }
     this._sysURL.hostname = h;
   }
@@ -158,6 +188,11 @@ export class BuildURI {
   }
   static from(strURLUri?: CoerceURI, defaultProtocol = "file:"): BuildURI {
     return from((url) => new BuildURI(url), strURLUri, defaultProtocol);
+  }
+
+  port(p: string) {
+    this._url.port = p;
+    return this;
   }
 
   hostname(h: string) {
@@ -247,8 +282,23 @@ export class BuildURI {
 
 export type CoerceURI = string | URI | MutableURL | URL | BuildURI | NullOrUndef;
 
+export const protocols = new Map<string, boolean>([
+  ["http", true],
+  ["https", true],
+  ["ws", true],
+  ["wss", true],
+]);
+
 // non mutable URL Implementation
 export class URI {
+  static protocolHasHostpart(protocol: string): () => void {
+    protocol = protocol.replace(/:$/, "");
+    protocols.set(protocol, true);
+    return () => {
+      protocols.delete(protocol);
+    };
+  }
+
   // if no protocol is provided, default to file:
   static merge(into: CoerceURI, from: CoerceURI, defaultProtocol = "file:"): URI {
     const intoUrl = BuildURI.from(into, defaultProtocol);
@@ -280,6 +330,10 @@ export class URI {
     return from((url) => new URI(url), strURLUri, defaultProtocol);
   }
 
+  static fromResult(strURLUri?: CoerceURI, defaultProtocol = "file:"): Result<URI> {
+    return exception2Result(() => from((url) => new URI(url), strURLUri, defaultProtocol)) as Result<URI>;
+  }
+
   readonly _url: MutableURL;
   private constructor(url: MutableURL) {
     this._url = url.clone();
@@ -297,9 +351,13 @@ export class URI {
   //   return this._url.password;
   // }
 
-  // get port(): string {
-  //   return this._url.port;
-  // }
+  get port(): string {
+    return this._url.port;
+  }
+
+  get host(): string {
+    return this._url.host;
+  }
 
   // get username(): string {
   //   return this._url.username;
@@ -314,10 +372,11 @@ export class URI {
   }
 
   get pathname(): string {
-    return this._url
-      .toString()
-      .replace(/^.*:\/\//, "")
-      .replace(/\?.*$/, "");
+    return this._url.pathname;
+    // return this._url
+    //   .toString()
+    //   .replace(/^.*:\/\//, "")
+    //   .replace(/\?.*$/, "");
   }
 
   // get hash(): string {

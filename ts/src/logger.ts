@@ -107,7 +107,7 @@ export interface LoggerInterface<R> {
   Log(): R;
   WithLevel(level: Level): R;
 
-  Err(err: unknown): R; // could be Error, or something which coerces to string
+  Err(err: unknown | Result<unknown> | Error): R; // could be Error, or something which coerces to string
   Info(): R;
   Timestamp(): R;
   Any(key: string, value: unknown): R;

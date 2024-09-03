@@ -323,8 +323,14 @@ export class LoggerImpl implements Logger {
     this._attributes["level"] = logValue(Level.INFO);
     return this;
   }
-  Err(err: unknown): Logger {
-    if (err instanceof Error) {
+  Err(err: unknown | Result<unknown> | Error): Logger {
+    if (Result.Is(err)) {
+      if (err.isOk()) {
+        this.Result("noerror", err);
+      } else {
+        this.Result("error", err);
+      }
+    } else if (err instanceof Error) {
       this._attributes["error"] = logValue(err.message);
       if (this._levelHandler.isStackExposed) {
         this._attributes["stack"] = logValue(err.stack?.split("\n").map((s) => s.trim()));

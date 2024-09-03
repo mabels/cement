@@ -131,8 +131,25 @@ describe("URI", () => {
   it("MutableURL is instance of URL", () => {
     expect(new MutableURL("http://example.com") instanceof URL).toBe(true);
   });
+
   it("file url", () => {
     const uri = URI.from("file://fp?storagekey=zTvTPEPQRWij8rfb3FrFqBm");
     expect(uri.pathname).toBe("fp");
+  });
+
+  it("unregistered protocol with hostPart", () => {
+    const withoutHostpart = URI.from("indexdb://fp:bla/test/?name=test&store=meta");
+    expect(() => withoutHostpart.hostname).toThrowError('you can use hostname only if protocol is ["http","https","ws","wss"]');
+  });
+
+  it("register protocol with hostPart", () => {
+    const unreg = URI.protocolHasHostpart("indexdb:");
+    const withHostpart = URI.from("indexdb://fp1:88/test/wurst?name=test&store=meta");
+    expect(withHostpart.host).toBe("fp1:88");
+    expect(withHostpart.pathname).toBe("/test/wurst");
+    const withHostpartNoPath = URI.from("indexdb://fp2:88?name=test&store=meta");
+    expect(withHostpartNoPath.host).toBe("fp2:88");
+    expect(withHostpartNoPath.pathname).toBe("/");
+    unreg();
   });
 });
