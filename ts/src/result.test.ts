@@ -82,6 +82,17 @@ it("async exception2Result throw", async () => {
   ).toEqual(Result.Err("x"));
 });
 
+it("result typ", () => {
+  function ok(): Result<number> {
+    return Result.Ok(1);
+  }
+  function err(): Result<number> {
+    return Result.Err("x");
+  }
+  expect(ok().Ok()).toBe(1);
+  expect(err().Err().message).toBe("x");
+});
+
 // it("Result.OK with void", () => {
 //   const result = Result.Ok();
 //   expect(result.isOk()).toBe(true);
