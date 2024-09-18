@@ -137,6 +137,7 @@ export interface LoggerInterface<R> {
 
   SetDebug(...modules: (string | string[])[]): R;
   SetExposeStack(enable?: boolean): R;
+  SetFormatter(fmt: LogFormatter): R;
 
   Ref(key: string, action: { toString: () => string } | FnSerialized): R;
   Result<T>(key: string, res: Result<T>): R;

@@ -100,7 +100,7 @@ export class LoggerImpl implements Logger {
   readonly _logWriter: LogWriterStream;
   readonly _levelHandler: LevelHandler;
   readonly _txtEnDe: TxtEnDecoder;
-  readonly _formatter: LogFormatter;
+  _formatter: LogFormatter;
   // readonly _id: string = "logger-" + Math.random().toString(36)
 
   constructor(params?: LoggerImplParams) {
@@ -196,6 +196,11 @@ export class LoggerImpl implements Logger {
   // if the string is "*" it will enable for all modules
   SetDebug(...modules: (string | string[])[]): Logger {
     this._levelHandler.setDebug(...modules);
+    return this;
+  }
+
+  SetFormatter(formatter: LogFormatter): Logger {
+    this._formatter = formatter;
     return this;
   }
 
@@ -317,6 +322,7 @@ export class LoggerImpl implements Logger {
         logWriter: this._logWriter,
         sys: this._sys,
         levelHandler: this._levelHandler,
+        formatter: this._formatter,
         withAttributes: {
           module: this._attributes["module"],
           ...this._withAttributes,
@@ -381,6 +387,11 @@ class WithLoggerBuilder implements WithLogger {
 
   SetExposeStack(enable?: boolean): WithLogger {
     this._li._levelHandler.setExposeStack(enable);
+    return this;
+  }
+
+  SetFormatter(fmt: LogFormatter): WithLogger {
+    this._li.SetFormatter(fmt);
     return this;
   }
 

@@ -1020,13 +1020,8 @@ describe("TestLogger", () => {
   });
 
   it("my own json formatter", async () => {
-    const log = new LoggerImpl({
-      out: logCollector,
-      formatter: new JSONFormatter(logger.TxtEnDe(), 2),
-      sys: WebSysAbstraction({ TimeMode: TimeMode.STEP }),
-      levelHandler: new LevelHandlerImpl(),
-    }).SetExposeStack(true);
-    log
+    logger.SetExposeStack(true).SetFormatter(new JSONFormatter(logger.TxtEnDe(), 2));
+    logger
       .Error()
       .Str("bla", "blub")
       // .Err(new Error("test"))
@@ -1041,7 +1036,7 @@ describe("TestLogger", () => {
         ls: "a\nb\nc",
       })
       .Msg("hello");
-    await log.Flush();
+    await logger.Flush();
     expect(logCollector.Logs(true)).toEqual([
       "{",
       '  "level": "error",',
@@ -1087,12 +1082,7 @@ describe("TestLogger", () => {
   });
 
   it("my own yaml formatter", async () => {
-    const log = new LoggerImpl({
-      out: logCollector,
-      formatter: new YAMLFormatter(logger.TxtEnDe(), 2),
-      sys: WebSysAbstraction({ TimeMode: TimeMode.STEP }),
-      levelHandler: new LevelHandlerImpl(),
-    }).SetExposeStack(true);
+    const log = logger.SetExposeStack(true).SetFormatter(new YAMLFormatter(logger.TxtEnDe(), 2)).With().Logger();
     log
       .Error()
       .Str("bla", "blub")
