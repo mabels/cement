@@ -1,5 +1,6 @@
+import { LevelHandlerImpl } from "../log-level-impl";
 import { Logger } from "../logger";
-import { LevelHandlerImpl, LoggerImpl } from "../logger-impl";
+import { LoggerImpl } from "../logger-impl";
 import { SysAbstraction } from "../sys-abstraction";
 import { LogCollector } from "./log-write-stream";
 

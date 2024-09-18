@@ -1,6 +1,7 @@
 import path from "node:path";
 import fs from "node:fs";
 import { FileService, NamedWritableStream } from "../file-service";
+import { Utf8EnDecoderSingleton } from "../txt-en-decoder";
 
 export class NodeFileService implements FileService {
   readonly baseDir: string;
@@ -55,10 +56,10 @@ export class NodeFileService implements FileService {
     return path.isAbsolute(fname);
   }
 
-  async writeFileString(fname: string, content: string): Promise<void> {
+  async writeFileString(fname: string, content: string, ende = Utf8EnDecoderSingleton()): Promise<void> {
     const o = await this.create(fname);
     const wr = o.stream.getWriter();
-    await wr.write(new TextEncoder().encode(content));
+    await wr.write(ende.encode(content));
     await wr.close();
   }
 

@@ -52,15 +52,16 @@
     "@typescript-eslint/eslint-plugin": "^8.2.0",
     "@typescript-eslint/parser": "^8.3.0",
     "@vitest/browser": "^2.0.5",
-    "ts-essentials": "^10.0.2",
     "eslint": "^9.8.0",
     "prettier": "^3.2.5",
+    "ts-essentials": "^10.0.2",
     "tsup": "^8.1.0",
     "tsx": "^4.16.0",
     "typescript": "^5.5.0",
     "typescript-eslint": "^8.2.0",
     "vite-tsconfig-paths": "^5.0.1",
     "vitest": "^2.0.5",
+    "yaml": "^2.5.1",
     "webdriverio": "^9.0.7"
   },
   "engines": {

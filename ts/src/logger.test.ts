@@ -13,6 +13,8 @@ import {
   BuildURI,
   URI,
   MutableURL,
+  JSONFormatter,
+  YAMLFormatter,
 } from "@adviser/cement";
 import { WebSysAbstraction } from "@adviser/cement/web";
 
@@ -724,7 +726,7 @@ describe("TestLogger", () => {
       },
     ]);
   });
-  it("setDebug could receive anything", () => {
+  it("array setDebug could receive anything", () => {
     function c(u: unknown): string {
       return u as string;
     }
@@ -750,7 +752,7 @@ describe("TestLogger", () => {
       "morex",
     ]);
   });
-  it("setDebug could receive anything", async () => {
+  it("object setDebug could receive anything", async () => {
     logger
       .Error()
       .Any("sock", {
@@ -944,6 +946,197 @@ describe("TestLogger", () => {
         level: "error",
         msg: "2",
       },
+    ]);
+  });
+
+  it("introspect json", async () => {
+    logger
+      .Info()
+      .Str("bla", JSON.stringify({ a: 4711 }))
+      .Any("y", {
+        a: JSON.stringify({ b: 4711, c: '{"d":4711}', e: ['{"f":4712}'] }),
+      })
+      .Msg(JSON.stringify(["x", 4712, { a: 4711 }, '{"d":4711}', '{"a":4711}']));
+    await logger.Flush();
+    expect(logCollector.Logs()).toEqual([
+      {
+        bla: { a: 4711 },
+        level: "info",
+        msg: [
+          "x",
+          4712,
+          {
+            a: 4711,
+          },
+          {
+            d: 4711,
+          },
+          {
+            a: 4711,
+          },
+        ],
+        y: {
+          a: {
+            b: 4711,
+            c: {
+              d: 4711,
+            },
+            e: [
+              {
+                f: 4712,
+              },
+            ],
+          },
+        },
+      },
+    ]);
+  });
+
+  it("introspect uint8array", async () => {
+    logger
+      .Info()
+      .Any("fhex", new Uint8Array(new Array(36).fill(1).map((_, i) => i)))
+      .Any("hex", { a: new Uint8Array(new Array(36).fill(1).map((_, i) => i)) })
+      .Msg("1");
+    await logger.Flush();
+    expect(logCollector.Logs()).toEqual([
+      {
+        fhex: [
+          "0000  00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f ................",
+          "0010  10 11 12 13 14 15 16 17 18 19 1a 1b 1c 1d 1e 1f ................",
+          '0020  20 21 22 23                                      !"#',
+        ],
+        hex: {
+          a: [
+            "0000  00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f ................",
+            "0010  10 11 12 13 14 15 16 17 18 19 1a 1b 1c 1d 1e 1f ................",
+            '0020  20 21 22 23                                      !"#',
+          ],
+        },
+        level: "info",
+        msg: "1",
+      },
+    ]);
+  });
+
+  it("my own json formatter", async () => {
+    const log = new LoggerImpl({
+      out: logCollector,
+      formatter: new JSONFormatter(logger.TxtEnDe(), 2),
+      sys: WebSysAbstraction({ TimeMode: TimeMode.STEP }),
+      levelHandler: new LevelHandlerImpl(),
+    }).SetExposeStack(true);
+    log
+      .Error()
+      .Str("bla", "blub")
+      // .Err(new Error("test"))
+      .Str("xxx", '{"b": 4711}')
+      .Str("lines", "a\nb\nc")
+      .Any("flat", new Uint8Array(new Array(36).fill(1).map((_, i) => i)))
+      .Any("hi", {
+        ho: 1,
+        su: "bla",
+        js: '{"a":1}',
+        bi: new Uint8Array(new Array(36).fill(1).map((_, i) => i)),
+        ls: "a\nb\nc",
+      })
+      .Msg("hello");
+    await log.Flush();
+    expect(logCollector.Logs(true)).toEqual([
+      "{",
+      '  "level": "error",',
+      '  "bla": "blub",',
+      //  "  \"error\": \"test\",",
+      //  "  \"stack\": [",
+      //  "    \"Error: test\",",
+      // "   ],",
+      '  "xxx": {',
+      '    "b": 4711',
+      "  },",
+      '  "lines": [',
+      '    "a",',
+      '    "b",',
+      '    "c"',
+      "  ],",
+      '  "flat": [',
+      '    "0000  00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f ................",',
+      '    "0010  10 11 12 13 14 15 16 17 18 19 1a 1b 1c 1d 1e 1f ................",',
+      '    "0020  20 21 22 23                                      !\\"#"',
+      "  ],",
+      '  "hi": {',
+      '    "ho": 1,',
+      '    "su": "bla",',
+      '    "js": {',
+      '      "a": 1',
+      "    },",
+      '    "bi": [',
+      '      "0000  00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f ................",',
+      '      "0010  10 11 12 13 14 15 16 17 18 19 1a 1b 1c 1d 1e 1f ................",',
+      '      "0020  20 21 22 23                                      !\\"#"',
+      "    ],",
+
+      '    "ls": [',
+      '      "a",',
+      '      "b",',
+      '      "c"',
+      "    ]",
+      "  },",
+      '  "msg": "hello"',
+      "}",
+    ]);
+  });
+
+  it("my own yaml formatter", async () => {
+    const log = new LoggerImpl({
+      out: logCollector,
+      formatter: new YAMLFormatter(logger.TxtEnDe(), 2),
+      sys: WebSysAbstraction({ TimeMode: TimeMode.STEP }),
+      levelHandler: new LevelHandlerImpl(),
+    }).SetExposeStack(true);
+    log
+      .Error()
+      .Str("bla", "blub")
+      // .Err(new Error("test"))
+      .Str("xxx", '{"b": 4711}')
+      .Str("lines", "a\nb\nc")
+      .Any("flat", new Uint8Array(new Array(36).fill(1).map((_, i) => i)))
+      .Any("hi", {
+        ho: 1,
+        su: "bla",
+        js: '{"a":1}',
+        bi: new Uint8Array(new Array(36).fill(1).map((_, i) => i)),
+        ls: "a\nb\nc",
+      })
+      .Msg("hello");
+    await log.Flush();
+    expect(logCollector.Logs(true)).toEqual([
+      "---",
+      "level: error",
+      "bla: blub",
+      "xxx:",
+      "  b: 4711",
+      "lines:",
+      "  - a",
+      "  - b",
+      "  - c",
+      "flat:",
+      "  - 0000  00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f ................",
+      "  - 0010  10 11 12 13 14 15 16 17 18 19 1a 1b 1c 1d 1e 1f ................",
+      '  - 0020  20 21 22 23                                      !"#',
+      "hi:",
+      "  ho: 1",
+      "  su: bla",
+      "  js:",
+      "    a: 1",
+      "  bi:",
+      "    - 0000  00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f ................",
+      "    - 0010  10 11 12 13 14 15 16 17 18 19 1a 1b 1c 1d 1e 1f ................",
+      '    - 0020  20 21 22 23                                      !"#',
+      "  ls:",
+      "    - a",
+      "    - b",
+      "    - c",
+      "msg: hello",
     ]);
   });
 });

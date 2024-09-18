@@ -1,4 +1,6 @@
+import { bin2string } from "./bin2text";
 import { Result } from "./result";
+import { TxtEnDecoder } from "./txt-en-decoder";
 import { CoerceURI } from "./uri";
 
 export enum Level {
@@ -23,7 +25,7 @@ export class LogValue {
 
 export type LogSerializable = Record<string, LogValue | Promise<LogValue>>;
 
-export function removeSelfRef(): (key: unknown, val: unknown) => unknown {
+export function removeSelfRef(lineEnd?: string): (key: unknown, val: unknown) => unknown {
   const cache = new Set();
   return function (key: unknown, value: unknown) {
     if (typeof value === "object" && value !== null) {
@@ -31,7 +33,7 @@ export function removeSelfRef(): (key: unknown, val: unknown) => unknown {
       if (cache.has(value)) return "...";
       cache.add(value);
     }
-    return value;
+    return lineEnd ? value + lineEnd : value;
   };
 }
 
@@ -41,29 +43,60 @@ export function asyncLogValue(val: () => Promise<Serialized>): Promise<LogValue>
   throw new Error("Not implemented");
 }
 
-export function logValue(val: Serialized | Serialized[] | FnSerialized | LogSerializable | undefined | null): LogValue {
+export type LogValueArg = LogValue | Serialized | Serialized[] | FnSerialized | undefined | null;
+
+export function logValue(val: LogValueArg, state = new Set<unknown>([Math.random()])): LogValue {
   switch (typeof val) {
     case "function":
       return new LogValue(val);
-    case "string":
-      return new LogValue(() => {
-        try {
-          const ret = JSON.parse(val);
-          if (typeof ret === "object" && ret !== null) {
-            return ret;
-          }
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        } catch (e) {
-          // do nothing
+    case "string": {
+      try {
+        const ret = JSON.parse(val);
+        if (typeof ret === "object" && ret !== null) {
+          return logValue(ret, state);
         }
-        return val.toString();
-      });
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      } catch (e) {
+        if (val.match(/[\n\r]/)) {
+          const lines = val.trimEnd().split(/[\n\r]/);
+          return new LogValue(() => lines);
+        }
+      }
+      return new LogValue(() => val.toString());
+    }
     case "number":
       return new LogValue(() => val);
     case "boolean":
       return new LogValue(() => val);
-    case "object":
-      return new LogValue(() => JSON.parse(JSON.stringify(val, removeSelfRef())));
+    case "object": {
+      if (ArrayBuffer.isView(val)) {
+        return logValue(bin2string(val, 512));
+      }
+      if (Array.isArray(val)) {
+        return new LogValue(() => val.map((v) => logValue(v).value() as Serialized));
+      }
+      if (val === null) {
+        return new LogValue(() => "null");
+      }
+      // Duplicate reference found, discard key
+      if (state.has(val)) {
+        return new LogValue(() => "...");
+      }
+      state.add(val);
+
+      const res: Record<string, LogValue> = {};
+      const typedVal = val as unknown as Record<string, LogValueArg>;
+      for (const key in typedVal) {
+        const element = typedVal[key];
+        if (element instanceof LogValue) {
+          res[key] = element;
+        } else {
+          res[key] = logValue(element, state);
+        }
+      }
+      // ugly as hell cast but how declare a self-referencing type?
+      return new LogValue(() => res as unknown as Serialized);
+    }
     default:
       if (!val) {
         return new LogValue(() => "--Falsy--");
@@ -80,7 +113,21 @@ export interface Lengthed {
 }
 export type SizeOrLength = Sized | Lengthed;
 
+export interface LogFormatter {
+  format(attr: LogSerializable): Uint8Array;
+}
+
+export interface LevelHandler {
+  enableLevel(level: Level, ...modules: string[]): void;
+  disableLevel(level: Level, ...modules: string[]): void;
+  setExposeStack(enable?: boolean): void;
+  isStackExposed: boolean;
+  setDebug(...modules: (string | string[])[]): void;
+  isEnabled(ilevel: unknown, module: unknown): boolean;
+}
+
 export interface LoggerInterface<R> {
+  TxtEnDe(): TxtEnDecoder;
   Module(key: string): R;
   // if modules is empty, set for all Levels
   EnableLevel(level: Level, ...modules: string[]): R;

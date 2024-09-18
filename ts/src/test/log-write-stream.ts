@@ -1,5 +1,6 @@
 import { FanoutWriteStream } from "../utils/fanout-write-stream";
 import { Future } from "../future";
+import { TxtEnDecoder, Utf8EnDecoderSingleton } from "../txt-en-decoder";
 
 export class LogWriteStream implements WritableStreamDefaultWriter<Uint8Array> {
   private readonly _bufferArr: Uint8Array[];
@@ -37,9 +38,11 @@ export class LogCollector implements WritableStream<Uint8Array> {
   private _writer?: FanoutWriteStream;
   private readonly _pass?: WritableStreamDefaultWriter<Uint8Array>;
   private readonly _bufferArr: Uint8Array[] = [];
+  private readonly _txtEnDe: TxtEnDecoder;
 
-  constructor(pass?: WritableStreamDefaultWriter<Uint8Array>) {
+  constructor(pass?: WritableStreamDefaultWriter<Uint8Array>, txtEnDe?: TxtEnDecoder) {
     this._pass = pass;
+    this._txtEnDe = txtEnDe || Utf8EnDecoderSingleton();
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -68,11 +71,11 @@ export class LogCollector implements WritableStream<Uint8Array> {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  Logs(): any[] {
+  Logs(notJsonLine = false): any[] {
     if (!this._writer) {
       return [];
     }
-    const jsonNlStr = new TextDecoder().decode(
+    const jsonNlStr = this._txtEnDe.decode(
       new Uint8Array(
         (function* (res: Uint8Array[]) {
           for (const x of res) {
@@ -81,9 +84,12 @@ export class LogCollector implements WritableStream<Uint8Array> {
         })(this._bufferArr),
       ),
     );
-    const splitStr = jsonNlStr.split("\n");
-    const filterStr = splitStr.filter((a) => a.length);
-    const mapStr = filterStr.map((a) => JSON.parse(a));
-    return mapStr;
+    if (!notJsonLine) {
+      const splitStr = jsonNlStr.split("\n");
+      const filterStr = splitStr.filter((a) => a.length);
+      const mapStr = filterStr.map((a) => JSON.parse(a));
+      return mapStr;
+    }
+    return jsonNlStr.split("\n").filter((a) => a.length);
   }
 }

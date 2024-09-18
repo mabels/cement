@@ -31,7 +31,7 @@ importers:
         version: 10.0.2(typescript@5.5.4)
       tsup:
         specifier: ^8.1.0
-        version: 8.2.4(postcss@8.4.39)(tsx@4.19.0)(typescript@5.5.4)(yaml@2.4.5)
+        version: 8.2.4(postcss@8.4.39)(tsx@4.19.0)(typescript@5.5.4)(yaml@2.5.1)
       tsx:
         specifier: ^4.16.0
         version: 4.19.0
@@ -50,6 +50,9 @@ importers:
       webdriverio:
         specifier: ^9.0.7
         version: 9.0.9
+      yaml:
+        specifier: ^2.5.1
+        version: 2.5.1
 
 packages:
 
@@ -2353,8 +2356,8 @@ packages:
     resolution: {integrity: sha512-0pfFzegeDWJHJIAmTLRP2DwHjdF5s7jo9tuztdQxAhINCdvS+3nGINqPd00AphqJR/0LhANUS6/+7SCb98YOfA==}
     engines: {node: '>=10'}
 
-  yaml@2.4.5:
-    resolution: {integrity: sha512-aBx2bnqDzVOyNKfsysjA2ms5ZlnjSAW2eG3/L5G/CSujfjLJTJsEw1bGw8kCf04KodQWk1pxlGnZ56CRxiawmg==}
+  yaml@2.5.1:
+    resolution: {integrity: sha512-bLQOjaX/ADgQ20isPJRvF0iRUHIxVhYvr53Of7wGcWlO2jvtUlH5m87DsmulFVxRpNLOnI4tB6p/oh8D7kpn9Q==}
     engines: {node: '>= 14'}
     hasBin: true
 
@@ -4057,13 +4060,13 @@ snapshots:
 
   pirates@4.0.6: {}
 
-  postcss-load-config@6.0.1(postcss@8.4.39)(tsx@4.19.0)(yaml@2.4.5):
+  postcss-load-config@6.0.1(postcss@8.4.39)(tsx@4.19.0)(yaml@2.5.1):
     dependencies:
       lilconfig: 3.1.2
     optionalDependencies:
       postcss: 8.4.39
       tsx: 4.19.0
-      yaml: 2.4.5
+      yaml: 2.5.1
 
   postcss@8.4.39:
     dependencies:
@@ -4402,7 +4405,7 @@ snapshots:
 
   tslib@2.6.3: {}
 
-  tsup@8.2.4(postcss@8.4.39)(tsx@4.19.0)(typescript@5.5.4)(yaml@2.4.5):
+  tsup@8.2.4(postcss@8.4.39)(tsx@4.19.0)(typescript@5.5.4)(yaml@2.5.1):
     dependencies:
       bundle-require: 5.0.0(esbuild@0.23.0)
       cac: 6.7.14
@@ -4414,7 +4417,7 @@ snapshots:
       globby: 11.1.0
       joycon: 3.1.1
       picocolors: 1.0.1
-      postcss-load-config: 6.0.1(postcss@8.4.39)(tsx@4.19.0)(yaml@2.4.5)
+      postcss-load-config: 6.0.1(postcss@8.4.39)(tsx@4.19.0)(yaml@2.5.1)
       resolve-from: 5.0.0
       rollup: 4.20.0
       source-map: 0.8.0-beta.0
@@ -4674,8 +4677,7 @@ snapshots:
 
   y18n@5.0.8: {}
 
-  yaml@2.4.5:
-    optional: true
+  yaml@2.5.1: {}
 
   yargs-parser@21.1.1: {}
 

@@ -154,6 +154,12 @@ export class Keyed<T extends { reset: () => void }, K = string> {
     return keyed;
   }
 
+  unget(key: K) {
+    const keyed = this._map.get(key);
+    keyed?.reset();
+    this._map.delete(key);
+  }
+
   reset() {
     this._map.forEach((keyed) => keyed.reset());
     this._map.clear();

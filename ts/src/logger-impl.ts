@@ -1,4 +1,5 @@
 // import { v4 } from "uuid";
+import YAML from "yaml";
 import {
   AsError,
   FnSerialized,
@@ -13,6 +14,9 @@ import {
   Lengthed,
   LogValue,
   asyncLogValue,
+  LevelHandler,
+  LogFormatter,
+  LogValueArg,
 } from "./logger";
 import { WebSysAbstraction } from "./web/web-sys-abstraction";
 import { SysAbstraction } from "./sys-abstraction";
@@ -20,158 +24,9 @@ import { Result } from "./result";
 import { CoerceURI, URI } from "./uri";
 import { runtimeFn } from "./runtime";
 import { ConsoleWriterStream } from "./utils/console-write-stream";
-
-const encoder = new TextEncoder();
-
-export interface LevelHandler {
-  enableLevel(level: Level, ...modules: string[]): void;
-  disableLevel(level: Level, ...modules: string[]): void;
-  setExposeStack(enable?: boolean): void;
-  isStackExposed: boolean;
-  setDebug(...modules: (string | string[])[]): void;
-  isEnabled(ilevel: unknown, module: unknown): boolean;
-}
-
-export class LevelHandlerImpl implements LevelHandler {
-  readonly _globalLevels = new Set<Level>([Level.INFO, Level.ERROR, Level.WARN]);
-  readonly _modules = new Map<string, Set<Level>>();
-  isStackExposed = false;
-  enableLevel(level: Level, ...modules: string[]): void {
-    if (modules.length == 0) {
-      this._globalLevels.add(level);
-      return;
-    }
-    this.forModules(
-      level,
-      (p) => {
-        this._modules.set(p, new Set([...this._globalLevels, level]));
-      },
-      ...modules,
-    );
-  }
-  disableLevel(level: Level, ...modules: string[]): void {
-    if (modules.length == 0) {
-      this._globalLevels.delete(level);
-      return;
-    }
-    this.forModules(
-      level,
-      (p) => {
-        this._modules.delete(p);
-      },
-      ...modules,
-    );
-  }
-
-  setExposeStack(enable?: boolean): void {
-    this.isStackExposed = !!enable;
-  }
-
-  forModules(level: Level, fnAction: (p: string) => void, ...modules: (string | string[])[]): void {
-    for (const m of modules.flat()) {
-      if (typeof m !== "string") {
-        continue;
-      }
-      const parts = m
-        .split(",")
-        .map((s) => s.trim())
-        .filter((s) => s.length);
-      for (const p of parts) {
-        fnAction(p);
-      }
-    }
-  }
-  setDebug(...modules: (string | string[])[]): void {
-    this.forModules(
-      Level.DEBUG,
-      (p) => {
-        this._modules.set(p, new Set([...this._globalLevels, Level.DEBUG]));
-      },
-      ...modules,
-    );
-  }
-  isEnabled(ilevel: unknown, module: unknown): boolean {
-    const level = ilevel as Level; // what if it's not a level?
-    if (typeof module === "string") {
-      const levels = this._modules.get(module);
-      if (levels && levels.has(level)) {
-        return true;
-      }
-    }
-    const wlevel = this._modules.get("*");
-    if (wlevel && typeof level === "string") {
-      if (wlevel.has(level)) {
-        return true;
-      }
-    }
-    if (typeof level !== "string") {
-      // this is a plain log
-      return true;
-    }
-    return this._globalLevels.has(level);
-  }
-}
-
-const levelSingleton = new LevelHandlerImpl();
-
-export class LogWriterStream {
-  readonly _out: WritableStream<Uint8Array>;
-  readonly _toFlush: (() => Promise<void>)[] = [];
-
-  constructor(out: WritableStream<Uint8Array>) {
-    this._out = out;
-  }
-
-  write(encoded: Uint8Array) {
-    const my = async () => {
-      // const val = Math.random();
-      // console.log(">>>My:", val)
-      try {
-        const writer = this._out.getWriter();
-        await writer.ready;
-        await writer.write(encoded);
-        await writer.releaseLock();
-      } catch (err) {
-        // eslint-disable-next-line no-console
-        console.error("Chunk error:", err);
-      }
-      // console.log("<<<My:", val)
-    };
-    this._toFlush.push(my);
-    this._flush();
-  }
-
-  _flushIsRunning = false;
-  _flushDoneFns = Array<() => void>();
-  _flush(toFlush: (() => Promise<void>)[] | undefined = undefined, done?: () => void): void {
-    if (done) {
-      this._flushDoneFns.push(done);
-    }
-
-    if (this._toFlush.length == 0) {
-      // console.log("Flush is stopped", this._toFlush.length)
-      this._flushIsRunning = false;
-      this._flushDoneFns.forEach((fn) => fn());
-      this._flushDoneFns = [];
-      return;
-    }
-
-    if (!toFlush && this._toFlush.length == 1 && !this._flushIsRunning) {
-      this._flushIsRunning = true;
-      // console.log("Flush is started", this._toFlush.length)
-    } else if (!toFlush) {
-      // console.log("flush queue check but is running", this._toFlush.length)
-      return;
-    }
-
-    // console.log(">>>Msg:", this._toFlush.length)
-    const my = this._toFlush.shift();
-    my?.().finally(() => {
-      // console.log("<<<Msg:", this._toFlush.length)
-      this._flush(this._toFlush);
-    });
-  }
-}
+import { LogWriterStream } from "./log-writer-impl";
+import { TxtEnDecoder, Utf8EnDecoderSingleton } from "./txt-en-decoder";
+import { LevelHandlerSingleton } from "./log-level-impl";
 
 function getLen(value: unknown): LogValue {
   if (Array.isArray(value)) {
@@ -204,12 +59,38 @@ function toLogValue(lop: LogValue | Promise<LogValue>): LogValue | undefined {
   return lop as LogValue;
 }
 
+export class JSONFormatter implements LogFormatter {
+  private readonly _txtEnDe: TxtEnDecoder;
+  private readonly _space?: number;
+  constructor(txtEnde: TxtEnDecoder, space?: number) {
+    this._txtEnDe = txtEnde;
+    this._space = space;
+  }
+  format(attr: LogSerializable): Uint8Array {
+    return this._txtEnDe.encode(JSON.stringify(attr, removeSelfRef(), this._space) + "\n");
+  }
+}
+
+export class YAMLFormatter implements LogFormatter {
+  private readonly _txtEnDe: TxtEnDecoder;
+  private readonly _space?: number;
+  constructor(txtEnde: TxtEnDecoder, space?: number) {
+    this._txtEnDe = txtEnde;
+    this._space = space;
+  }
+  format(attr: LogSerializable): Uint8Array {
+    return this._txtEnDe.encode("---\n" + YAML.stringify(attr, removeSelfRef(), this._space) + "\n");
+  }
+}
+
 export interface LoggerImplParams {
   readonly out?: WritableStream<Uint8Array>;
   readonly logWriter?: LogWriterStream;
   readonly sys?: SysAbstraction;
   readonly withAttributes?: LogSerializable;
   readonly levelHandler?: LevelHandler;
+  readonly txtEnDe?: TxtEnDecoder;
+  readonly formatter?: LogFormatter;
 }
 
 export class LoggerImpl implements Logger {
@@ -218,6 +99,8 @@ export class LoggerImpl implements Logger {
   readonly _withAttributes: LogSerializable;
   readonly _logWriter: LogWriterStream;
   readonly _levelHandler: LevelHandler;
+  readonly _txtEnDe: TxtEnDecoder;
+  readonly _formatter: LogFormatter;
   // readonly _id: string = "logger-" + Math.random().toString(36)
 
   constructor(params?: LoggerImplParams) {
@@ -229,6 +112,17 @@ export class LoggerImpl implements Logger {
     } else {
       this._sys = params.sys;
     }
+    if (!params.txtEnDe) {
+      this._txtEnDe = Utf8EnDecoderSingleton();
+    } else {
+      this._txtEnDe = params.txtEnDe;
+    }
+    if (!params.formatter) {
+      this._formatter = new JSONFormatter(this._txtEnDe);
+    } else {
+      this._formatter = params.formatter;
+    }
+
     if (params.logWriter) {
       this._logWriter = params.logWriter;
     } else {
@@ -258,21 +152,26 @@ export class LoggerImpl implements Logger {
     if (params.levelHandler) {
       this._levelHandler = params.levelHandler;
     } else {
-      this._levelHandler = levelSingleton;
+      this._levelHandler = LevelHandlerSingleton();
     }
     // console.log("LoggerImpl", this._id, this._attributes, this._withAttributes)
   }
 
+  TxtEnDe(): TxtEnDecoder {
+    return this._txtEnDe;
+  }
+
   Attributes(): Record<string, unknown> {
-    return Array.from(Object.entries(this._attributes)).reduce(
-      (acc, [key, value]) => {
-        if (value instanceof LogValue) {
-          acc[key] = value.value();
-        }
-        return acc;
-      },
-      {} as Record<string, unknown>,
-    );
+    return JSON.parse(JSON.stringify(this._attributes, removeSelfRef()));
+    // return Array.from(Object.entries(this._attributes)).reduce(
+    //   (acc, [key, value]) => {
+    //     if (value instanceof LogValue) {
+    //       acc[key] = value.value();
+    //     }
+    //     return acc;
+    //   },
+    //   {} as Record<string, unknown>,
+    // );
   }
 
   SetExposeStack(enable?: boolean): Logger {
@@ -389,7 +288,7 @@ export class LoggerImpl implements Logger {
   }
 
   Any(key: string, value?: string | number | boolean | LogSerializable): Logger {
-    this._attributes[key] = logValue(value);
+    this._attributes[key] = logValue(value as LogValueArg);
     return this;
   }
   Dur(key: string, nsec: number): Logger {
@@ -426,7 +325,7 @@ export class LoggerImpl implements Logger {
     );
   }
 
-  _resetAttributes(fn: () => () => string): () => string {
+  _resetAttributes(fn: () => () => Uint8Array): () => Uint8Array {
     const ret = fn();
     Object.keys(this._attributes).forEach((key) => {
       // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
@@ -435,21 +334,6 @@ export class LoggerImpl implements Logger {
     Object.assign(this._attributes, this._withAttributes);
     return ret;
   }
-  _produceError(attr: LogSerializable, ...args: string[]): string {
-    attr["msg"] = logValue(args.join(" "));
-    const msg = attr["msg"].value();
-    if (typeof msg === "string" && !msg.trim().length) {
-      delete attr["msg"];
-    }
-    // if (toLogValue(attr["ts"])?.value() === "ETERNITY") {
-    //   // hacky but it works
-    //   this.Timestamp.call({
-    //     _sys: this._sys,
-    //     _attributes: attr,
-    //   });
-    // }
-    return JSON.stringify(attr, removeSelfRef());
-  }
 
   Msg(...args: string[]): AsError {
     const fnError = this._resetAttributes(() => {
@@ -457,17 +341,21 @@ export class LoggerImpl implements Logger {
         toLogValue(this._attributes["level"])?.value(),
         toLogValue(this._attributes["module"])?.value(),
       );
-      let fnRet = () => this._produceError({ ...this._attributes }, ...args);
+      this._attributes["msg"] = logValue(args.join(" "));
+      const msg = this._attributes["msg"].value();
+      if (typeof msg === "string" && !msg.trim().length) {
+        delete this._attributes["msg"];
+      }
+      let fnRet = () => this._formatter.format({ ...this._attributes });
       if (doWrite) {
-        const str = fnRet();
-        const encoded = encoder.encode(str + "\n");
+        const encoded = fnRet();
         this._logWriter.write(encoded);
-        fnRet = () => str;
+        fnRet = () => encoded;
       }
       return fnRet;
     });
     return {
-      AsError: () => new Error(fnError()),
+      AsError: () => new Error(this._txtEnDe.decode(fnError())),
     };
   }
 }
@@ -476,6 +364,10 @@ class WithLoggerBuilder implements WithLogger {
   readonly _li: LoggerImpl;
   constructor(li: LoggerImpl) {
     this._li = li;
+  }
+
+  TxtEnDe(): TxtEnDecoder {
+    return this._li.TxtEnDe();
   }
 
   Logger(): Logger {

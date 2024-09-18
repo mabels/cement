@@ -282,18 +282,13 @@ export class BuildURI {
 
 export type CoerceURI = string | URI | MutableURL | URL | BuildURI | NullOrUndef;
 
-export const protocols = new Map<string, boolean>([
-  ["http", true],
-  ["https", true],
-  ["ws", true],
-  ["wss", true],
-]);
+export const protocols = new Set<string>(["http", "https", "ws", "wss"]);
 
 // non mutable URL Implementation
 export class URI {
   static protocolHasHostpart(protocol: string): () => void {
     protocol = protocol.replace(/:$/, "");
-    protocols.set(protocol, true);
+    protocols.add(protocol);
     return () => {
       protocols.delete(protocol);
     };
