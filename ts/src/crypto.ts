@@ -90,6 +90,7 @@ export interface CryptoRuntime {
     extractable: boolean,
     keyUsages: CTKeyUsage[],
   ): Promise<CTCryptoKey>;
+  exportKey(format: CTKeyFormat, key: CTCryptoKey): Promise<CTJsonWebKey | ArrayBuffer>;
 
   //(format: "raw", key: ArrayBuffer, algo: string, extractable: boolean, usages: string[]) => Promise<CryptoKey>;
   decrypt(algo: { name: string; iv: Uint8Array; tagLength: number }, key: CTCryptoKey, data: Uint8Array): Promise<ArrayBuffer>;
@@ -113,6 +114,7 @@ function digestSHA256(data: Uint8Array): Promise<ArrayBuffer> {
 export function toCryptoRuntime(cryptoOpts: Partial<CryptoRuntime> = {}): CryptoRuntime {
   const runtime = {
     importKey: cryptoOpts.importKey || crypto.subtle.importKey.bind(crypto.subtle),
+    exportKey: cryptoOpts.exportKey || crypto.subtle.exportKey.bind(crypto.subtle),
     encrypt: cryptoOpts.encrypt || crypto.subtle.encrypt.bind(crypto.subtle),
     decrypt: cryptoOpts.decrypt || crypto.subtle.decrypt.bind(crypto.subtle),
     randomBytes: cryptoOpts.randomBytes || randomBytes,
