@@ -1,6 +1,6 @@
 import type { MarkWritable } from "ts-essentials";
-import { Time } from "./time";
-import { Logger } from "./logger";
+import { Time } from "./time.js";
+import { Logger } from "./logger.js";
 
 export type TraceCtx = {
   readonly spanId: string;

@@ -22,8 +22,11 @@ export function runtimeFn(): Runtime {
   const gt: any = globalThis;
   const isReactNative =
     isSet("navigator.product") && typeof gt["navigator"] === "object" && gt["navigator"]["product"] === "ReactNative";
-  const isNodeIsh = isSet("process.versions.node") && !isReactNative;
-  const isDeno = isSet("Deno") && !isReactNative;
+  let isNodeIsh = false;
+  if (!isSet("Deno")) {
+    isNodeIsh = isSet("process.versions.node") && !isReactNative;
+  }
+  const isDeno = isSet("Deno");
   return {
     isNodeIsh,
     isBrowser: !(isNodeIsh || isDeno) && !isReactNative,

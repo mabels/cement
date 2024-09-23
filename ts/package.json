@@ -24,16 +24,22 @@
       "types": "./node/index.d.ts",
       "require": "./node/index.cjs",
       "import": "./node/index.js"
+    },
+    "./deno": {
+      "types": "./node/index.d.ts",
+      "require": "./node/index.cjs",
+      "import": "./node/index.js"
     }
   },
   "scripts": {
     "clean": "rm -rf dist node_modules",
     "build": "pnpm run build:tsc; pnpm run build:js",
-    "build:tsc": "tsc --emitDeclarationOnly",
+    "build:tsc": "tsc",
     "build:js": "tsup --out-dir dist/pkg src/index.ts src/*/index.ts --sourcemap --format cjs,esm --dts --clean --external node:fs --external node:path",
     "test": "pnpm run test:js",
+    "test:deno": "deno run --allow-net --allow-write --allow-run  --allow-sys --allow-ffi  --allow-read --allow-env  ./node_modules/vitest/vitest.mjs --run --project node",
     "test:js": "vitest --run",
-    "pubdir": "pnpm run build; rm -rf pubdir ; mkdir -p pubdir; cp -pr ../.gitignore package.json ../README.md ../LICENSE pubdir/; cd dist/pkg ; cp -pr . ../../pubdir/",
+    "pubdir": "bash ./prepare-pubdir.sh",
     "presmoke": "pnpm run pubdir ; cd pubdir ; pnpm pack",
     "smoke": "cd smoke; rm -f package.json; pnpm init ; pnpm install -f ../pubdir/adviser-cement-*.tgz; npx tsx ./smoke.ts; deno run --allow-read ./smoke.ts",
     "lint": "eslint .",

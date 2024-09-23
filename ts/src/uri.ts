@@ -1,4 +1,4 @@
-import { exception2Result, Result } from "./result.ts";
+import { exception2Result, Result } from "./result.js";
 
 type NullOrUndef = null | undefined;
 

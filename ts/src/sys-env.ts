@@ -1,4 +1,4 @@
-import { ResolveOnce } from "./resolve-once.ts";
+import { ResolveOnce } from "./resolve-once.js";
 
 export interface EnvMap {
   get(key: string): string | undefined;

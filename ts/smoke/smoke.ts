@@ -1,6 +1,7 @@
 import { WebSysAbstraction } from "@adviser/cement/web";
 import { NodeSysAbstraction } from "@adviser/cement/node";
-import { LoggerImpl, Result, Option, Level } from "@adviser/cement";
+import { DenoSysAbstraction } from "@adviser/cement/deno";
+import { LoggerImpl, Result, Option, Level, runtimeFn } from "@adviser/cement";
 
 (async (): Promise<void> => {
   const none = Option.None();
@@ -14,8 +15,13 @@ import { LoggerImpl, Result, Option, Level } from "@adviser/cement";
     .Str("runtime", globalThis.Deno ? "Deno" : "Node")
     .Str("version", typeof process == "object" ? process?.version : globalThis.Deno.version.deno)
     .Logger();
-  {
+  const rt = runtimeFn();
+  if (rt.isNodeIsh) {
     const sys = NodeSysAbstraction();
+    log.Info().Str("id", sys.NextId()).Msg("Node-Alright");
+  }
+  if (rt.isDeno) {
+    const sys = DenoSysAbstraction();
     log.Info().Str("id", sys.NextId()).Msg("Node-Alright");
   }
   {

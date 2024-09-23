@@ -1,4 +1,4 @@
-import { array2stream, stream2array } from "./stream-map.ts";
+import { array2stream, stream2array } from "./stream-map.js";
 
 interface ReChunkResult {
   readonly rest: Uint8Array;

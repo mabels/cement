@@ -1,9 +1,23 @@
 {
   "name": "@adviser/cement",
-  "version": "0.0.0-dev",
-  "exports": "./src/index.ts",
+  "version": "0.0.0-dev-c",
+  "exports": {
+    ".": "./src/index.ts",
+    "./web": "./src/web/index.ts",
+    "./node": "./src/node/index.ts",
+    "./deno": "./src/node/index.ts"
+  },
   "license": "AFL-2.0",
   "publish": {
     "include": ["src/**/*.ts"]
+  },
+  "tasks": {
+    "test": {
+      "command": "pnpm run test:deno"
+    }
+  },
+  "lint": {
+    "include": ["src/"],
+    "exclude": ["dist/"]
   }
 }

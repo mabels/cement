@@ -1,4 +1,4 @@
-import { toCryptoRuntime } from "./crypto";
+import { toCryptoRuntime } from "./crypto.js";
 
 it("not extractable import -> export", async () => {
   const cp = toCryptoRuntime();

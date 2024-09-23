@@ -6,34 +6,46 @@ import {
   WrapperSysAbstraction,
   WrapperSysAbstractionParams,
 } from "../base-sys-abstraction.js";
-import { NodeFileService } from "./node-file-service.js";
 import { Env, envFactory } from "../sys-env.js";
 import { Utf8EnDecoderSingleton } from "../txt-en-decoder.js";
-// import * as process from 'node:process'
+import * as process from "node:process";
+import { DenoFileService } from "./deno-file-service.js";
 
-export class NodeExitServiceImpl implements ExitService {
+const Deno = (globalThis as unknown as { Deno: unknown }).Deno as {
+  addSignalListener(sig: string, hdl: () => void): void;
+  exit(code?: number): void;
+};
+
+export class DenoExitServiceImpl implements ExitService {
   constructor() {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    process.on("unhandledRejection", (reason: string, p: Promise<unknown>) => {
+    globalThis.addEventListener("unhandledrejection", (e) => {
+      e.preventDefault();
       this.exit(19);
     });
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    process.on("uncaughtException", (error: Error) => {
-      this.exit(18);
+    globalThis.addEventListener("error", () => {
+      this.exit(19);
     });
-    process.on("close", () => {
+    globalThis.addEventListener("uncaughtException", () => {
+      this.exit(19);
+    });
+
+    // process.on("close", () => {
+    //   this.exit(0);
+    // });
+    globalThis.addEventListener("unload", () => {
       this.exit(0);
+      // console.log('goodbye!');
     });
-    process.on("exit", () => {
-      this.exit(0);
-    });
-    process.on("SIGQUIT", () => {
+
+    // process.on("exit", () => {
+    // });
+    Deno.addSignalListener("SIGQUIT", () => {
       this.exit(3);
     });
-    process.on("SIGINT", () => {
+    Deno.addSignalListener("SIGINT", () => {
       this.exit(2);
     });
-    process.on("SIGTERM", () => {
+    Deno.addSignalListener("SIGTERM", () => {
       this.exit(9);
     });
   }
@@ -67,21 +79,21 @@ export class NodeExitServiceImpl implements ExitService {
     // console.log("ExitService: exit called", code)
     this._handleExit()
       .then(() => {
-        process.exit(code);
+        Deno.exit(code);
       })
       .catch((err) => {
         // eslint-disable-next-line no-console
         console.error("ExitService: failed to handle exit", err);
-        process.exit(code);
+        Deno.exit(code);
       });
   }
 }
 
-export class NodeSystemService implements SystemService {
+export class DenoSystemService implements SystemService {
   static readonly _exitHandlers: ExitHandler[] = [];
-  readonly _exitService: ExitService = new NodeExitServiceImpl();
+  readonly _exitService: ExitService = new DenoExitServiceImpl();
   constructor() {
-    this._exitService.injectExitHandlers(NodeSystemService._exitHandlers);
+    this._exitService.injectExitHandlers(DenoSystemService._exitHandlers);
   }
 
   Env(): Env {
@@ -94,11 +106,11 @@ export class NodeSystemService implements SystemService {
 
   OnExit(hdl: VoidFunc): VoidFunc {
     const id = crypto.randomUUID();
-    NodeSystemService._exitHandlers.push({ hdl, id });
+    DenoSystemService._exitHandlers.push({ hdl, id });
     return () => {
-      const idx = NodeSystemService._exitHandlers.findIndex((h) => h.id === id);
+      const idx = DenoSystemService._exitHandlers.findIndex((h) => h.id === id);
       if (idx >= 0) {
-        NodeSystemService._exitHandlers.splice(idx, 1);
+        DenoSystemService._exitHandlers.splice(idx, 1);
       }
     };
   }
@@ -109,12 +121,12 @@ export class NodeSystemService implements SystemService {
 }
 
 let my: BaseSysAbstraction | undefined = undefined;
-export function NodeSysAbstraction(param?: WrapperSysAbstractionParams): SysAbstraction {
+export function DenoSysAbstraction(param?: WrapperSysAbstractionParams): SysAbstraction {
   if (!my) {
     my = new BaseSysAbstraction({
       TxtEnDecoder: param?.TxtEnDecoder || Utf8EnDecoderSingleton(),
-      FileSystem: new NodeFileService(),
-      SystemService: new NodeSystemService(),
+      FileSystem: new DenoFileService(),
+      SystemService: new DenoSystemService(),
     });
   }
   return new WrapperSysAbstraction(my, param);

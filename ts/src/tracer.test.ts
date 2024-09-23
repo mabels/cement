@@ -1,8 +1,8 @@
-import { Time } from "./time";
-import { WebSysAbstraction } from "./web";
-import { TimeMode } from "./sys-abstraction";
-import { TraceNode } from "./tracer";
-import { MockLogger } from "./test/mock-logger";
+import { Time } from "./time.js";
+import { WebSysAbstraction } from "./web/index.js";
+import { TimeMode } from "./sys-abstraction.js";
+import { TraceNode } from "./tracer.js";
+import { MockLogger } from "./test/mock-logger.js";
 
 describe("trace", () => {
   let time: Time;

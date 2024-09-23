@@ -18,7 +18,7 @@ export interface FileService {
   dirname(fname: string): string;
   basename(fname: string): string;
 
-  nodeImport(fname: string): string;
+  // nodeImport(fname: string): string;
 
   isAbsolute(fname: string): boolean;
 }

@@ -1,9 +1,28 @@
+import { runtimeFn } from "../runtime.js";
+
+const gts = globalThis as unknown as {
+  Deno: {
+    args: string[];
+    pid: number;
+    kill(pid: number, signal: string): void;
+  };
+  process: {
+    argv: string[];
+    pid: number;
+    kill(pid: number, signal: string): void;
+  };
+};
+
 (async (): Promise<void> => {
-  const sa = await import("../node/node-sys-abstraction");
+  const sa = await import(runtimeFn().isDeno ? "../node/deno-sys-abstraction.ts" : "../node/node-sys-abstraction.ts");
 
-  const my = sa.NodeSysAbstraction();
+  const my = runtimeFn().isDeno ? sa.DenoSysAbstraction() : sa.NodeSysAbstraction();
 
-  const larg = process.argv[process.argv.length - 1];
+  const process = runtimeFn().isDeno ? gts.Deno : gts.process;
+
+  const rargs = (runtimeFn().isDeno ? gts.Deno?.args : gts.process?.argv) || [];
+
+  const larg = rargs[rargs.length - 1];
   // eslint-disable-next-line no-console
   console.log(
     JSON.stringify({

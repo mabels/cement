@@ -1,13 +1,20 @@
-import path from "node:path";
-import fs from "node:fs";
-import process from "node:process";
 import { FileService, NamedWritableStream } from "../file-service.js";
 import { TxtEnDecoder, Utf8EnDecoderSingleton } from "../txt-en-decoder.js";
+import * as path from "node:path";
 
-export class NodeFileService implements FileService {
+const Deno = (globalThis as unknown as { Deno: unknown }).Deno as {
+  cwd(): string;
+  readFile(fname: string): Promise<Uint8Array>;
+  mkdir(base: string, options: { recursive: boolean }): Promise<void>;
+  open(fname: string, options: { write: boolean; create: boolean; truncate: boolean }): Promise<WritableStream>;
+};
+
+export class DenoFileService implements FileService {
   readonly baseDir: string;
-  constructor(baseDir: string = process.cwd()) {
+  readonly txtEnde: TxtEnDecoder;
+  constructor(baseDir: string = Deno.cwd(), txtEnde: TxtEnDecoder = Utf8EnDecoderSingleton()) {
     this.baseDir = this.abs(baseDir);
+    this.txtEnde = txtEnde;
   }
 
   // nodeImport(fname: string): string {
@@ -19,8 +26,8 @@ export class NodeFileService implements FileService {
   //   }
   // }
 
-  readFileString(fname: string): Promise<string> {
-    return fs.promises.readFile(fname, { encoding: "utf-8" });
+  async readFileString(fname: string): Promise<string> {
+    return this.txtEnde.decode(await Deno.readFile(fname));
   }
 
   dirname(fname: string): string {
@@ -37,7 +44,7 @@ export class NodeFileService implements FileService {
   relative(from: string, to?: string): string {
     if (to === undefined) {
       to = from;
-      from = process.cwd();
+      from = Deno.cwd();
     }
     const ret = path.relative(from, to);
     // console.log('relative:'+ from + " -> " + to +   "= " + ret);
@@ -48,7 +55,7 @@ export class NodeFileService implements FileService {
     if (path.isAbsolute(fname)) {
       return fname;
     } else {
-      const cwd = process.cwd();
+      const cwd = Deno.cwd();
       return path.resolve(cwd, fname);
     }
   }
@@ -57,7 +64,7 @@ export class NodeFileService implements FileService {
     return path.isAbsolute(fname);
   }
 
-  async writeFileString(fname: string, content: string, ende: TxtEnDecoder = Utf8EnDecoderSingleton()): Promise<void> {
+  async writeFileString(fname: string, content: string, ende = Utf8EnDecoderSingleton()): Promise<void> {
     const o = await this.create(fname);
     const wr = o.stream.getWriter();
     await wr.write(ende.encode(content));
@@ -71,21 +78,15 @@ export class NodeFileService implements FileService {
     }
 
     const base = path.dirname(oName);
-    await fs.promises.mkdir(base, { recursive: true });
-    const out = fs.createWriteStream(oName);
+    await Deno.mkdir(base, { recursive: true });
+    const out = await Deno.open(oName, {
+      write: true,
+      create: true,
+      truncate: true,
+    });
     return {
       name: oName,
-      stream: new WritableStream<Uint8Array>({
-        write(chunk): void {
-          out.write(chunk);
-        },
-        close(): void {
-          out.close();
-        },
-        abort(): void {
-          throw new Error("not implemented");
-        },
-      }),
+      stream: out,
     };
   }
 }

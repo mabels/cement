@@ -1,4 +1,4 @@
-import { Mock } from "vitest";
+import type { Mock } from "vitest";
 
 interface mockValue {
   done: boolean;

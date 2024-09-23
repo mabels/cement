@@ -1,7 +1,7 @@
-import { FileService } from "./file-service.ts";
-import { TimeMode, RandomMode, IDMode, SystemService, VoidFunc, SysAbstraction } from "./sys-abstraction.ts";
-import { Time } from "./time.ts";
-import { TxtEnDecoder } from "./txt-en-decoder.ts";
+import { FileService } from "./file-service.js";
+import { TimeMode, RandomMode, IDMode, SystemService, VoidFunc, SysAbstraction } from "./sys-abstraction.js";
+import { Time } from "./time.js";
+import { TxtEnDecoder } from "./txt-en-decoder.js";
 
 export class SysTime extends Time {
   Now(): Date {

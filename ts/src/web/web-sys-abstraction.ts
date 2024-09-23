@@ -1,8 +1,8 @@
-import { BaseSysAbstraction, WrapperSysAbstraction, WrapperSysAbstractionParams } from "../base-sys-abstraction.ts";
-import { FileService, NamedWritableStream } from "../file-service.ts";
-import { SysAbstraction, SystemService, VoidFunc } from "../sys-abstraction.ts";
-import { Env, envFactory } from "../sys-env.ts";
-import { Utf8EnDecoderSingleton } from "../txt-en-decoder.ts";
+import { BaseSysAbstraction, WrapperSysAbstraction, WrapperSysAbstractionParams } from "../base-sys-abstraction.js";
+import { FileService, NamedWritableStream } from "../file-service.js";
+import { SysAbstraction, SystemService, VoidFunc } from "../sys-abstraction.js";
+import { Env, envFactory } from "../sys-env.js";
+import { Utf8EnDecoderSingleton } from "../txt-en-decoder.js";
 
 class WebFileService implements FileService {
   get baseDir(): string {

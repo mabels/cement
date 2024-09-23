@@ -1,4 +1,4 @@
-import { stream2string } from "./stream2string";
+import { stream2string } from "./stream2string.js";
 
 it("stream2string", async () => {
   expect(

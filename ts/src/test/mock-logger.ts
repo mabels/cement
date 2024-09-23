@@ -1,8 +1,8 @@
-import { LevelHandlerImpl } from "../log-level-impl.ts";
-import { Logger } from "../logger.ts";
-import { LoggerImpl } from "../logger-impl.ts";
-import { SysAbstraction } from "../sys-abstraction.ts";
-import { LogCollector } from "./log-write-stream.ts";
+import { LevelHandlerImpl } from "../log-level-impl.js";
+import { Logger } from "../logger.js";
+import { LoggerImpl } from "../logger-impl.js";
+import { SysAbstraction } from "../sys-abstraction.js";
+import { LogCollector } from "./log-write-stream.js";
 
 export interface MockLoggerReturn {
   readonly logger: Logger;

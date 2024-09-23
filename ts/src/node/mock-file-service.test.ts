@@ -2,10 +2,10 @@ import { runtimeFn } from "@adviser/cement";
 import { MockFileService } from "@adviser/cement/node";
 
 describe("MockFileService", () => {
-  if (runtimeFn().isNodeIsh) {
+  if (runtimeFn().isNodeIsh || runtimeFn().isDeno) {
     let MFS: MockFileService;
     beforeAll(async () => {
-      const { MockFileService } = await import("./mock-file-service");
+      const { MockFileService } = await import("./mock-file-service.js");
       MFS = new MockFileService();
     });
     it("writeFileString", async () => {

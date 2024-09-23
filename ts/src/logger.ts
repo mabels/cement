@@ -1,7 +1,7 @@
-import { bin2string } from "./bin2text.ts";
-import { Result } from "./result.ts";
-import { TxtEnDecoder } from "./txt-en-decoder.ts";
-import { CoerceURI } from "./uri.ts";
+import { bin2string } from "./bin2text.js";
+import { Result } from "./result.js";
+import { TxtEnDecoder } from "./txt-en-decoder.js";
+import { CoerceURI } from "./uri.js";
 
 export enum Level {
   WARN = "warn",

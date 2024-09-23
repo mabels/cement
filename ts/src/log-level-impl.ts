@@ -1,4 +1,4 @@
-import { LevelHandler, Level } from "./logger.ts";
+import { LevelHandler, Level } from "./logger.js";
 
 export class LevelHandlerImpl implements LevelHandler {
   readonly _globalLevels: Set<Level> = new Set<Level>([Level.INFO, Level.ERROR, Level.WARN]);

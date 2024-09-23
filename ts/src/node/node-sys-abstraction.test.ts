@@ -1,4 +1,4 @@
-import { type ExecException, type exec } from "node:child_process";
+import type { ExecException, exec } from "node:child_process";
 import { runtimeFn } from "@adviser/cement";
 
 function exitHandler(errCode: number, larg: string, done: () => void) {
@@ -41,39 +41,46 @@ function exitHandler(errCode: number, larg: string, done: () => void) {
 }
 
 describe("node_sys", () => {
-  if (runtimeFn().isNodeIsh) {
+  if (runtimeFn().isNodeIsh || runtimeFn().isDeno) {
     let fnExec: typeof exec;
+    let execHandler = "tsx src/test/test-exit-handler.ts";
     beforeAll(async () => {
-      const { exec } = await import("child_process");
-      fnExec = exec;
+      if (runtimeFn().isDeno) {
+        const { exec } = await import("child_process");
+        fnExec = exec;
+        execHandler = "deno run --allow-net --allow-read --allow-run --unstable-sloppy-imports src/test/test-exit-handler.ts";
+      } else {
+        const { exec } = await import("child_process");
+        fnExec = exec;
+      }
     });
     it("just-exit", () => {
       return new Promise<void>((done) => {
-        fnExec("tsx src/test/test-exit-handler.ts exit24", exitHandler(24, "exit24", done));
+        fnExec(`${execHandler}  exit24`, exitHandler(24, "exit24", done));
       });
     });
 
     it("throw", () => {
       return new Promise<void>((done) => {
-        fnExec("tsx src/test/test-exit-handler.ts throw", exitHandler(19, "throw", done));
+        fnExec(`${execHandler}  throw`, exitHandler(19, "throw", done));
       });
     });
 
     it("via sigint", () => {
       return new Promise<void>((done) => {
-        fnExec("tsx src/test/test-exit-handler.ts sigint", exitHandler(2, "sigint", done));
+        fnExec(`${execHandler}  sigint`, exitHandler(2, "sigint", done));
       });
     });
 
     it("via sigterm", () => {
       return new Promise<void>((done) => {
-        fnExec("tsx src/test/test-exit-handler.ts sigterm", exitHandler(9, "sigterm", done));
+        fnExec(`${execHandler}  sigterm`, exitHandler(9, "sigterm", done));
       });
     });
 
     it("via sigquit", () => {
       return new Promise<void>((done) => {
-        fnExec("tsx src/test/test-exit-handler.ts sigquit", exitHandler(3, "sigquit", done));
+        fnExec(`${execHandler}  sigquit`, exitHandler(3, "sigquit", done));
       });
     });
   } else {

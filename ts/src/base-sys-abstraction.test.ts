@@ -1,11 +1,15 @@
 import { runtimeFn, IDMode, TimeMode, RandomMode } from "@adviser/cement";
-import { NodeSysAbstraction } from "@adviser/cement/node";
+import { DenoSysAbstraction, NodeSysAbstraction } from "@adviser/cement/node";
 import { WebSysAbstraction } from "@adviser/cement/web";
 
 const abstractions = [];
 
 if (runtimeFn().isNodeIsh) {
   abstractions.push({ name: "NodeSysAbstraction", fn: NodeSysAbstraction });
+}
+
+if (runtimeFn().isDeno) {
+  abstractions.push({ name: "DenoSysAbstraction", fn: DenoSysAbstraction });
 }
 
 if (runtimeFn().isBrowser) {

@@ -17,16 +17,16 @@ import {
   LevelHandler,
   LogFormatter,
   LogValueArg,
-} from "./logger.ts";
-import { WebSysAbstraction } from "./web/web-sys-abstraction.ts";
-import { SysAbstraction } from "./sys-abstraction.ts";
-import { Result } from "./result.ts";
-import { CoerceURI, URI } from "./uri.ts";
-import { runtimeFn } from "./runtime.ts";
-import { ConsoleWriterStream } from "./utils/console-write-stream.ts";
-import { LogWriterStream } from "./log-writer-impl.ts";
-import { TxtEnDecoder, Utf8EnDecoderSingleton } from "./txt-en-decoder.ts";
-import { LevelHandlerSingleton } from "./log-level-impl.ts";
+} from "./logger.js";
+import { WebSysAbstraction } from "./web/web-sys-abstraction.js";
+import { SysAbstraction } from "./sys-abstraction.js";
+import { Result } from "./result.js";
+import { CoerceURI, URI } from "./uri.js";
+import { runtimeFn } from "./runtime.js";
+import { ConsoleWriterStream } from "./utils/console-write-stream.js";
+import { LogWriterStream } from "./log-writer-impl.js";
+import { TxtEnDecoder, Utf8EnDecoderSingleton } from "./txt-en-decoder.js";
+import { LevelHandlerSingleton } from "./log-level-impl.js";
 
 function getLen(value: unknown): LogValue {
   if (Array.isArray(value)) {
@@ -132,7 +132,7 @@ export class LoggerImpl implements Logger {
         if (rt.isBrowser) {
           stream = new ConsoleWriterStream();
         } else {
-          if (rt.isNodeIsh || rt.isReactNative) {
+          if (rt.isNodeIsh || rt.isReactNative || rt.isDeno) {
             stream = this._sys.Stdout();
           } else {
             throw new Error("No output defined for runtime");

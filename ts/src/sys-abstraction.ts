@@ -1,6 +1,6 @@
-import { FileService } from "./file-service.ts";
-import { Env } from "./sys-env.ts";
-import { Time } from "./time.ts";
+import { FileService } from "./file-service.js";
+import { Env } from "./sys-env.js";
+import { Time } from "./time.js";
 
 export enum TimeMode {
   REAL = "real",
