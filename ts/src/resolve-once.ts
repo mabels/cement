@@ -11,10 +11,10 @@ export class ResolveSeq<T, C = void> {
   constructor(ctx?: C) {
     this.ctx = ctx as C;
   }
-  reset() {
+  reset(): void {
     /* noop */
   }
-  async _step(item?: ResolveSeqItem<T, C> | undefined) {
+  async _step(item?: ResolveSeqItem<T, C> | undefined): Promise<void> {
     if (!item) {
       // done
       return;
@@ -53,11 +53,11 @@ export class ResolveOnce<T, CTX = void> {
     this.ctx = ctx as CTX;
   }
 
-  get ready() {
+  get ready(): boolean {
     return this._onceDone;
   }
 
-  reset() {
+  reset(): void {
     this._onceDone = false;
     this._onceOk = false;
     this._onceValue = undefined;
@@ -88,7 +88,7 @@ export class ResolveOnce<T, CTX = void> {
     const future = new Future<T>();
     this._onceFutures.push(future);
     if (this._onceFutures.length === 1) {
-      const okFn = (value: T) => {
+      const okFn = (value: T): void => {
         this._onceValue = value;
         this._onceOk = true;
         this._onceDone = true;
@@ -98,7 +98,7 @@ export class ResolveOnce<T, CTX = void> {
         }
         this._onceFutures.length = 0;
       };
-      const catchFn = (e: Error) => {
+      const catchFn = (e: Error): void => {
         this._onceError = e as Error;
         this._onceOk = false;
         this._onceValue = undefined;
@@ -154,13 +154,13 @@ export class Keyed<T extends { reset: () => void }, K = string> {
     return keyed;
   }
 
-  unget(key: K) {
+  unget(key: K): void {
     const keyed = this._map.get(key);
     keyed?.reset();
     this._map.delete(key);
   }
 
-  reset() {
+  reset(): void {
     this._map.forEach((keyed) => keyed.reset());
     this._map.clear();
   }

@@ -5,7 +5,7 @@ export interface StreamMap<T, U> {
 export function streamMap<T, U>(s: ReadableStream<T>, sm: StreamMap<T, U>): ReadableStream<U> {
   const state = { reader: s.getReader(), streamMap: sm, idx: 0 };
   return new ReadableStream<U>({
-    async pull(controller) {
+    async pull(controller): Promise<void> {
       const { done, value } = await state.reader.read();
       if (done) {
         if (state.streamMap.Close) {
@@ -42,7 +42,7 @@ export async function devnull<T>(a: ReadableStream<T>): Promise<number> {
 export function array2stream<T>(a: T[]): ReadableStream<T> {
   let i = 0;
   return new ReadableStream<T>({
-    pull(controller) {
+    pull(controller): void {
       if (i >= a.length) {
         controller.close();
         return;

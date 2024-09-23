@@ -128,7 +128,7 @@ const decoder = new TextDecoder();
 export class BaseSysAbstraction {
   readonly _time = new SysTime();
   readonly _stdout = new WritableStream({
-    write(chunk) {
+    write(chunk): Promise<void> {
       return new Promise((resolve) => {
         const decoded = decoder.decode(chunk);
         // eslint-disable-next-line no-console
@@ -138,7 +138,7 @@ export class BaseSysAbstraction {
     },
   });
   readonly _stderr = new WritableStream({
-    write(chunk) {
+    write(chunk): Promise<void> {
       return new Promise((resolve) => {
         const decoded = decoder.decode(chunk);
         // eslint-disable-next-line no-console

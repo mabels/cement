@@ -190,12 +190,12 @@ export class BuildURI {
     return from((url) => new BuildURI(url), strURLUri, defaultProtocol);
   }
 
-  port(p: string) {
+  port(p: string): BuildURI {
     this._url.port = p;
     return this;
   }
 
-  hostname(h: string) {
+  hostname(h: string): BuildURI {
     this._url.hostname = h;
     return this;
   }
@@ -220,7 +220,7 @@ export class BuildURI {
   //   return this;
   // }
 
-  protocol(p: string) {
+  protocol(p: string): BuildURI {
     this._url.protocol = p;
     // if (!p.endsWith(":")) {
     //   p = `${p}:`;
@@ -231,7 +231,7 @@ export class BuildURI {
     return this;
   }
 
-  pathname(p: string) {
+  pathname(p: string): BuildURI {
     // const myp = this.URI().pathname;
     // const mySrc = this._url.toString();
     // const myDst = mySrc.replace(new RegExp(`^${this._url.protocol}//${myp}`), `${this._url.protocol}//${p}`);
@@ -250,21 +250,29 @@ export class BuildURI {
   //   return this;
   // }
 
-  delParam(key: string) {
+  delParam(key: string): BuildURI {
     this._url.searchParams.delete(key);
     return this;
   }
 
-  defParam(key: string, str: string) {
+  defParam(key: string, str: string): BuildURI {
     if (!this._url.searchParams.has(key)) {
       this._url.searchParams.set(key, str);
     }
     return this;
   }
 
-  setParam(key: string, str: string) {
+  setParam(key: string, str: string): BuildURI {
     this._url.searchParams.set(key, str);
     return this;
+  }
+
+  hasParam(key: string): boolean {
+    return this._url.searchParams.has(key);
+  }
+
+  getParam(key: string): string | undefined {
+    return falsy2undef(this._url.searchParams.get(key));
   }
 
   toString(): string {

@@ -66,7 +66,7 @@ export function rebuffer(a: ReadableStream<Uint8Array>, chunkSize: number): Read
     chunkSize,
   };
   return new ReadableStream<Uint8Array>({
-    async pull(controller) {
+    async pull(controller): Promise<void> {
       return new Promise<void>((resolve) => {
         pump(state, controller, resolve);
       });

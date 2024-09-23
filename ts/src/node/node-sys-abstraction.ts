@@ -7,7 +7,7 @@ import {
   WrapperSysAbstractionParams,
 } from "../base-sys-abstraction";
 import { NodeFileService } from "./node-file-service";
-import { envFactory } from "../sys-env";
+import { Env, envFactory } from "../sys-env";
 
 export class ExitServiceImpl implements ExitService {
   constructor() {
@@ -82,11 +82,11 @@ export class NodeSystemService implements SystemService {
     this._exitService.injectExitHandlers(NodeSystemService._exitHandlers);
   }
 
-  Env() {
+  Env(): Env {
     return envFactory();
   }
 
-  Args() {
+  Args(): string[] {
     return process.argv;
   }
 

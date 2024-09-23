@@ -1,7 +1,7 @@
 import { BaseSysAbstraction, WrapperSysAbstraction, WrapperSysAbstractionParams } from "../base-sys-abstraction";
 import { FileService, NamedWritableStream } from "../file-service";
 import { SysAbstraction, SystemService, VoidFunc } from "../sys-abstraction";
-import { envFactory } from "../sys-env";
+import { Env, envFactory } from "../sys-env";
 
 class WebFileService implements FileService {
   get baseDir(): string {
@@ -50,7 +50,7 @@ class WebFileService implements FileService {
 }
 
 class WebSystemService implements SystemService {
-  Env() {
+  Env(): Env {
     return envFactory();
   }
   Args(): string[] {

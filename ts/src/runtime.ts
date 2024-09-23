@@ -18,7 +18,10 @@ function isSet(value: string, ref: any = globalThis): boolean {
 }
 
 export function runtimeFn(): Runtime {
-  const isReactNative = isSet("navigator.product") && globalThis.navigator.product === "ReactNative";
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const gt: any = globalThis;
+  const isReactNative =
+    isSet("navigator.product") && typeof gt["navigator"] === "object" && gt["navigator"]["product"] === "ReactNative";
   const isNodeIsh = isSet("process.versions.node") && !isReactNative;
   const isDeno = isSet("Deno") && !isReactNative;
   return {

@@ -16,7 +16,7 @@ it("array2stream", async () => {
 it("stream2array", async () => {
   const as = await utils.stream2array(
     new ReadableStream({
-      start(controller) {
+      start(controller): void {
         controller.enqueue(1);
         controller.enqueue(2);
         controller.enqueue(3);

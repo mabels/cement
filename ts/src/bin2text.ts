@@ -1,4 +1,4 @@
-export function bin2text(hex: ArrayBufferView, lineFn: (line: string) => void, size = 0) {
+export function bin2text(hex: ArrayBufferView, lineFn: (line: string) => void, size = 0): void {
   const arr = new Uint8Array(hex.buffer, hex.byteOffset, hex.byteLength);
   let cutted = "  ";
   if (size == 0) {

@@ -99,7 +99,7 @@ export interface CryptoRuntime {
   randomBytes(size: number): Uint8Array;
 }
 
-function randomBytes(size: number) {
+function randomBytes(size: number): Uint8Array {
   const bytes = new Uint8Array(size);
   if (size > 0) {
     crypto.getRandomValues(bytes);

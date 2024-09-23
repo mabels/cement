@@ -30,16 +30,16 @@ it("ResultErr", () => {
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 class xResult {}
 class fakeResult {
-  is_ok() {
+  is_ok(): boolean {
     return true;
   }
-  is_err() {
+  is_err(): boolean {
     return false;
   }
-  unwrap() {
+  unwrap(): number {
     return 1;
   }
-  unwrap_err() {
+  unwrap_err(): Error {
     throw new Error("Result is Ok");
   }
 }

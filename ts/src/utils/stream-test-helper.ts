@@ -13,11 +13,11 @@ export interface streamingTestState {
   CollectorFn: Mock<(mv: mockValue) => void>;
 }
 
-export async function receiveFromStream(reb: ReadableStream<Uint8Array>, state: streamingTestState) {
+export async function receiveFromStream(reb: ReadableStream<Uint8Array>, state: streamingTestState): Promise<void> {
   return new Promise<void>((resolve) => {
     let reBufferCalls = 0;
     const reader = reb.getReader();
-    function pump() {
+    function pump(): void {
       reader.read().then(({ done, value }) => {
         state.CollectorFn({ done, value, fillCalls: state.fillCalls, reBufferCalls });
         reBufferCalls++;
@@ -32,10 +32,10 @@ export async function receiveFromStream(reb: ReadableStream<Uint8Array>, state: 
   });
 }
 
-export async function sendToStream(reb: WritableStream<Uint8Array>, state: streamingTestState) {
+export async function sendToStream(reb: WritableStream<Uint8Array>, state: streamingTestState): Promise<void> {
   return new Promise<void>((resolve) => {
     const writer = reb.getWriter();
-    function pump(i: number) {
+    function pump(i: number): void {
       if (i >= state.sendChunks) {
         writer.close();
         resolve();

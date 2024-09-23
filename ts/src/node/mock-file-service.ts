@@ -30,13 +30,13 @@ export class MockFileService extends NodeFileService {
     return {
       name: oName,
       stream: new WritableStream<Uint8Array>({
-        write(chunk) {
+        write(chunk): void {
           fc.content = fc.content + decoder.decode(chunk);
         },
-        close() {
+        close(): void {
           // do nothing
         },
-        abort() {
+        abort(): void {
           throw new Error("not implemented");
         },
       }),

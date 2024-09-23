@@ -2,7 +2,7 @@ import { WebSysAbstraction } from "@adviser/cement/web";
 import { NodeSysAbstraction } from "@adviser/cement/node";
 import { LoggerImpl, Result, Option, Level } from "@adviser/cement";
 
-(async () => {
+(async (): Promise<void> => {
   const none = Option.None();
   const result = Result.Ok(none);
   if (!result.isOk()) {

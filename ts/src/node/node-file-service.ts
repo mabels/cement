@@ -75,13 +75,13 @@ export class NodeFileService implements FileService {
     return {
       name: oName,
       stream: new WritableStream<Uint8Array>({
-        write(chunk) {
+        write(chunk): void {
           out.write(chunk);
         },
-        close() {
+        close(): void {
           out.close();
         },
-        abort() {
+        abort(): void {
           throw new Error("not implemented");
         },
       }),

@@ -1,4 +1,4 @@
-(async () => {
+(async (): Promise<void> => {
   const sa = await import("../node/node-sys-abstraction");
 
   const my = sa.NodeSysAbstraction();

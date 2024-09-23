@@ -12,7 +12,7 @@ describe("resolve-once", () => {
       });
     });
     const start = Date.now();
-    const fn = () => once.once(async () => reallyOnce());
+    const fn = (): Promise<number> => once.once(async () => reallyOnce());
     expect(reallyOnce).toHaveBeenCalledTimes(0);
     expect(await fn()).toBe(42);
     expect(reallyOnce).toHaveBeenCalledTimes(1);
@@ -33,7 +33,7 @@ describe("resolve-once", () => {
         }, 100);
       });
     });
-    const fn = () => once.once(async () => reallyOnce());
+    const fn = (): Promise<number> => once.once(async () => reallyOnce());
     const start = Date.now();
     expect(
       await Promise.all(
@@ -57,7 +57,7 @@ describe("resolve-once", () => {
         }, 100);
       });
     });
-    const fn = () => once.once(async () => reallyOnce());
+    const fn = (): Promise<void> => once.once(async () => reallyOnce());
     const start = Date.now();
     expect(
       await Promise.all(
@@ -81,7 +81,7 @@ describe("resolve-once", () => {
         }, 100);
       });
     });
-    const fn = () => once.once(async () => reallyOnce());
+    const fn = (): Promise<number> => once.once(async () => reallyOnce());
     const start = Date.now();
     await new Promise((rs) => {
       for (let i = 0; i < 100; i++) {
@@ -113,7 +113,7 @@ describe("resolve-once", () => {
       });
     });
     let order = 0;
-    const fn = async () => {
+    const fn = async (): Promise<string> => {
       const o = order++;
       const ret = await once.once(async () => reallyOnce());
       return `${o}:${ret}`;
@@ -250,7 +250,7 @@ describe("resolve-once", () => {
     expect(b_orderFn).toHaveBeenCalledWith("b");
   });
 
-  function shuffle<T>(array: T[]) {
+  function shuffle<T>(array: T[]): T[] {
     let currentIndex = array.length;
 
     // While there remain elements to shuffle...
@@ -290,7 +290,7 @@ describe("resolve-once", () => {
   it("with promise", async () => {
     const once = new ResolveOnce<number>();
     let val = 42;
-    const fn = async () => {
+    const fn = async (): Promise<number> => {
       return new Promise<number>((resolve) => {
         setTimeout(() => {
           resolve(val++);
@@ -304,7 +304,7 @@ describe("resolve-once", () => {
   it("without promise", () => {
     const once = new ResolveOnce<number>();
     let val = 42;
-    const fn = () => val++;
+    const fn = (): number => val++;
     expect(once.once(fn)).toBe(42);
     expect(once.once(fn)).toBe(42);
   });
@@ -312,7 +312,7 @@ describe("resolve-once", () => {
   it("without promise but exception", () => {
     const once = new ResolveOnce<number>();
     let val = 42;
-    const fn = () => {
+    const fn = (): Promise<number> => {
       throw new Error(`nope ${val++}`);
     };
     expect(() => once.once(fn)).toThrowError("nope 42");

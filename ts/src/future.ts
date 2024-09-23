@@ -18,10 +18,10 @@ export class Future<T> {
     return this.#promise;
   }
 
-  resolve(value: T) {
+  resolve(value: T): void {
     this.#resolveFn(value);
   }
-  reject(reason: unknown) {
+  reject(reason: unknown): void {
     this.#rejectFn(reason);
   }
 }

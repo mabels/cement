@@ -545,7 +545,7 @@ describe("TestLogger", () => {
   it("ref", async () => {
     const log = logger;
     let value = 4711;
-    const fn = () => "" + value++;
+    const fn = (): string => "" + value++;
     log.Info().Ref("1", { toString: fn }).Msg("1");
     log.Info().Ref("2", { toString: fn }).Msg("2");
     log.Info().Ref("3", fn).Msg("3");

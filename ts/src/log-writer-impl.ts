@@ -6,8 +6,8 @@ export class LogWriterStream {
     this._out = out;
   }
 
-  write(encoded: Uint8Array) {
-    const my = async () => {
+  write(encoded: Uint8Array): void {
+    const my = async (): Promise<void> => {
       // const val = Math.random();
       // console.log(">>>My:", val)
       try {

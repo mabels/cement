@@ -2,7 +2,7 @@ import { type ExecException, type exec } from "node:child_process";
 import { runtimeFn } from "@adviser/cement";
 
 function exitHandler(errCode: number, larg: string, done: () => void) {
-  return (err: ExecException | null, stdout: string | Buffer, stderr: string | Buffer) => {
+  return (err: ExecException | null, stdout: string | Buffer, stderr: string | Buffer): void => {
     if (err) {
       expect(err.code).toBe(errCode);
     }

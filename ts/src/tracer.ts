@@ -31,11 +31,11 @@ export class Metric<T> {
     this.path = path;
   }
 
-  set(value: T) {
+  set(value: T): void {
     this.value = value;
   }
 
-  add<R extends number | ArrayLike<T>>(value: R) {
+  add<R extends number | ArrayLike<T>>(value: R): void {
     if (typeof value === "number") {
       if (this.value === undefined) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any

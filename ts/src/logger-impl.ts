@@ -352,11 +352,11 @@ export class LoggerImpl implements Logger {
       if (typeof msg === "string" && !msg.trim().length) {
         delete this._attributes["msg"];
       }
-      let fnRet = () => this._formatter.format({ ...this._attributes });
+      let fnRet = (): Uint8Array => this._formatter.format({ ...this._attributes });
       if (doWrite) {
         const encoded = fnRet();
         this._logWriter.write(encoded);
-        fnRet = () => encoded;
+        fnRet = (): Uint8Array => encoded;
       }
       return fnRet;
     });

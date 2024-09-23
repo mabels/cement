@@ -77,7 +77,7 @@ export class LogCollector implements WritableStream<Uint8Array> {
     }
     const jsonNlStr = this._txtEnDe.decode(
       new Uint8Array(
-        (function* (res: Uint8Array[]) {
+        (function* (res: Uint8Array[]): Generator<number, void, undefined> {
           for (const x of res) {
             yield* x;
           }
