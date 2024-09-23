@@ -26,7 +26,7 @@ export class LogWriterStream {
   }
 
   _flushIsRunning = false;
-  _flushDoneFns = Array<() => void>();
+  _flushDoneFns: (() => void)[] = [];
   _flush(toFlush: (() => Promise<void>)[] | undefined = undefined, done?: () => void): void {
     if (done) {
       this._flushDoneFns.push(done);

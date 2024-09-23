@@ -1,4 +1,4 @@
-import { Future } from "./future";
+import { Future } from "./future.ts";
 
 interface ResolveSeqItem<T, C> {
   readonly future: Future<T>;

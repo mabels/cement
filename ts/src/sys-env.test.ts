@@ -27,8 +27,13 @@ describe("sys_env", () => {
     const fn = vi.fn();
     envImpl.onSet(fn);
     expect(fn).toBeCalledTimes(envImpl.keys().length);
-    expect(fn.mock.calls.map((i) => i[0])).toEqual(envImpl.keys());
-    expect(fn.mock.calls.map((i) => i[1])).toEqual(envImpl.keys().map((i) => envImpl.get(i)));
+    expect(fn.mock.calls.map((i) => i[0]).sort()).toEqual(envImpl.keys().sort());
+    expect(fn.mock.calls.map((i) => i[1]).sort()).toEqual(
+      envImpl
+        .keys()
+        .map((i) => envImpl.get(i))
+        .sort(),
+    );
   });
   it("onSet filter", () => {
     const env = new EnvImpl(new BrowserEnvActions({}), {

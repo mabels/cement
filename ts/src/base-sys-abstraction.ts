@@ -1,6 +1,7 @@
-import { FileService } from "./file-service";
-import { TimeMode, RandomMode, IDMode, SystemService, VoidFunc, SysAbstraction } from "./sys-abstraction";
-import { Time } from "./time";
+import { FileService } from "./file-service.ts";
+import { TimeMode, RandomMode, IDMode, SystemService, VoidFunc, SysAbstraction } from "./sys-abstraction.ts";
+import { Time } from "./time.ts";
+import { TxtEnDecoder } from "./txt-en-decoder.ts";
 
 export class SysTime extends Time {
   Now(): Date {
@@ -110,6 +111,7 @@ export class IdService {
 }
 
 export interface BaseSysAbstractionParams {
+  readonly TxtEnDecoder: TxtEnDecoder;
   readonly FileSystem: FileService;
   readonly SystemService: SystemService;
 }
@@ -124,38 +126,42 @@ export interface ExitService {
   exit(code: number): void;
 }
 
-const decoder = new TextDecoder();
 export class BaseSysAbstraction {
-  readonly _time = new SysTime();
-  readonly _stdout = new WritableStream({
-    write(chunk): Promise<void> {
-      return new Promise((resolve) => {
-        const decoded = decoder.decode(chunk);
-        // eslint-disable-next-line no-console
-        console.log(decoded.trimEnd());
-        resolve();
-      });
-    },
-  });
-  readonly _stderr = new WritableStream({
-    write(chunk): Promise<void> {
-      return new Promise((resolve) => {
-        const decoded = decoder.decode(chunk);
-        // eslint-disable-next-line no-console
-        console.error(decoded.trimEnd());
-        resolve();
-      });
-    },
-  });
+  readonly _time: SysTime = new SysTime();
+  readonly _stdout: WritableStream;
+  readonly _stderr: WritableStream;
 
-  readonly _idService = new IdService();
-  readonly _randomService = new RandomService(RandomMode.RANDOM);
+  readonly _idService: IdService = new IdService();
+  readonly _randomService: RandomService = new RandomService(RandomMode.RANDOM);
   readonly _fileSystem: FileService;
   readonly _systemService: SystemService;
+  readonly _txtEnDe: TxtEnDecoder;
 
   constructor(params: BaseSysAbstractionParams) {
     this._fileSystem = params.FileSystem;
     this._systemService = params.SystemService;
+    this._txtEnDe = params.TxtEnDecoder;
+    const decoder = this._txtEnDe;
+    this._stdout = new WritableStream({
+      write(chunk): Promise<void> {
+        return new Promise((resolve) => {
+          const decoded = decoder.decode(chunk);
+          // eslint-disable-next-line no-console
+          console.log(decoded.trimEnd());
+          resolve();
+        });
+      },
+    });
+    this._stderr = new WritableStream({
+      write(chunk): Promise<void> {
+        return new Promise((resolve) => {
+          const decoded = decoder.decode(chunk);
+          // eslint-disable-next-line no-console
+          console.error(decoded.trimEnd());
+          resolve();
+        });
+      },
+    });
   }
 }
 
@@ -167,6 +173,7 @@ export interface WrapperSysAbstractionParams {
   readonly RandomMode?: RandomMode;
   readonly FileSystem?: FileService;
   readonly SystemService?: SystemService;
+  readonly TxtEnDecoder?: TxtEnDecoder;
 }
 
 export class WrapperSysAbstraction implements SysAbstraction {

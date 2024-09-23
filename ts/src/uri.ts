@@ -1,4 +1,4 @@
-import { exception2Result, Result } from "./result";
+import { exception2Result, Result } from "./result.ts";
 
 type NullOrUndef = null | undefined;
 
@@ -290,7 +290,7 @@ export class BuildURI {
 
 export type CoerceURI = string | URI | MutableURL | URL | BuildURI | NullOrUndef;
 
-export const protocols = new Set<string>(["http", "https", "ws", "wss"]);
+export const protocols: Set<string> = new Set<string>(["http", "https", "ws", "wss"]);
 
 // non mutable URL Implementation
 export class URI {

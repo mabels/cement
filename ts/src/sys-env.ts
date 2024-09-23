@@ -1,4 +1,4 @@
-import { ResolveOnce } from "./resolve-once";
+import { ResolveOnce } from "./resolve-once.ts";
 
 export interface EnvMap {
   get(key: string): string | undefined;
@@ -79,7 +79,7 @@ class DenoEnvActions implements EnvActions {
 }
 
 export class BrowserEnvActions implements EnvActions {
-  readonly env = new Map<string, string>();
+  readonly env: Map<string, string> = new Map<string, string>();
   readonly opts: Partial<EnvFactoryOpts>;
   constructor(opts: Partial<EnvFactoryOpts>) {
     this.opts = opts;

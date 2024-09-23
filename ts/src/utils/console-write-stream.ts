@@ -1,6 +1,6 @@
 export class ConsoleWriterStreamDefaultWriter implements WritableStreamDefaultWriter<Uint8Array> {
   readonly desiredSize: number | null = null;
-  readonly decoder = new TextDecoder();
+  readonly decoder: TextDecoder = new TextDecoder();
 
   closed: Promise<undefined>;
   ready: Promise<undefined>;

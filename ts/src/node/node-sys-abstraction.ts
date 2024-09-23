@@ -8,6 +8,7 @@ import {
 } from "../base-sys-abstraction";
 import { NodeFileService } from "./node-file-service";
 import { Env, envFactory } from "../sys-env";
+import { Utf8EnDecoderSingleton } from "../txt-en-decoder";
 
 export class ExitServiceImpl implements ExitService {
   constructor() {
@@ -110,6 +111,7 @@ let my: BaseSysAbstraction | undefined = undefined;
 export function NodeSysAbstraction(param?: WrapperSysAbstractionParams): SysAbstraction {
   if (!my) {
     my = new BaseSysAbstraction({
+      TxtEnDecoder: param?.TxtEnDecoder || Utf8EnDecoderSingleton(),
       FileSystem: new NodeFileService(),
       SystemService: new NodeSystemService(),
     });

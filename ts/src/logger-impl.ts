@@ -17,16 +17,16 @@ import {
   LevelHandler,
   LogFormatter,
   LogValueArg,
-} from "./logger";
-import { WebSysAbstraction } from "./web/web-sys-abstraction";
-import { SysAbstraction } from "./sys-abstraction";
-import { Result } from "./result";
-import { CoerceURI, URI } from "./uri";
-import { runtimeFn } from "./runtime";
-import { ConsoleWriterStream } from "./utils/console-write-stream";
-import { LogWriterStream } from "./log-writer-impl";
-import { TxtEnDecoder, Utf8EnDecoderSingleton } from "./txt-en-decoder";
-import { LevelHandlerSingleton } from "./log-level-impl";
+} from "./logger.ts";
+import { WebSysAbstraction } from "./web/web-sys-abstraction.ts";
+import { SysAbstraction } from "./sys-abstraction.ts";
+import { Result } from "./result.ts";
+import { CoerceURI, URI } from "./uri.ts";
+import { runtimeFn } from "./runtime.ts";
+import { ConsoleWriterStream } from "./utils/console-write-stream.ts";
+import { LogWriterStream } from "./log-writer-impl.ts";
+import { TxtEnDecoder, Utf8EnDecoderSingleton } from "./txt-en-decoder.ts";
+import { LevelHandlerSingleton } from "./log-level-impl.ts";
 
 function getLen(value: unknown): LogValue {
   if (Array.isArray(value)) {

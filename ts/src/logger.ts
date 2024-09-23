@@ -1,7 +1,7 @@
-import { bin2string } from "./bin2text";
-import { Result } from "./result";
-import { TxtEnDecoder } from "./txt-en-decoder";
-import { CoerceURI } from "./uri";
+import { bin2string } from "./bin2text.ts";
+import { Result } from "./result.ts";
+import { TxtEnDecoder } from "./txt-en-decoder.ts";
+import { CoerceURI } from "./uri.ts";
 
 export enum Level {
   WARN = "warn",
@@ -45,7 +45,7 @@ export function asyncLogValue(val: () => Promise<Serialized>): Promise<LogValue>
 
 export type LogValueArg = LogValue | Serialized | Serialized[] | FnSerialized | undefined | null;
 
-export function logValue(val: LogValueArg, state = new Set<unknown>([Math.random()])): LogValue {
+export function logValue(val: LogValueArg, state: Set<unknown> = new Set<unknown>([Math.random()])): LogValue {
   switch (typeof val) {
     case "function":
       return new LogValue(val);

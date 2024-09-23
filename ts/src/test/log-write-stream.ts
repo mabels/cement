@@ -1,6 +1,6 @@
-import { FanoutWriteStream } from "../utils/fanout-write-stream";
-import { Future } from "../future";
-import { TxtEnDecoder, Utf8EnDecoderSingleton } from "../txt-en-decoder";
+import { FanoutWriteStream } from "../utils/fanout-write-stream.ts";
+import { Future } from "../future.ts";
+import { TxtEnDecoder, Utf8EnDecoderSingleton } from "../txt-en-decoder.ts";
 
 export class LogWriteStream implements WritableStreamDefaultWriter<Uint8Array> {
   private readonly _bufferArr: Uint8Array[];
@@ -9,7 +9,7 @@ export class LogWriteStream implements WritableStreamDefaultWriter<Uint8Array> {
     this._bufferArr = bufferArr;
   }
 
-  readonly _resolveClosed = new Future<undefined>();
+  readonly _resolveClosed: Future<undefined> = new Future<undefined>();
   readonly closed: Promise<undefined> = this._resolveClosed.asPromise();
   readonly desiredSize: number | null = null;
   readonly ready: Promise<undefined> = Promise.resolve(undefined);

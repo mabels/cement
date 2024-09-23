@@ -6,30 +6,30 @@
   "type": "module",
   "exports": {
     ".": {
+      "types": "./index.d.ts",
       "require": "./index.cjs",
-      "import": "./index.js",
-      "types": "./index.d.ts"
+      "import": "./index.js"
     },
     "./web": {
+      "types": "./web/index.d.ts",
       "require": "./web/index.cjs",
-      "import": "./web/index.js",
-      "types": "./web/index.d.ts"
+      "import": "./web/index.js"
     },
     "./utils": {
+      "types": "./utils/index.d.ts",
       "require": "./utils/index.cjs",
-      "import": "./utils/index.js",
-      "types": "./utils/index.d.ts"
+      "import": "./utils/index.js"
     },
     "./node": {
+      "types": "./node/index.d.ts",
       "require": "./node/index.cjs",
-      "import": "./node/index.js",
-      "types": "./node/index.d.ts"
+      "import": "./node/index.js"
     }
   },
   "scripts": {
     "clean": "rm -rf dist node_modules",
     "build": "pnpm run build:tsc; pnpm run build:js",
-    "build:tsc": "tsc",
+    "build:tsc": "tsc --emitDeclarationOnly",
     "build:js": "tsup --out-dir dist/pkg src/index.ts src/*/index.ts --sourcemap --format cjs,esm --dts --clean --external node:fs --external node:path",
     "test": "pnpm run test:js",
     "test:js": "vitest --run",

@@ -1,8 +1,8 @@
-import { LevelHandler, Level } from "./logger";
+import { LevelHandler, Level } from "./logger.ts";
 
 export class LevelHandlerImpl implements LevelHandler {
-  readonly _globalLevels = new Set<Level>([Level.INFO, Level.ERROR, Level.WARN]);
-  readonly _modules = new Map<string, Set<Level>>();
+  readonly _globalLevels: Set<Level> = new Set<Level>([Level.INFO, Level.ERROR, Level.WARN]);
+  readonly _modules: Map<string, Set<Level>> = new Map<string, Set<Level>>();
   isStackExposed = false;
   enableLevel(level: Level, ...modules: string[]): void {
     if (modules.length == 0) {

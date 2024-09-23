@@ -1,0 +1,9 @@
+{
+  "name": "@adviser/cement",
+  "version": "0.0.0-dev",
+  "exports": "./src/index.ts",
+  "license": "AFL-2.0",
+  "publish": {
+    "include": ["src/**/*.ts"]
+  }
+}
