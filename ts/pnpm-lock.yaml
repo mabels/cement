@@ -7,6 +7,13 @@ settings:
 importers:
 
   .:
+    dependencies:
+      ts-essentials:
+        specifier: ^10.0.2
+        version: 10.0.2(typescript@5.6.2)
+      yaml:
+        specifier: ^2.5.1
+        version: 2.5.1
     devDependencies:
       '@types/node':
         specifier: ^22.0.0
@@ -32,9 +39,6 @@ importers:
       prettier:
         specifier: ^3.2.5
         version: 3.3.3
-      ts-essentials:
-        specifier: ^10.0.2
-        version: 10.0.2(typescript@5.6.2)
       tsup:
         specifier: ^8.1.0
         version: 8.3.0(postcss@8.4.47)(tsx@4.19.1)(typescript@5.6.2)(yaml@2.5.1)
@@ -56,9 +60,6 @@ importers:
       webdriverio:
         specifier: ^9.0.7
         version: 9.0.9
-      yaml:
-        specifier: ^2.5.1
-        version: 2.5.1
 
 packages:
 
