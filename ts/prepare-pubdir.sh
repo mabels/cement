@@ -12,6 +12,7 @@ cp package.json pubdir/
 cp ../README.md ../LICENSE pubdir/src/
 cp ./jsr.json ./pubdir/src/
 (cd pubdir/src && rm -f test/test-exit-handler.* ./utils/stream-test-helper.ts)
+find pubdir/src -name __screenshots__ -print | xargs rm -r
 find pubdir/src -name "*.test.ts" -print | xargs rm
 
 node ./patch-version.cjs ./pubdir/package.json 

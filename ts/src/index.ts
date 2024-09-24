@@ -19,4 +19,5 @@ export * from "./crypto.js";
 export * from "./base-sys-abstraction.js";
 export * from "./bin2text.js";
 export * from "./version.js";
+export * from "./refcounted.js";
 export * as utils from "./utils/index.js";
