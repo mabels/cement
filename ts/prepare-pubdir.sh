@@ -11,11 +11,12 @@ cp -pr ../.gitignore ../README.md ../LICENSE dist/ts pubdir/
 cp package.json pubdir/
 cp ../README.md ../LICENSE pubdir/src/
 cp ./jsr.json ./pubdir/src/
-(cd pubdir/src && rm -f test/test-exit-handler.* ./utils/stream-test-helper.ts **/*.test.ts)
+(cd pubdir/src && rm -f test/test-exit-handler.* ./utils/stream-test-helper.ts)
+find pubdir/src -name "*.test.ts" --print | xargs rm 
 
 node ./patch-version.cjs ./pubdir/package.json 
 node ./patch-version.cjs ./pubdir/src/jsr.json 
 
 node ./setup-jsr-json.cjs ./pubdir/src/jsr.json
 
-(cd pubdir/src && deno publish --dry-run --unstable-sloppy-imports --allow-dirty)
+(cd pubdir/src && deno publish --quiet --dry-run --unstable-sloppy-imports --allow-dirty)
