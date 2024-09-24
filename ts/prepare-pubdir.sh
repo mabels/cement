@@ -9,7 +9,7 @@ cp -pr ../.gitignore ../README.md ../LICENSE dist/ts pubdir/
 (cd dist/pkg && cp -pr . ../../pubdir/)
 (cd src/ && cp -pr . ../pubdir/src/)
 cp package.json pubdir/
-cp ../README.md ../LICENSE pubdir/ts
+cp ../README.md ../LICENSE pubdir/src/
 cp ./jsr.json ./pubdir/src/
 (cd pubdir/src && rm -f test/test-exit-handler.* ./utils/stream-test-helper.ts **/*.test.ts)
 
