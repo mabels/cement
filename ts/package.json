@@ -40,7 +40,7 @@
     "test": "pnpm run test:js",
     "test:deno": "deno run --quiet --allow-net --allow-write --allow-run  --allow-sys --allow-ffi  --allow-read --allow-env  ./node_modules/vitest/vitest.mjs --run --project node",
     "test:js": "vitest --run",
-    "pubdir": "bash ./prepare-pubdir.sh",
+    "pubdir": "bash -e ./prepare-pubdir.sh",
     "presmoke": "pnpm run pubdir ; cd pubdir ; pnpm pack",
     "smoke": "cd smoke; rm -f package.json; pnpm init ; pnpm install -f ../pubdir/adviser-cement-*.tgz; npx tsx ./smoke.ts; deno run --allow-read ./smoke.ts",
     "lint": "eslint .",
