@@ -1,4 +1,5 @@
 import { utils } from "@adviser/cement";
+import { receiveFromStream, sendToStream, streamingTestState } from "./stream-test-helper.js";
 
 it("rechunk empty", async () => {
   const chunks = await utils.rebufferArray([], 10);
@@ -63,7 +64,7 @@ it("rechunk smaller 10 pack bigger chunks", async () => {
 });
 
 describe("test streaming through rebuffer", () => {
-  const state: utils.streamingTestState = {
+  const state: streamingTestState = {
     sendChunks: 10000,
     sendChunkSize: 3,
     fillCalls: 0,
@@ -74,7 +75,7 @@ describe("test streaming through rebuffer", () => {
   it("does rebuffer respect backpressure", async () => {
     const ts = new TransformStream<Uint8Array, Uint8Array>(undefined, undefined, { highWaterMark: 2 });
     const reb = utils.rebuffer(ts.readable, reBufferSize);
-    await Promise.all([utils.receiveFromStream(reb, state), utils.sendToStream(ts.writable, state)]);
+    await Promise.all([receiveFromStream(reb, state), sendToStream(ts.writable, state)]);
 
     expect(state.CollectorFn).toBeCalledTimes(~~((state.sendChunkSize * state.sendChunks) / reBufferSize) + 1 + 1 /*done*/);
     expect(state.CollectorFn.mock.calls.slice(-1)[0][0].done).toBeTruthy();

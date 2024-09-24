@@ -1,4 +1,5 @@
 import { utils } from "@adviser/cement";
+import { receiveFromStream, sendToStream, streamingTestState } from "./stream-test-helper.js";
 
 it("array2stream", async () => {
   const as = utils.array2stream([1, 2, 3]);
@@ -72,7 +73,7 @@ it("map types", async () => {
 });
 
 describe("test streaming through streamMap", () => {
-  const state: utils.streamingTestState = {
+  const state: streamingTestState = {
     sendChunks: 10000,
     sendChunkSize: 3,
     fillCalls: 0,
@@ -88,7 +89,7 @@ describe("test streaming through streamMap", () => {
         return chunk;
       },
     });
-    await Promise.all([utils.receiveFromStream(reb, state), utils.sendToStream(ts.writable, state)]);
+    await Promise.all([receiveFromStream(reb, state), sendToStream(ts.writable, state)]);
 
     expect(state.CollectorFn).toBeCalledTimes(state.sendChunks + 1 /*done*/);
     expect(state.CollectorFn.mock.calls.slice(-1)[0][0].done).toBeTruthy();

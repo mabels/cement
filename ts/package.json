@@ -35,6 +35,7 @@
     "clean": "rm -rf dist node_modules",
     "build": "pnpm run build:tsc; pnpm run build:js",
     "build:tsc": "tsc",
+    "xbuild:js": "tsup",
     "build:js": "tsup --out-dir dist/pkg src/index.ts src/*/index.ts --sourcemap --format cjs,esm --dts --clean --external node:fs --external node:path",
     "test": "pnpm run test:js",
     "test:deno": "deno run --allow-net --allow-write --allow-run  --allow-sys --allow-ffi  --allow-read --allow-env  ./node_modules/vitest/vitest.mjs --run --project node",
@@ -58,6 +59,8 @@
     "@typescript-eslint/eslint-plugin": "^8.2.0",
     "@typescript-eslint/parser": "^8.3.0",
     "@vitest/browser": "^2.0.5",
+    "esbuild-plugin-replace": "^1.4.0",
+    "esbuild-plugin-resolve": "^2.0.0",
     "eslint": "^9.8.0",
     "prettier": "^3.2.5",
     "ts-essentials": "^10.0.2",
@@ -67,8 +70,8 @@
     "typescript-eslint": "^8.2.0",
     "vite-tsconfig-paths": "^5.0.1",
     "vitest": "^2.0.5",
-    "yaml": "^2.5.1",
-    "webdriverio": "^9.0.7"
+    "webdriverio": "^9.0.7",
+    "yaml": "^2.5.1"
   },
   "engines": {
     "node": ">=16"

@@ -7,17 +7,12 @@
     "./node": "./src/node/index.ts",
     "./deno": "./src/node/index.ts"
   },
+  "imports": {
+    "yaml": "npm:yaml@^2.5.1",
+    "ts-essentials": "npm:ts-essentials@^10.0.2"
+  },
   "license": "AFL-2.0",
   "publish": {
     "include": ["src/**/*.ts"]
-  },
-  "tasks": {
-    "test": {
-      "command": "pnpm run test:deno"
-    }
-  },
-  "lint": {
-    "include": ["src/"],
-    "exclude": ["dist/"]
   }
 }

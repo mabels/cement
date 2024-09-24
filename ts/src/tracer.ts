@@ -53,11 +53,14 @@ export class Metric<T> {
     }
   }
 }
+
+export type MetricMap = Map<string, Metric<unknown>>;
+
 export class Metrics {
   readonly tracenode: TraceNode;
-  private readonly map: Map<string, Metric<unknown>>;
+  private readonly map: MetricMap;
 
-  readonly spanRefs = new Map<string, Metric<unknown>>();
+  readonly spanRefs: MetricMap = new Map<string, Metric<unknown>>();
   constructor(tracenode: TraceNode) {
     this.tracenode = tracenode;
     this.map = tracenode.ctx.metrics;
@@ -99,8 +102,10 @@ export interface Invokaction {
   readonly metrics?: Metrics;
 }
 
+export type TraceNodeMap = Map<string, TraceNode>;
+
 export class TraceNode {
-  readonly childs = new Map<string, TraceNode>();
+  readonly childs: TraceNodeMap = new Map<string, TraceNode>();
 
   readonly invokations: Invokaction[] = [];
 

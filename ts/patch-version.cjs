@@ -1,7 +1,11 @@
 const fs = require("fs");
-let version = process.argv[process.argv.length - 1];
-version = version.split("/").slice(-1)[0].replace(/^v/, "");
-const fileToPatch = process.argv[process.argv.length - 2];
+const ghref = process.env.GITHUB_REF || "a/v0.0.0-smoke";
+const lastPart = ghref.split("/").slice(-1)[0];
+let version = "0.0.0-smoke-ci";
+if (lastPart.match(/^v/)) {
+  version = lastPart.replace(/^v/, "");
+}
+const fileToPatch = process.argv[process.argv.length - 1];
 console.error(`Patch ${fileToPatch} version to ${version}`);
 const packageJson = JSON.parse(fs.readFileSync(fileToPatch).toString());
 packageJson.version = version;

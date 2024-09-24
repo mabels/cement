@@ -1,7 +1,7 @@
 import { WebSysAbstraction } from "@adviser/cement/web";
 import { NodeSysAbstraction } from "@adviser/cement/node";
 import { DenoSysAbstraction } from "@adviser/cement/deno";
-import { LoggerImpl, Result, Option, Level, runtimeFn } from "@adviser/cement";
+import { VERSION, LoggerImpl, Result, Option, Level, runtimeFn } from "@adviser/cement";
 
 (async (): Promise<void> => {
   const none = Option.None();
@@ -13,7 +13,8 @@ import { LoggerImpl, Result, Option, Level, runtimeFn } from "@adviser/cement";
     .EnableLevel(Level.DEBUG)
     .With()
     .Str("runtime", globalThis.Deno ? "Deno" : "Node")
-    .Str("version", typeof process == "object" ? process?.version : globalThis.Deno.version.deno)
+    .Str("version", VERSION)
+    .Str("runtime-version", typeof process == "object" ? process?.version : globalThis.Deno.version.deno)
     .Logger();
   const rt = runtimeFn();
   if (rt.isNodeIsh) {

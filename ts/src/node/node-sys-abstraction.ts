@@ -9,7 +9,7 @@ import {
 import { NodeFileService } from "./node-file-service.js";
 import { Env, envFactory } from "../sys-env.js";
 import { Utf8EnDecoderSingleton } from "../txt-en-decoder.js";
-// import * as process from 'node:process'
+import process from "node:process";
 
 export class NodeExitServiceImpl implements ExitService {
   constructor() {
