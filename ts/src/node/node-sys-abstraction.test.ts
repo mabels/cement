@@ -45,13 +45,22 @@ describe("node_sys", () => {
     let fnExec: typeof exec;
     let execHandler = "tsx src/test/test-exit-handler.ts";
     beforeAll(async () => {
+      const { exec } = await import("node:child_process");
+      fnExec = exec;
       if (runtimeFn().isDeno) {
-        const { exec } = await import("child_process");
-        fnExec = exec;
         execHandler = "deno run --allow-net --allow-read --allow-run --unstable-sloppy-imports src/test/test-exit-handler.ts";
-      } else {
-        const { exec } = await import("child_process");
-        fnExec = exec;
+        // // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // const gs = globalThis as any;
+        // fnExec = (async (cmd: string, cb: (err: ExecException | null, stdout: string | Buffer, stderr: string | Buffer) => void) => {
+        //   const c = new gs.Deno.Command(cmd.split(" ")[0], {
+        //     args: cmd.split(" ").slice(1),
+        //     stdout: "piped",
+        //     stderr: "piped",
+        //   });
+        //   const result = await c.output();
+        //   const td = new TextDecoder();
+        //   cb(result, td.decode(result.stdout), td.decode(result.stderr));
+        // }) as unknown as typeof exec;
       }
     });
     it("just-exit", () => {
