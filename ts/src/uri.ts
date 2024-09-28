@@ -2,6 +2,23 @@ import { exception2Result, Result } from "./result.js";
 
 type NullOrUndef = null | undefined;
 
+export interface URIObject {
+  readonly style: "host" | "path";
+  readonly protocol: string;
+  readonly pathname: string;
+  readonly searchParams: Record<string, string>;
+}
+
+export interface PathURIObject extends URIObject {
+  readonly style: "path";
+}
+
+export interface HostURIObject extends URIObject {
+  readonly style: "host";
+  readonly hostname: string;
+  readonly port: string;
+}
+
 function falsy2undef<T>(value: T | NullOrUndef): T | undefined {
   return value === undefined || value === null ? undefined : value;
 }
@@ -47,7 +64,7 @@ export class MutableURL extends URL {
   constructor(urlStr: string) {
     super("defect://does.not.exist");
     const partedURL = urlStr.split(":");
-    this._hasHostpart = protocols.has(partedURL[0]);
+    this._hasHostpart = hasHostPartProtocols.has(partedURL[0]);
     let hostPartUrl = ["http", ...partedURL.slice(1)].join(":");
     if (!this._hasHostpart) {
       const pathname = hostPartUrl.replace(/http:\/\/[/]*/, "").replace(/[#?].*$/, "");
@@ -76,7 +93,7 @@ export class MutableURL extends URL {
   get host(): string {
     if (!this._hasHostpart) {
       throw new Error(
-        `you can use hostname only if protocol is ${this.toString()} ${JSON.stringify(Array.from(protocols.keys()))}`,
+        `you can use hostname only if protocol is ${this.toString()} ${JSON.stringify(Array.from(hasHostPartProtocols.keys()))}`,
       );
     }
     return this._sysURL.host;
@@ -84,28 +101,28 @@ export class MutableURL extends URL {
 
   get port(): string {
     if (!this._hasHostpart) {
-      throw new Error(`you can use hostname only if protocol is ${JSON.stringify(Array.from(protocols.keys()))}`);
+      throw new Error(`you can use hostname only if protocol is ${JSON.stringify(Array.from(hasHostPartProtocols.keys()))}`);
     }
     return this._sysURL.port;
   }
 
   set port(p: string) {
     if (!this._hasHostpart) {
-      throw new Error(`you can use port only if protocol is ${JSON.stringify(Array.from(protocols.keys()))}`);
+      throw new Error(`you can use port only if protocol is ${JSON.stringify(Array.from(hasHostPartProtocols.keys()))}`);
     }
     this._sysURL.port = p;
   }
 
   get hostname(): string {
     if (!this._hasHostpart) {
-      throw new Error(`you can use hostname only if protocol is ${JSON.stringify(Array.from(protocols.keys()))}`);
+      throw new Error(`you can use hostname only if protocol is ${JSON.stringify(Array.from(hasHostPartProtocols.keys()))}`);
     }
     return this._sysURL.hostname;
   }
 
   set hostname(h: string) {
     if (!this._hasHostpart) {
-      throw new Error(`you can use hostname only if protocol is ${JSON.stringify(Array.from(protocols.keys()))}`);
+      throw new Error(`you can use hostname only if protocol is ${JSON.stringify(Array.from(hasHostPartProtocols.keys()))}`);
     }
     this._sysURL.hostname = h;
   }
@@ -290,15 +307,15 @@ export class BuildURI {
 
 export type CoerceURI = string | URI | MutableURL | URL | BuildURI | NullOrUndef;
 
-export const protocols: Set<string> = new Set<string>(["http", "https", "ws", "wss"]);
+export const hasHostPartProtocols: Set<string> = new Set<string>(["http", "https", "ws", "wss"]);
 
 // non mutable URL Implementation
 export class URI {
   static protocolHasHostpart(protocol: string): () => void {
     protocol = protocol.replace(/:$/, "");
-    protocols.add(protocol);
+    hasHostPartProtocols.add(protocol);
     return () => {
-      protocols.delete(protocol);
+      hasHostPartProtocols.delete(protocol);
     };
   }
 
@@ -417,5 +434,22 @@ export class URI {
   }
   toJSON(): string {
     return this.toString();
+  }
+  asObj(): HostURIObject | PathURIObject {
+    const pathURI: PathURIObject = {
+      style: "path",
+      protocol: this.protocol,
+      pathname: this.pathname,
+      searchParams: Object.fromEntries(this.getParams),
+    };
+    if (hasHostPartProtocols.has(this.protocol.replace(/:$/, ""))) {
+      return {
+        ...pathURI,
+        style: "host",
+        hostname: this.hostname,
+        port: this.port,
+      } as HostURIObject;
+    }
+    return pathURI;
   }
 }

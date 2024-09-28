@@ -1,4 +1,4 @@
-import { BuildURI, MutableURL, URI } from "@adviser/cement";
+import { BuildURI, HostURIObject, MutableURL, PathURIObject, URI } from "@adviser/cement";
 
 describe("BuildURI", () => {
   let uri: BuildURI;
@@ -151,5 +151,35 @@ describe("URI", () => {
     expect(withHostpartNoPath.host).toBe("fp2:88");
     expect(withHostpartNoPath.pathname).toBe("/");
     unreg();
+  });
+
+  it("host uri as json with omit", () => {
+    const uri = URI.from("http://example.com:8000/bla/blub?name=test&store=meta&key=%40bla");
+    expect(uri.asObj()).toEqual({
+      style: "host",
+      protocol: "http:",
+      hostname: "example.com",
+      port: "8000",
+      pathname: "/bla/blub",
+      searchParams: {
+        store: "meta",
+        name: "test",
+        key: "@bla",
+      },
+    } as HostURIObject);
+  });
+
+  it("path uri as json with omit", () => {
+    const uri = URI.from("blix://bla/blub?name=test&store=meta&key=%40bla");
+    expect(uri.asObj()).toEqual({
+      style: "path",
+      protocol: "blix:",
+      pathname: "bla/blub",
+      searchParams: {
+        store: "meta",
+        name: "test",
+        key: "@bla",
+      },
+    } as PathURIObject);
   });
 });

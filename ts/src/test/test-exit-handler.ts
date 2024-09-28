@@ -1,6 +1,6 @@
 import { runtimeFn } from "../runtime.js";
 
-const gts = globalThis as unknown as {
+const gts = globalThis as unknown /*Deno*/ as {
   Deno: {
     args: string[];
     pid: number;
