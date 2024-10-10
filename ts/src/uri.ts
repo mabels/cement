@@ -1,4 +1,5 @@
 import { exception2Result, Result } from "./result.js";
+import { StripCommand, stripper } from "./utils/stripper.js";
 
 type NullOrUndef = null | undefined;
 
@@ -435,7 +436,7 @@ export class URI {
   toJSON(): string {
     return this.toString();
   }
-  asObj(): HostURIObject | PathURIObject {
+  asObj(...strips: StripCommand[]): HostURIObject | PathURIObject {
     const pathURI: PathURIObject = {
       style: "path",
       protocol: this.protocol,
@@ -443,13 +444,13 @@ export class URI {
       searchParams: Object.fromEntries(this.getParams),
     };
     if (hasHostPartProtocols.has(this.protocol.replace(/:$/, ""))) {
-      return {
+      return stripper(strips, {
         ...pathURI,
         style: "host",
         hostname: this.hostname,
         port: this.port,
-      } as HostURIObject;
+      }) as HostURIObject;
     }
-    return pathURI;
+    return stripper(strips, pathURI) as PathURIObject;
   }
 }
