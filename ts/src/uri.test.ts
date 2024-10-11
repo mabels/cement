@@ -240,8 +240,23 @@ describe("URI", () => {
     });
   });
 
-  it("URI getParamsResult fail", () => {
+  it("BuildURI getParamsResult fail", () => {
     const url = BuildURI.from("http://host/bla/blub?name=test&store=meta&key=%40bla");
+    const rParams = url.getParamsResult("key", "name", "store", "key2", "name2");
+    expect(rParams.Err().message).toEqual(`missing parameters: key2,name2`);
+    const rParams2 = url.getParamsResult(
+      "key",
+      "name",
+      "store",
+      "key2",
+      "name2",
+      (...keys: string[]) => `keys not found: ${keys.join(",")}`,
+    );
+    expect(rParams2.Err().message).toEqual(`keys not found: key2,name2`);
+  });
+
+  it("URI getParamsResult fail", () => {
+    const url = URI.from("http://host/bla/blub?name=test&store=meta&key=%40bla");
     const rParams = url.getParamsResult("key", "name", "store", "key2", "name2");
     expect(rParams.Err().message).toEqual(`missing parameters: key2,name2`);
     const rParams2 = url.getParamsResult(

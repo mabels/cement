@@ -492,6 +492,10 @@ export class URI {
     return getParamResult(key, this.getParam(key), msgFn);
   }
 
+  getParamsResult(...keys: keysParam): Result<Record<string, string>> {
+    return getParamsResult(keys, this);
+  }
+
   clone(): URI {
     return new URI(this._url);
   }
