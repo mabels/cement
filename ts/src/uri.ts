@@ -311,15 +311,28 @@ export class BuildURI {
   // }
 
   appendRelative(p: CoerceURI): BuildURI {
-    const url = URI.from(p);
-    let pathname = url.pathname;
-    if (url.pathname === "/") {
-      pathname = "";
-    } else if (!pathname.startsWith("/")) {
-      pathname = `/${pathname}`;
+    const appendUrl = URI.from(p);
+    let pathname = appendUrl.pathname;
+    let basePath = this._url.pathname;
+    /*
+     * cases
+     *  pathname "" basePAth "" -> ""
+     *  pathname "/" basePath "" -> "/"
+     *  pathname "" basePath "/" -> "/"
+     *  pathname "/" basePath "/" -> "/"
+     *  pathname "ab" basePath "" -> "/ab"
+     *  pathname "ab" basePath "/" -> "/ab"
+     *  pathname "ab" basePath "/ab/" -> "/ab/ab"
+     *  pathname "/ab/" basePath "/ab/" -> "/ab/ab/"
+     */
+    if (pathname.startsWith("/")) {
+      pathname = pathname.replace(/^\//, "");
     }
-    this.pathname(this._url.pathname + pathname);
-    for (const [key, value] of url.getParams) {
+    if (basePath.length > 0) {
+      basePath = basePath.replace(/\/$/, "");
+    }
+    this.pathname(basePath + "/" + pathname);
+    for (const [key, value] of appendUrl.getParams) {
       this.setParam(key, value);
     }
     return this;
@@ -364,6 +377,10 @@ export class BuildURI {
   }
   toJSON(): string {
     return this.toString();
+  }
+
+  asURL(): URL {
+    return this.URI().asURL();
   }
 
   asObj(...strips: StripCommand[]): HostURIObject | PathURIObject {

@@ -231,6 +231,19 @@ describe("URI", () => {
     });
   });
 
+  it("URI append Params Host Flat", () => {
+    const uri = BuildURI.from("https://fp1-uploads-201698179963.s3.us-east-2.amazonaws.com/").appendRelative(`/data/name/key.car`);
+
+    expect(uri.asObj()).toEqual({
+      pathname: "/data/name/key.car",
+      hostname: "fp1-uploads-201698179963.s3.us-east-2.amazonaws.com",
+      port: "",
+      protocol: "https:",
+      searchParams: {},
+      style: "host",
+    });
+  });
+
   it("URI getParamsResult ok", () => {
     const rParams = BuildURI.from("http://host/bla/blub?name=test&store=meta&key=%40bla").getParamsResult("key", "name", "store");
     expect(rParams.Ok()).toEqual({
@@ -253,6 +266,31 @@ describe("URI", () => {
       (...keys: string[]) => `keys not found: ${keys.join(",")}`,
     );
     expect(rParams2.Err().message).toEqual(`keys not found: key2,name2`);
+  });
+
+  describe("URI appendRelative", () => {
+    const cases = [
+      ["", "", "/"],
+      ["/", "", "/"],
+      ["", "/", "/"],
+      ["/", "/", "/"],
+      ["ab", "", "/ab"],
+      ["ab", "/", "/ab"],
+      ["cd", "/ab", "/ab/cd"],
+      ["cd", "/ab", "/ab/cd"],
+      ["/cd", "/ab", "/ab/cd"],
+      ["/cd", "/ab", "/ab/cd"],
+      ["/cd", "/ab/", "/ab/cd"],
+      ["/cd/", "/ab/", "/ab/cd/"],
+    ];
+    for (const [relative, path, result] of cases) {
+      it(`[${path}] [${relative}] -> ${result}`, () => {
+        const noHost = BuildURI.from(`file://${path}`).appendRelative(relative).URI();
+        expect(noHost.pathname).toBe(result);
+        const host = BuildURI.from(`https://wurst`).pathname(path).appendRelative(relative).URI();
+        expect(host.pathname).toBe(result);
+      });
+    }
   });
 
   it("URI getParamsResult fail", () => {
