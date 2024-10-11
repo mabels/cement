@@ -182,4 +182,76 @@ describe("URI", () => {
       },
     } as PathURIObject);
   });
+  it("URI getParamResult", () => {
+    const uri = URI.from("blix://bla/blub?name=test&store=meta&key=%40bla");
+    expect(uri.getParamResult("key").Ok()).toBe("@bla");
+    expect(uri.getParamResult("key2", (k) => `${k} not found`).Err().message).toBe("key2 not found");
+    expect(uri.getParamResult("key2").Err().message).toBe("missing parameter: key2");
+  });
+  it("BuildURI getParamResult", () => {
+    const uri = BuildURI.from("blix://bla/blub?name=test&store=meta&key=%40bla");
+    expect(uri.getParamResult("key").Ok()).toBe("@bla");
+    expect(uri.getParamResult("key2", (k) => `${k} not found`).Err().message).toBe("key2 not found");
+    expect(uri.getParamResult("key2").Err().message).toBe("missing parameter: key2");
+  });
+
+  it("URI append Params Path", () => {
+    const uri = BuildURI.from("blix://bla/blub?name=test&store=meta&key=%40bla").appendRelative(
+      "/murks/blub?name=append&work=hard",
+    );
+    expect(uri.asObj()).toEqual({
+      pathname: "bla/blub/murks/blub",
+      protocol: "blix:",
+      searchParams: {
+        key: "@bla",
+        name: "append",
+        store: "meta",
+        work: "hard",
+      },
+      style: "path",
+    });
+  });
+
+  it("URI append Params Host", () => {
+    const uri = BuildURI.from("http://host/bla/blub?name=test&store=meta&key=%40bla").appendRelative(
+      "/murks/blub?name=append&work=hard",
+    );
+    expect(uri.asObj()).toEqual({
+      pathname: "/bla/blub/murks/blub",
+      hostname: "host",
+      port: "",
+      protocol: "http:",
+      searchParams: {
+        key: "@bla",
+        name: "append",
+        store: "meta",
+        work: "hard",
+      },
+      style: "host",
+    });
+  });
+
+  it("URI getParamsResult ok", () => {
+    const rParams = BuildURI.from("http://host/bla/blub?name=test&store=meta&key=%40bla").getParamsResult("key", "name", "store");
+    expect(rParams.Ok()).toEqual({
+      key: "@bla",
+      name: "test",
+      store: "meta",
+    });
+  });
+
+  it("URI getParamsResult fail", () => {
+    const url = BuildURI.from("http://host/bla/blub?name=test&store=meta&key=%40bla");
+    const rParams = url.getParamsResult("key", "name", "store", "key2", "name2");
+    expect(rParams.Err().message).toEqual(`missing parameters: key2,name2`);
+    const rParams2 = url.getParamsResult(
+      "key",
+      "name",
+      "store",
+      "key2",
+      "name2",
+      (...keys: string[]) => `keys not found: ${keys.join(",")}`,
+    );
+    expect(rParams2.Err().message).toEqual(`keys not found: key2,name2`);
+  });
 });

@@ -192,6 +192,48 @@ function from<T>(fac: (url: MutableURL) => T, strURLUri: CoerceURI | undefined, 
   }
 }
 
+function getParamResult(
+  key: string,
+  val: string | undefined,
+  msgFn: (key: string) => string = (key) => {
+    return `missing parameter: ${key}`;
+  },
+): Result<string> {
+  if (val === undefined) {
+    return Result.Err(msgFn(key));
+  }
+  return Result.Ok(val);
+}
+
+type keysParam = (string | ((...keys: string[]) => string))[];
+
+function getParamsResult(
+  keys: keysParam,
+  getParam: { getParam: (key: string) => string | undefined },
+): Result<Record<string, string>> {
+  const keyStrs = keys.flat().filter((k) => typeof k === "string");
+  const msgFn =
+    keys.find((k) => typeof k === "function") ||
+    ((...keys: string[]): string => {
+      const msg = keys.join(",");
+      return `missing parameters: ${msg}`;
+    });
+  const errors: string[] = [];
+  const result: Record<string, string> = {};
+  for (const key of keyStrs) {
+    const val = getParam.getParam(key);
+    if (val === undefined) {
+      errors.push(key);
+    } else {
+      result[key] = val;
+    }
+  }
+  if (errors.length) {
+    return Result.Err(msgFn(...errors));
+  }
+  return Result.Ok(result);
+}
+
 export class BuildURI {
   _url: MutableURL; // pathname needs this
   private constructor(url: MutableURL) {
@@ -268,6 +310,21 @@ export class BuildURI {
   //   return this;
   // }
 
+  appendRelative(p: CoerceURI): BuildURI {
+    const url = URI.from(p);
+    let pathname = url.pathname;
+    if (url.pathname === "/") {
+      pathname = "";
+    } else if (!pathname.startsWith("/")) {
+      pathname = `/${pathname}`;
+    }
+    this.pathname(this._url.pathname + pathname);
+    for (const [key, value] of url.getParams) {
+      this.setParam(key, value);
+    }
+    return this;
+  }
+
   delParam(key: string): BuildURI {
     this._url.searchParams.delete(key);
     return this;
@@ -293,12 +350,24 @@ export class BuildURI {
     return falsy2undef(this._url.searchParams.get(key));
   }
 
+  getParamResult(key: string, msgFn?: (key: string) => string): Result<string> {
+    return getParamResult(key, this.getParam(key), msgFn);
+  }
+
+  getParamsResult(...keys: keysParam): Result<Record<string, string>> {
+    return getParamsResult(keys, this);
+  }
+
   toString(): string {
     this._url.searchParams.sort();
     return this._url.toString();
   }
   toJSON(): string {
     return this.toString();
+  }
+
+  asObj(...strips: StripCommand[]): HostURIObject | PathURIObject {
+    return this.URI().asObj(...strips);
   }
 
   URI(): URI {
@@ -417,6 +486,10 @@ export class URI {
   }
   getParam(key: string): string | undefined {
     return falsy2undef(this._url.searchParams.get(key));
+  }
+
+  getParamResult(key: string, msgFn?: (key: string) => string): Result<string> {
+    return getParamResult(key, this.getParam(key), msgFn);
   }
 
   clone(): URI {

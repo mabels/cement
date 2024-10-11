@@ -198,6 +198,7 @@ export interface WithLogger extends LoggerInterface<WithLogger> {
 
 export interface AsError {
   AsError(): Error;
+  ResultError<T>(): Result<T>;
 }
 
 export interface Logger extends LoggerInterface<Logger> {

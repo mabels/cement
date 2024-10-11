@@ -360,8 +360,10 @@ export class LoggerImpl implements Logger {
       }
       return fnRet;
     });
+    const asError = (): Error => new Error(this._txtEnDe.decode(fnError()));
     return {
-      AsError: () => new Error(this._txtEnDe.decode(fnError())),
+      ResultError: () => Result.Err(asError()),
+      AsError: asError,
     };
   }
 }

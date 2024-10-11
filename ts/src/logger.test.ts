@@ -1081,6 +1081,22 @@ describe("TestLogger", () => {
     ]);
   });
 
+  it("AsError", () => {
+    const error = logger.Error().Msg("AsError").AsError();
+    expect(error).toBeInstanceOf(Error);
+    expect(error.message).toBe('{"level":"error","msg":"AsError"}\n');
+  });
+
+  it("ResultError", () => {
+    const fn = (): Result<{ a: number }> => {
+      return logger.Error().Msg("AsError").ResultError();
+    };
+    const res = fn();
+    expect(Result.Is(res)).toBeTruthy();
+    expect(res.isErr()).toBeTruthy();
+    expect(res.Err().message).toBe('{"level":"error","msg":"AsError"}\n');
+  });
+
   it("my own yaml formatter", async () => {
     const log = logger.SetExposeStack(true).SetFormatter(new YAMLFormatter(logger.TxtEnDe(), 2)).With().Logger();
     log
