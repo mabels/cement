@@ -17,6 +17,7 @@ import {
   YAMLFormatter,
 } from "@adviser/cement";
 import { WebSysAbstraction } from "@adviser/cement/web";
+import { stripper } from "./utils/stripper.js";
 
 describe("TestLogger", () => {
   let logCollector: LogCollector;
@@ -1144,5 +1145,194 @@ describe("TestLogger", () => {
       "    - c",
       "msg: hello",
     ]);
+  });
+
+  it("Pairing", async () => {
+    logger
+      .Error()
+      .Pair({
+        str: "blub",
+        int: 4711,
+        bool: true,
+        resultOk: Result.Ok({ a: 1 }),
+        resultErr: Result.Err("Error"),
+        uint8: new Uint8Array([1, 2, 3]),
+        obj: { a: 1 },
+        arr: [1, 2, 3],
+      })
+      .Msg("1");
+    await logger.Flush();
+    expect(logCollector.Logs(true)).toEqual([
+      JSON.stringify({
+        level: "error",
+        str: "blub",
+        int: 4711,
+        bool: true,
+        resultOk: { a: 1 },
+        error: "Error",
+        uint8: "0000  01 02 03                                        ...",
+        obj: { a: 1 },
+        arr: [1, 2, 3],
+        msg: "1",
+      }),
+    ]);
+  });
+
+  it("fetch-formatter", async () => {
+    // const result = await fetch("https://www.google.com")
+    const result = new Response("body", {
+      status: 200,
+      statusText: "OK",
+      headers: new Headers({
+        "Content-Type": "text/html",
+        "X-Test": "test",
+      }),
+    });
+    // logger.SetFormatter(new YAMLFormatter(logger.TxtEnDe(), 2));
+    logger.Error().Any("res", { the: result }).Msg("ok");
+    logger.Error().Http(Result.Ok(result)).Msg("1");
+    const req = new Request("https://www.google.com", {
+      method: "PUT",
+      headers: new Headers({
+        "Content-Type": "text/html",
+        "X-Test": "xtest",
+      }),
+    });
+    logger.Error().Http(result, req, "Https").Msg("1");
+    await logger.Flush();
+    expect(
+      stripper(
+        ["isReloadNavigation", "reason", "targetAddressSpace", "attribute", "duplex"],
+        logCollector.Logs(true).map((i) => JSON.parse(i)),
+      ),
+    ).toEqual([
+      {
+        level: "error",
+        res: {
+          the: {
+            type: "default",
+            url: "",
+            redirected: false,
+            status: 200,
+            ok: true,
+            statusText: "OK",
+            headers: {
+              "content-type": "text/html",
+              "x-test": "test",
+            },
+            body: ">Stream<",
+            bodyUsed: false,
+          },
+        },
+        msg: "ok",
+      },
+      {
+        level: "error",
+        Http: {
+          type: "default",
+          url: "",
+          redirected: false,
+          status: 200,
+          ok: true,
+          statusText: "OK",
+          headers: {
+            "content-type": "text/html",
+            "x-test": "test",
+          },
+          body: ">Stream<",
+          bodyUsed: false,
+        },
+        msg: "1",
+      },
+      {
+        level: "error",
+        Https: {
+          res: {
+            type: "default",
+            url: "",
+            redirected: false,
+            status: 200,
+            ok: true,
+            statusText: "OK",
+            headers: {
+              "content-type": "text/html",
+              "x-test": "test",
+            },
+            body: ">Stream<",
+            bodyUsed: false,
+          },
+          req: {
+            method: "PUT",
+            url: "https://www.google.com/",
+            headers: {
+              "content-type": "text/html",
+              "x-test": "xtest",
+            },
+            destination: "",
+            referrer: "about:client",
+            referrerPolicy: "",
+            mode: "cors",
+            credentials: "same-origin",
+            cache: "default",
+            redirect: "follow",
+            integrity: "",
+            keepalive: false,
+            isHistoryNavigation: false,
+            signal: {
+              aborted: false,
+              onabort: "null",
+            },
+            body: "null",
+            bodyUsed: false,
+          },
+        },
+        msg: "1",
+      },
+    ]);
+  });
+
+  it("use toJSON", async () => {
+    logger
+      .Error()
+      .Any("res", { uri: URI.from("https://doof.de?x=4&a=b") })
+      .Msg("ok");
+    await logger.Flush();
+    expect(logCollector.Logs(true)).toEqual(
+      [
+        {
+          level: "error",
+          res: {
+            uri: "https://doof.de/?a=b&x=4",
+          },
+          msg: "ok",
+        },
+      ].map((i) => JSON.stringify(i)),
+    );
+  });
+
+  class Test {
+    constructor(
+      public a: number,
+      public b: URI,
+    ) {}
+    toJSON(): unknown {
+      throw new Error("test");
+    }
+  }
+  it("throw in toString", async () => {
+    logger
+      .Error()
+      .Any("res", new Test(1, URI.from("https://doof.de")))
+      .Msg("ok");
+    await logger.Flush();
+    expect(logCollector.Logs(true)).toEqual(
+      [
+        {
+          level: "error",
+          res: "LogValue:test",
+          msg: "ok",
+        },
+      ].map((i) => JSON.stringify(i)),
+    );
   });
 });

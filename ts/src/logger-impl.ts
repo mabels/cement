@@ -9,7 +9,7 @@ import {
   logValue,
   Serialized,
   WithLogger,
-  removeSelfRef,
+  // sanitizeSerialize,
   Sized,
   Lengthed,
   LogValue,
@@ -67,7 +67,13 @@ export class JSONFormatter implements LogFormatter {
     this._space = space;
   }
   format(attr: LogSerializable): Uint8Array {
-    return this._txtEnDe.encode(JSON.stringify(attr, removeSelfRef(), this._space) + "\n");
+    let ret: string;
+    try {
+      ret = JSON.stringify(attr, null, this._space);
+    } catch (e) {
+      ret = JSON.stringify({ internal: { message: (e as Error).message, stack: (e as Error).stack } });
+    }
+    return this._txtEnDe.encode(ret + "\n");
   }
 }
 
@@ -79,7 +85,7 @@ export class YAMLFormatter implements LogFormatter {
     this._space = space;
   }
   format(attr: LogSerializable): Uint8Array {
-    return this._txtEnDe.encode("---\n" + YAML.stringify(attr, removeSelfRef(), this._space) + "\n");
+    return this._txtEnDe.encode("---\n" + YAML.stringify(attr, null, this._space) + "\n");
   }
 }
 
@@ -162,7 +168,7 @@ export class LoggerImpl implements Logger {
   }
 
   Attributes(): Record<string, unknown> {
-    return JSON.parse(JSON.stringify(this._attributes, removeSelfRef()));
+    return JSON.parse(JSON.stringify(this._attributes, null));
     // return Array.from(Object.entries(this._attributes)).reduce(
     //   (acc, [key, value]) => {
     //     if (value instanceof LogValue) {
@@ -263,6 +269,38 @@ export class LoggerImpl implements Logger {
     this._attributes[key] = logValue(!!value);
     return this;
   }
+
+  Http(res: Response | Result<Response>, req?: Request, key?: string): Logger {
+    if (Result.Is(res)) {
+      if (res.isErr()) {
+        this.Err(res.Err());
+        return this;
+      }
+      res = res.Ok();
+    }
+    let reqRes: Response | { res: Response; req: Request } = res;
+    if (req) {
+      reqRes = { res, req };
+    }
+    this.Any(key || "Http", reqRes as unknown as LogSerializable);
+    return this;
+  }
+  Pair(x: Record<string, unknown>): Logger {
+    for (const key of Object.keys(x)) {
+      const value = x[key];
+      if (value instanceof LogValue) {
+        this._attributes[key] = value;
+        continue;
+      }
+      if (Result.Is(value)) {
+        this.Result(key, value);
+        continue;
+      }
+      this.Any(key, value as LogSerializable);
+    }
+    return this;
+  }
+
   Result<T>(key: string, res: Result<T, Error>): Logger {
     if (res.isOk()) {
       this._attributes[key] = logValue(res.Ok() as Serialized);
@@ -412,6 +450,15 @@ class WithLoggerBuilder implements WithLogger {
   }
   SetDebug(...modules: (string | string[])[]): WithLogger {
     this._li.SetDebug(...modules);
+    return this;
+  }
+
+  Http(res: Response | Result<Response>, req?: Request, key?: string): WithLogger {
+    this._li.Http(res, req, key);
+    return this;
+  }
+  Pair(x: Record<string, unknown>): WithLogger {
+    this._li.Pair(x);
     return this;
   }
 

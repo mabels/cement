@@ -60,7 +60,7 @@ export class MutableURL extends URL {
   private _pathname: string;
   private _hasHostpart: boolean;
 
-  readonly hash: string;
+  override readonly hash: string;
 
   constructor(urlStr: string) {
     super("defect://does.not.exist");
@@ -91,7 +91,7 @@ export class MutableURL extends URL {
     return new MutableURL(this.toString());
   }
 
-  get host(): string {
+  override get host(): string {
     if (!this._hasHostpart) {
       throw new Error(
         `you can use hostname only if protocol is ${this.toString()} ${JSON.stringify(Array.from(hasHostPartProtocols.keys()))}`,
@@ -100,58 +100,58 @@ export class MutableURL extends URL {
     return this._sysURL.host;
   }
 
-  get port(): string {
+  override get port(): string {
     if (!this._hasHostpart) {
       throw new Error(`you can use hostname only if protocol is ${JSON.stringify(Array.from(hasHostPartProtocols.keys()))}`);
     }
     return this._sysURL.port;
   }
 
-  set port(p: string) {
+  override set port(p: string) {
     if (!this._hasHostpart) {
       throw new Error(`you can use port only if protocol is ${JSON.stringify(Array.from(hasHostPartProtocols.keys()))}`);
     }
     this._sysURL.port = p;
   }
 
-  get hostname(): string {
+  override get hostname(): string {
     if (!this._hasHostpart) {
       throw new Error(`you can use hostname only if protocol is ${JSON.stringify(Array.from(hasHostPartProtocols.keys()))}`);
     }
     return this._sysURL.hostname;
   }
 
-  set hostname(h: string) {
+  override set hostname(h: string) {
     if (!this._hasHostpart) {
       throw new Error(`you can use hostname only if protocol is ${JSON.stringify(Array.from(hasHostPartProtocols.keys()))}`);
     }
     this._sysURL.hostname = h;
   }
 
-  set pathname(p: string) {
+  override set pathname(p: string) {
     this._pathname = p;
   }
 
-  get pathname(): string {
+  override get pathname(): string {
     return this._pathname;
   }
 
-  get protocol(): string {
+  override get protocol(): string {
     return this._protocol;
   }
 
-  set protocol(p: string) {
+  override set protocol(p: string) {
     if (!p.endsWith(":")) {
       p = `${p}:`;
     }
     this._protocol = p;
   }
 
-  get searchParams(): URLSearchParams {
+  override get searchParams(): URLSearchParams {
     return this._sysURL.searchParams;
   }
 
-  toString(): string {
+  override toString(): string {
     let search = "";
     if (this._sysURL.searchParams.size) {
       for (const [key, value] of Array.from(this._sysURL.searchParams.entries()).sort((a, b) => a[0].localeCompare(b[0]))) {
@@ -359,8 +359,12 @@ export class BuildURI {
     return this._url.searchParams.has(key);
   }
 
-  getParam(key: string): string | undefined {
-    return falsy2undef(this._url.searchParams.get(key));
+  getParam<T extends string | undefined>(key: string, def?: T): T extends string ? string : string | undefined {
+    let val = this._url.searchParams.get(key);
+    if (!falsy2undef(val) && def) {
+      val = def;
+    }
+    return falsy2undef(val) as T extends string ? string : string | undefined;
   }
 
   getParamResult(key: string, msgFn?: (key: string) => string): Result<string> {
@@ -383,7 +387,7 @@ export class BuildURI {
     return this.URI().asURL();
   }
 
-  asObj(...strips: StripCommand[]): HostURIObject | PathURIObject {
+  asObj(...strips: StripCommand[]): Partial<HostURIObject | PathURIObject> {
     return this.URI().asObj(...strips);
   }
 
@@ -501,8 +505,13 @@ export class URI {
   hasParam(key: string): boolean {
     return this._url.searchParams.has(key);
   }
-  getParam(key: string): string | undefined {
-    return falsy2undef(this._url.searchParams.get(key));
+
+  getParam<T extends string | undefined>(key: string, def?: T): T extends string ? string : string | undefined {
+    let val = this._url.searchParams.get(key);
+    if (!falsy2undef(val) && def) {
+      val = def;
+    }
+    return falsy2undef(val) as T extends string ? string : string | undefined;
   }
 
   getParamResult(key: string, msgFn?: (key: string) => string): Result<string> {
@@ -530,7 +539,7 @@ export class URI {
   toJSON(): string {
     return this.toString();
   }
-  asObj(...strips: StripCommand[]): HostURIObject | PathURIObject {
+  asObj(...strips: StripCommand[]): Partial<HostURIObject | PathURIObject> {
     const pathURI: PathURIObject = {
       style: "path",
       protocol: this.protocol,
@@ -543,8 +552,8 @@ export class URI {
         style: "host",
         hostname: this.hostname,
         port: this.port,
-      }) as HostURIObject;
+      }) as Partial<HostURIObject>;
     }
-    return stripper(strips, pathURI) as PathURIObject;
+    return stripper(strips, pathURI) as Partial<PathURIObject>;
   }
 }

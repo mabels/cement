@@ -16,7 +16,12 @@ export type FnSerialized = () => Serialized | Serialized[];
 export class LogValue {
   constructor(readonly fn: FnSerialized) {}
   value(): Serialized | Serialized[] {
-    return this.fn();
+    try {
+      // console.log("LogValue.value", this.fn.toString());
+      return this.fn();
+    } catch (e) {
+      return `LogValue:${(e as Error).message}`;
+    }
   }
   toJSON(): Serialized | Serialized[] {
     return this.value();
@@ -25,17 +30,17 @@ export class LogValue {
 
 export type LogSerializable = Record<string, LogValue | Promise<LogValue>>;
 
-export function removeSelfRef(lineEnd?: string): (key: unknown, val: unknown) => unknown {
-  const cache = new Set();
-  return function (key: unknown, value: unknown) {
-    if (typeof value === "object" && value !== null) {
-      // Duplicate reference found, discard key
-      if (cache.has(value)) return "...";
-      cache.add(value);
-    }
-    return lineEnd ? value + lineEnd : value;
-  };
-}
+// export function sanitizeSerialize(lineEnd?: string): (key: unknown, val: unknown) => unknown {
+//   const cache = new Set();
+//   return function (this: unknown, key: unknown, value: unknown) {
+//     if (typeof value === "object" && value !== null) {
+//       // Duplicate reference found, discard key
+//       if (cache.has(value)) return "...";
+//       cache.add(value);
+//     }
+//     return lineEnd ? value + lineEnd : value;
+//   };
+// }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function asyncLogValue(val: () => Promise<Serialized>): Promise<LogValue> {
@@ -69,20 +74,39 @@ export function logValue(val: LogValueArg, state: Set<unknown> = new Set<unknown
     case "boolean":
       return new LogValue(() => val);
     case "object": {
+      if (val === null) {
+        return new LogValue(() => "null");
+      }
       if (ArrayBuffer.isView(val)) {
         return logValue(bin2string(val, 512));
       }
       if (Array.isArray(val)) {
-        return new LogValue(() => val.map((v) => logValue(v).value() as Serialized));
+        return new LogValue(() => (val as Serialized[]).map((v) => logValue(v).value() as Serialized));
       }
-      if (val === null) {
-        return new LogValue(() => "null");
+      // if (val instanceof Response) {
+      //   // my = my.clone() as unknown as LogValue | Serialized[] | null
+      //   // const rval = my as unknown as Partial<Response>;
+      //   // delete rval.clone
+      //   // delete rval.blob
+      // }
+      if (val instanceof Headers) {
+        return new LogValue(() => Object.fromEntries(val.entries()) as unknown as Serialized);
       }
+      if (val instanceof ReadableStream) {
+        return new LogValue(() => ">Stream<");
+      }
+      if (val instanceof Promise) {
+        return new LogValue(() => ">Promise<");
+      }
+
       // Duplicate reference found, discard key
       if (state.has(val)) {
         return new LogValue(() => "...");
       }
       state.add(val);
+      if (typeof val.toJSON === "function") {
+        return new LogValue(() => val.toJSON());
+      }
 
       const res: Record<string, LogValue> = {};
       const typedVal = val as unknown as Record<string, LogValueArg>;
@@ -91,7 +115,10 @@ export function logValue(val: LogValueArg, state: Set<unknown> = new Set<unknown
         if (element instanceof LogValue) {
           res[key] = element;
         } else {
-          res[key] = logValue(element, state);
+          if (typeof element !== "function") {
+            res[key] = logValue(element, state);
+          }
+          // res[key] = logValue(element, state);
         }
       }
       // ugly as hell cast but how declare a self-referencing type?
@@ -149,6 +176,10 @@ export interface LoggerInterface<R> {
   Hash(value: unknown, key?: string): R;
 
   Str(key: string, value?: string): R;
+
+  Http(res: Response | Result<Response>, req?: Request, key?: string): R;
+  Pair(x: Record<string, unknown>): R;
+
   Error(): R;
   Warn(): R;
   Debug(): R;

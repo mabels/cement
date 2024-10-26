@@ -1,6 +1,9 @@
 export type StripCommand = string | RegExp;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function stripper<T>(strip: StripCommand | StripCommand[], obj: T): Record<string, any> {
+
+export function stripper<T extends unknown | ArrayLike<unknown>>(
+  strip: StripCommand | StripCommand[],
+  obj: T,
+): T extends ArrayLike<unknown> ? Record<string, unknown>[] : Record<string, unknown> {
   const strips = Array.isArray(strip) ? strip : [strip];
   const restrips = strips.map((s) => {
     if (typeof s === "string") {
@@ -9,13 +12,17 @@ export function stripper<T>(strip: StripCommand | StripCommand[], obj: T): Recor
     }
     return s;
   });
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return localStripper(undefined, restrips, obj) as Record<string, any>;
+  return localStripper(undefined, restrips, obj) as T extends ArrayLike<unknown>
+    ? Record<string, unknown>[]
+    : Record<string, unknown>;
 }
 
 function localStripper<T>(path: string | undefined, restrips: RegExp[], obj: T): unknown {
   if (typeof obj !== "object" || obj === null) {
     return obj;
+  }
+  if (Array.isArray(obj)) {
+    return obj.map((i) => localStripper(path, restrips, i));
   }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const ret = { ...obj } as Record<string, any>;

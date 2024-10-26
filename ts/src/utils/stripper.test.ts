@@ -103,3 +103,39 @@ it("array dotted concrete stripper", () => {
     ],
   });
 });
+it("return type unknown|unknown[]", () => {
+  const plain = stripper(["main"], { main: "main" });
+  expectTypeOf(plain).toEqualTypeOf<Record<string, unknown>>();
+  const aplain = stripper(["main"], [{ main: "main" }]);
+  expectTypeOf(aplain).toEqualTypeOf<Record<string, unknown>[]>();
+});
+it("array top level stripper", () => {
+  expect(
+    stripper(
+      ["main"],
+      [
+        { o: 1, main: "main" },
+        { o: 2, main: "main" },
+        [
+          { o: 3, main: "main" },
+          { o: 4, main: "main" },
+        ],
+      ],
+    ),
+  ).toEqual([
+    {
+      o: 1,
+    },
+    {
+      o: 2,
+    },
+    [
+      {
+        o: 3,
+      },
+      {
+        o: 4,
+      },
+    ],
+  ]);
+});

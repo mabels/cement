@@ -307,4 +307,20 @@ describe("URI", () => {
     );
     expect(rParams2.Err().message).toEqual(`keys not found: key2,name2`);
   });
+  for (const url of [
+    URI.from("http://host/bla/blub?name=test&store=meta&key=%40bla"),
+    BuildURI.from("http://host/bla/blub?name=test&store=meta&key=%40bla"),
+  ]) {
+    it(`getParam default ${url.constructor.name}`, () => {
+      const rstring = url.getParam("key2", "default");
+      expectTypeOf(rstring).toEqualTypeOf<string>();
+      const xstring = url.getParam("key2");
+      expectTypeOf(xstring).toEqualTypeOf<string | undefined>();
+
+      expect(url.getParam("key2", "default")).toBe("default");
+      expect(url.getParam("key2")).toBeFalsy();
+      expect(url.getParam("key")).toBe("@bla");
+      expect(url.getParam("key", "default")).toBe("@bla");
+    });
+  }
 });
