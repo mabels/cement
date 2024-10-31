@@ -265,8 +265,9 @@ export class LoggerImpl implements Logger {
     }
     return this;
   }
-  Bool(key: string, value: unknown): Logger {
-    this._attributes[key] = logValue(!!value);
+  Bool(key: string | Record<string, unknown>, value: unknown): Logger {
+    this.coerceKey(key, !!value);
+    // this._attributes[key] = logValue(!!value);
     return this;
   }
 
@@ -325,13 +326,22 @@ export class LoggerImpl implements Logger {
     return this;
   }
 
-  Str(key: string, value?: string): Logger {
-    this._attributes[key] = logValue(value);
+  private coerceKey(key: string | Record<string, unknown>, value?: unknown): void {
+    if (typeof key === "string") {
+      this._attributes[key] = logValue(value as LogValueArg);
+    } else {
+      this.Pair(key);
+    }
+  }
+
+  Str(key: string | Record<string, string>, value?: string): Logger {
+    this.coerceKey(key, value);
     return this;
   }
 
-  Any(key: string, value?: string | number | boolean | LogSerializable): Logger {
-    this._attributes[key] = logValue(value as LogValueArg);
+  Any(key: string | Record<string, unknown>, value?: unknown): Logger {
+    this.coerceKey(key, value);
+    //this._attributes[coerceKey(key)] = logValue(value as LogValueArg);
     return this;
   }
   Dur(key: string, nsec: number): Logger {
@@ -339,11 +349,12 @@ export class LoggerImpl implements Logger {
     // new Intl.DurationFormat("en", { style: "narrow" }).format(nsec);
     return this;
   }
-  Uint64(key: string, value: number): Logger {
-    this._attributes[key] = logValue(value);
+  Uint64(key: string | Record<string, number>, value?: number): Logger {
+    this.coerceKey(key, value);
+    //this._attributes[coerceKey(key)] = logValue(value);
     return this;
   }
-  Int(key: string, value: number): Logger {
+  Int(key: string | Record<string, number>, value?: number): Logger {
     return this.Uint64(key, value);
   }
 
@@ -462,7 +473,7 @@ class WithLoggerBuilder implements WithLogger {
     return this;
   }
 
-  Str(key: string, value?: string): WithLogger {
+  Str(key: string | Record<string, string>, value?: string): WithLogger {
     this._li.Str(key, value);
     return this;
   }
@@ -481,7 +492,7 @@ class WithLoggerBuilder implements WithLogger {
     this._li.Ref(key, action);
     return this;
   }
-  Bool(key: string, value: unknown): WithLogger {
+  Bool(key: string | Record<string, unknown>, value?: unknown): WithLogger {
     this._li.Bool(key, value);
     return this;
   }
@@ -493,7 +504,7 @@ class WithLoggerBuilder implements WithLogger {
     this._li.Url(url, key);
     return this;
   }
-  Int(key: string, value: number): WithLogger {
+  Int(key: string | Record<string, number>, value?: number): WithLogger {
     this._li.Int(key, value);
     return this;
   }
@@ -532,7 +543,7 @@ class WithLoggerBuilder implements WithLogger {
     this._li.Timestamp();
     return this;
   }
-  Any(key: string, value: LogSerializable): WithLogger {
+  Any(key: string | Record<string, unknown>, value?: unknown | LogSerializable): WithLogger {
     this._li.Any(key, value);
     return this;
   }
@@ -540,7 +551,7 @@ class WithLoggerBuilder implements WithLogger {
     this._li.Dur(key, nsec);
     return this;
   }
-  Uint64(key: string, value: number): WithLogger {
+  Uint64(key: string | Record<string, number>, value?: number): WithLogger {
     this._li.Uint64(key, value);
     return this;
   }

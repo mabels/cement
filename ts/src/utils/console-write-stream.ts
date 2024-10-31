@@ -24,11 +24,11 @@ export class ConsoleWriterStreamDefaultWriter implements WritableStreamDefaultWr
     this.closed = Promise.resolve(undefined);
   }
   async write(chunk?: Uint8Array | undefined): Promise<void> {
-    const str = this.decoder.decode(chunk).trimEnd();
+    let strObj: string | { level: string } = this.decoder.decode(chunk).trimEnd();
     let output = "log";
     try {
-      const decode = JSON.parse(str);
-      output = decode.level;
+      strObj = JSON.parse(strObj) as { level: string };
+      output = strObj.level;
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
       /* noop */
@@ -36,15 +36,15 @@ export class ConsoleWriterStreamDefaultWriter implements WritableStreamDefaultWr
     switch (output) {
       case "error":
         // eslint-disable-next-line no-console
-        console.error(str);
+        console.error(strObj);
         break;
       case "warn":
         // eslint-disable-next-line no-console
-        console.warn(str);
+        console.warn(strObj);
         break;
       default:
         // eslint-disable-next-line no-console
-        console.log(str);
+        console.log(strObj);
     }
   }
 }

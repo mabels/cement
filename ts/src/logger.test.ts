@@ -1098,6 +1098,37 @@ describe("TestLogger", () => {
     expect(res.Err().message).toBe('{"level":"error","msg":"AsError"}\n');
   });
 
+  it("receive object", async () => {
+    logger
+      .Error()
+      .Str({ blaStr: "blub", blaStr2: "blub2" })
+      .Uint64({ blaUint64: 65, blaUint642: 66 })
+      .Int({ blaInt: 65 })
+      .Bool({ blaBool: true, blaBool2: false })
+      .Any({ blaAny: { a: 1 }, blaAny2: { b: 2 } })
+      .Msg("hello");
+    await logger.Flush();
+    expect(logCollector.Logs()).toEqual([
+      {
+        blaAny: {
+          a: 1,
+        },
+        blaAny2: {
+          b: 2,
+        },
+        blaBool: true,
+        blaBool2: false,
+        blaInt: 65,
+        blaStr: "blub",
+        blaStr2: "blub2",
+        blaUint64: 65,
+        blaUint642: 66,
+        level: "error",
+        msg: "hello",
+      },
+    ]);
+  });
+
   it("my own yaml formatter", async () => {
     const log = logger.SetExposeStack(true).SetFormatter(new YAMLFormatter(logger.TxtEnDe(), 2)).With().Logger();
     log

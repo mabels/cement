@@ -3,6 +3,38 @@ import { StripCommand, stripper } from "./utils/stripper.js";
 
 type NullOrUndef = null | undefined;
 
+type OneKey<K extends string, V = string> = Record<K, V>;
+
+export interface URIInterface<R extends URIInterface<R>> {
+  // readonly hostname: string;
+  // readonly port: string;
+  // readonly host: string;
+  // readonly protocol: string;
+  // readonly pathname: string;
+  readonly getParams: Iterable<[string, string]>;
+
+  hasParam(key: string): boolean;
+  getParam<T extends string | undefined>(key: string | OneKey<string>, def?: T): T extends string ? string : string | undefined;
+  getParamResult(key: string, msgFn?: (key: string) => string): Result<string>;
+  getParamsResult(...keys: keysParam): Result<Record<string, string>>;
+  clone(): R;
+  asURL(): URL;
+  toString(): string;
+  toJSON(): string;
+  asObj(...strips: StripCommand[]): Partial<HostURIObject | PathURIObject>;
+}
+
+function coerceKey(key: string | OneKey<string>, def?: string): { key: string; def?: string } {
+  if (typeof key === "object") {
+    const keys = Object.keys(key);
+    if (keys.length !== 1) {
+      throw new Error(`Invalid key: ${JSON.stringify(key)}`);
+    }
+    return { key: keys[0], def: key[keys[0]] };
+  }
+  return { key, def: def };
+}
+
 export interface URIObject {
   readonly style: "host" | "path";
   readonly protocol: string;
@@ -205,13 +237,25 @@ function getParamResult(
   return Result.Ok(val);
 }
 
-type keysParam = (string | ((...keys: string[]) => string))[];
+type msgFn = (...keys: string[]) => string;
+type keysParam = (string | msgFn | Record<string, string>)[];
 
 function getParamsResult(
   keys: keysParam,
   getParam: { getParam: (key: string) => string | undefined },
 ): Result<Record<string, string>> {
-  const keyStrs = keys.flat().filter((k) => typeof k === "string");
+  const keyDef = keys.flat().reduce(
+    (acc, i) => {
+      if (typeof i === "string") {
+        acc.push({ key: i });
+      } else if (typeof i === "object") {
+        acc.push(...Object.keys(i).map((k) => ({ key: k, def: i[k] })));
+      }
+      return acc;
+    },
+    [] as { key: string; def?: string }[],
+  );
+  //.filter((k) => typeof k === "string");
   const msgFn =
     keys.find((k) => typeof k === "function") ||
     ((...keys: string[]): string => {
@@ -220,12 +264,16 @@ function getParamsResult(
     });
   const errors: string[] = [];
   const result: Record<string, string> = {};
-  for (const key of keyStrs) {
-    const val = getParam.getParam(key);
+  for (const kd of keyDef) {
+    const val = getParam.getParam(kd.key);
     if (val === undefined) {
-      errors.push(key);
+      if (kd.def) {
+        result[kd.key] = kd.def;
+      } else {
+        errors.push(kd.key);
+      }
     } else {
-      result[key] = val;
+      result[kd.key] = val;
     }
   }
   if (errors.length) {
@@ -234,7 +282,7 @@ function getParamsResult(
   return Result.Ok(result);
 }
 
-export class BuildURI {
+export class BuildURI implements URIInterface<BuildURI> {
   _url: MutableURL; // pathname needs this
   private constructor(url: MutableURL) {
     this._url = url;
@@ -359,10 +407,15 @@ export class BuildURI {
     return this._url.searchParams.has(key);
   }
 
-  getParam<T extends string | undefined>(key: string, def?: T): T extends string ? string : string | undefined {
-    let val = this._url.searchParams.get(key);
-    if (!falsy2undef(val) && def) {
-      val = def;
+  get getParams(): Iterable<[string, string]> {
+    return this._url.searchParams.entries();
+  }
+
+  getParam<T extends string | undefined>(key: string | OneKey<string>, def?: T): T extends string ? string : string | undefined {
+    const { key: k, def: d } = coerceKey(key, def);
+    let val = this._url.searchParams.get(k);
+    if (!falsy2undef(val) && d) {
+      val = d;
     }
     return falsy2undef(val) as T extends string ? string : string | undefined;
   }
@@ -391,6 +444,10 @@ export class BuildURI {
     return this.URI().asObj(...strips);
   }
 
+  clone(): BuildURI {
+    return BuildURI.from(this.toString());
+  }
+
   URI(): URI {
     return URI.from(this._url);
   }
@@ -401,7 +458,7 @@ export type CoerceURI = string | URI | MutableURL | URL | BuildURI | NullOrUndef
 export const hasHostPartProtocols: Set<string> = new Set<string>(["http", "https", "ws", "wss"]);
 
 // non mutable URL Implementation
-export class URI {
+export class URI implements URIInterface<URI> {
   static protocolHasHostpart(protocol: string): () => void {
     protocol = protocol.replace(/:$/, "");
     hasHostPartProtocols.add(protocol);
@@ -506,10 +563,11 @@ export class URI {
     return this._url.searchParams.has(key);
   }
 
-  getParam<T extends string | undefined>(key: string, def?: T): T extends string ? string : string | undefined {
-    let val = this._url.searchParams.get(key);
-    if (!falsy2undef(val) && def) {
-      val = def;
+  getParam<T extends string | undefined>(key: string | OneKey<string>, def?: T): T extends string ? string : string | undefined {
+    const { key: k, def: d } = coerceKey(key, def);
+    let val = this._url.searchParams.get(k);
+    if (!falsy2undef(val) && d) {
+      val = d;
     }
     return falsy2undef(val) as T extends string ? string : string | undefined;
   }

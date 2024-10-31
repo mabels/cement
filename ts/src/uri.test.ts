@@ -295,7 +295,9 @@ describe("URI", () => {
 
   it("URI getParamsResult fail", () => {
     const url = URI.from("http://host/bla/blub?name=test&store=meta&key=%40bla");
-    const rParams = url.getParamsResult("key", "name", "store", "key2", "name2");
+    const rParams = url.getParamsResult("key", "name", "store", "key2", {
+      name2: undefined as unknown as string,
+    });
     expect(rParams.Err().message).toEqual(`missing parameters: key2,name2`);
     const rParams2 = url.getParamsResult(
       "key",
@@ -321,6 +323,46 @@ describe("URI", () => {
       expect(url.getParam("key2")).toBeFalsy();
       expect(url.getParam("key")).toBe("@bla");
       expect(url.getParam("key", "default")).toBe("@bla");
+
+      expect(url.getParam({ key: "default" })).toBe("@bla");
+      expect(url.getParam({ key2: "default" })).toBe("default");
+
+      expect(() => url.getParam({})).toThrowError("Invalid key: {}");
+      expect(() => url.getParam({ key: "x", key2: "y" })).toThrowError('Invalid key: {"key":"x","key2":"y"}');
     });
   }
+  it("dashed getParamsResult", () => {
+    const url = URI.from("http://host/bla/blub?name=test&email=a@b.de&clock-id=123&server-id=456");
+    const res = url.getParamsResult("name", "email", "clock-id", {
+      "server-id": "defServer",
+      bla: "defBla",
+    });
+    expect(res.isOk()).toBe(true);
+    expect(res.Ok()).toEqual({
+      bla: "defBla",
+      name: "test",
+      email: "a@b.de",
+      "clock-id": "123",
+      "server-id": "456",
+    });
+  });
+
+  it("recorded getParamsResult", () => {
+    const url = URI.from("http://host/bla/blub?name=test&email=a@b.de&clock-id=123&server-id=456");
+    const res = url.getParamsResult({
+      name: "defName",
+      email: "defEmail",
+      "clock-id": "defClock-id",
+      "server-id": "defServer",
+      bla: "defBla",
+    });
+    expect(res.isOk()).toBe(true);
+    expect(res.Ok()).toEqual({
+      name: "test",
+      email: "a@b.de",
+      "clock-id": "123",
+      "server-id": "456",
+      bla: "defBla",
+    });
+  });
 });

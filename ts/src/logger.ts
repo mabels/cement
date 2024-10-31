@@ -175,7 +175,11 @@ export interface LoggerInterface<R> {
 
   Hash(value: unknown, key?: string): R;
 
-  Str(key: string, value?: string): R;
+  Str<T extends string | Record<string, string>>(key: T, value?: T extends string ? string : undefined): R;
+  Uint64<T extends string | Record<string, number>>(key: T, value?: T extends string ? number : undefined): R;
+  Int<T extends string | Record<string, number>>(key: T, value?: T extends string ? number : undefined): R;
+  Bool<T extends string | Record<string, unknown>>(key: T, value?: T extends string ? unknown : undefined): R;
+  Any<T extends string | Record<string, unknown>>(key: T, value?: T extends string ? unknown : undefined): R;
 
   Http(res: Response | Result<Response>, req?: Request, key?: string): R;
   Pair(x: Record<string, unknown>): R;
@@ -189,11 +193,7 @@ export interface LoggerInterface<R> {
   Err(err: unknown | Result<unknown> | Error): R; // could be Error, or something which coerces to string
   Info(): R;
   Timestamp(): R;
-  Any(key: string, value: unknown): R;
   Dur(key: string, nsec: number): R;
-  Uint64(key: string, value: number): R;
-  Int(key: string, value: number): R;
-  Bool(key: string, value: unknown): R;
 }
 
 export function IsLogger(obj: unknown): obj is Logger {
