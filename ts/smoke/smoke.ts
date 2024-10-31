@@ -14,7 +14,7 @@ import { VERSION, LoggerImpl, Result, Option, Level, runtimeFn } from "@adviser/
     .With()
     .Str("runtime", globalThis.Deno ? "Deno" : "Node")
     .Str("version", VERSION)
-    .Str("runtime-version", typeof process == "object" ? process?.version : globalThis.Deno.version.deno)
+    .Str("runtime-version", !globalThis.Deno ? process?.version : globalThis.Deno.version.deno)
     .Logger();
   const rt = runtimeFn();
   if (rt.isNodeIsh) {
