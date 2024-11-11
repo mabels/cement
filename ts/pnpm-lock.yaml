@@ -26,7 +26,7 @@ importers:
         version: 8.12.2(eslint@9.14.0)(typescript@5.6.3)
       '@vitest/browser':
         specifier: ^2.1.1
-        version: 2.1.1(@vitest/spy@2.1.1)(typescript@5.6.3)(vite@5.4.7(@types/node@22.8.7))(vitest@2.1.1)(webdriverio@9.2.8)
+        version: 2.1.1(@vitest/spy@2.1.1)(typescript@5.6.3)(vite@5.4.7(@types/node@22.8.7))(vitest@2.1.1)(webdriverio@9.2.11)
       esbuild-plugin-replace:
         specifier: ^1.4.0
         version: 1.4.0
@@ -59,7 +59,7 @@ importers:
         version: 2.1.1(@types/node@22.8.7)(@vitest/browser@2.1.1)(msw@2.4.9(typescript@5.6.3))
       webdriverio:
         specifier: ^9.1.0
-        version: 9.2.8
+        version: 9.2.11
 
 packages:
 
@@ -2404,8 +2404,8 @@ packages:
     resolution: {integrity: sha512-40NtUC1zME9tPHNfZv6ETSE3+aE75qZuKjbVAA0gj02AkO1Nl3yJmf5RLdaLLfIQ2WlrbRP1g8KXlkiiVCmakg==}
     engines: {node: '>=18.20.0'}
 
-  webdriverio@9.2.8:
-    resolution: {integrity: sha512-LQa7DlwatyWc0WmBqdklrSzi43SLdva5q5CUFOIXtzhdngsjsqv9w2TxZnlyo2BTf/f/BbQ1L4FgiWADuTAZ/w==}
+  webdriverio@9.2.11:
+    resolution: {integrity: sha512-JZJiFUy7Rv5C2PmCIN2GjPxp6qUrUhvlhshbrczkySLUmv1NW1EGWOwpJiJ9AFQC94ydDq80EdFaRdyNZSs6DQ==}
     engines: {node: '>=18.20.0'}
     peerDependencies:
       puppeteer-core: ^22.3.0
@@ -3102,7 +3102,7 @@ snapshots:
       '@typescript-eslint/types': 8.12.2
       eslint-visitor-keys: 3.4.3
 
-  '@vitest/browser@2.1.1(@vitest/spy@2.1.1)(typescript@5.6.3)(vite@5.4.7(@types/node@22.8.7))(vitest@2.1.1)(webdriverio@9.2.8)':
+  '@vitest/browser@2.1.1(@vitest/spy@2.1.1)(typescript@5.6.3)(vite@5.4.7(@types/node@22.8.7))(vitest@2.1.1)(webdriverio@9.2.11)':
     dependencies:
       '@testing-library/dom': 10.4.0
       '@testing-library/user-event': 14.5.2(@testing-library/dom@10.4.0)
@@ -3115,7 +3115,7 @@ snapshots:
       vitest: 2.1.1(@types/node@22.8.7)(@vitest/browser@2.1.1)(msw@2.4.9(typescript@5.6.3))
       ws: 8.18.0
     optionalDependencies:
-      webdriverio: 9.2.8
+      webdriverio: 9.2.11
     transitivePeerDependencies:
       - '@vitest/spy'
       - bufferutil
@@ -4729,7 +4729,7 @@ snapshots:
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/node': 22.8.7
-      '@vitest/browser': 2.1.1(@vitest/spy@2.1.1)(typescript@5.6.3)(vite@5.4.7(@types/node@22.8.7))(vitest@2.1.1)(webdriverio@9.2.8)
+      '@vitest/browser': 2.1.1(@vitest/spy@2.1.1)(typescript@5.6.3)(vite@5.4.7(@types/node@22.8.7))(vitest@2.1.1)(webdriverio@9.2.11)
     transitivePeerDependencies:
       - less
       - lightningcss
@@ -4767,7 +4767,7 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  webdriverio@9.2.8:
+  webdriverio@9.2.11:
     dependencies:
       '@types/node': 20.16.5
       '@types/sinonjs__fake-timers': 8.1.5
