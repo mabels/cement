@@ -153,6 +153,8 @@ export interface LevelHandler {
   isEnabled(ilevel: unknown, module: unknown): boolean;
 }
 
+export type HttpType = Response | Result<Response> | Request | Result<Request>;
+
 export interface LoggerInterface<R> {
   TxtEnDe(): TxtEnDecoder;
   Module(key: string): R;
@@ -181,7 +183,10 @@ export interface LoggerInterface<R> {
   Bool<T extends string | Record<string, unknown>>(key: T, value?: T extends string ? unknown : undefined): R;
   Any<T extends string | Record<string, unknown>>(key: T, value?: T extends string ? unknown : undefined): R;
 
-  Http(res: Response | Result<Response>, req?: Request, key?: string): R;
+  // first string is the key
+  // first response is Response
+  // first request is Request
+  Http(...mix: (HttpType|string)[]): R;
   Pair(x: Record<string, unknown>): R;
 
   Error(): R;

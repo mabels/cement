@@ -17,6 +17,7 @@ import {
   LevelHandler,
   LogFormatter,
   LogValueArg,
+  HttpType,
 } from "./logger.js";
 import { WebSysAbstraction } from "./web/web-sys-abstraction.js";
 import { SysAbstraction } from "./sys-abstraction.js";
@@ -271,19 +272,33 @@ export class LoggerImpl implements Logger {
     return this;
   }
 
-  Http(res: Response | Result<Response>, req?: Request, key?: string): Logger {
-    if (Result.Is(res)) {
-      if (res.isErr()) {
-        this.Err(res.Err());
-        return this;
-      }
-      res = res.Ok();
+  Http(...mix: (HttpType|string)[]): Logger {
+    const key: string|undefined = mix.find((x) => typeof x === "string");
+    mix = mix.filter((x) => typeof x !== "string");
+    const resErrors = mix.filter((x) => Result.Is(x) && x.isErr()) as Result<unknown, Error>[];
+    if (resErrors.length) {
+      this.Err(resErrors.map((x) => x.Err().message).join("\n"));
+      return this;
     }
-    let reqRes: Response | { res: Response; req: Request } = res;
-    if (req) {
-      reqRes = { res, req };
+    const req = mix
+      .map(reqOrResult => Result.Is(reqOrResult) ? reqOrResult.Ok() : reqOrResult)
+      .find((req) => typeof (req as Response).status !== "number") as Request|undefined
+    const res = mix
+      .map(resOrResult => Result.Is(resOrResult) ? resOrResult.Ok() : resOrResult)
+      .find((res) => typeof (res as Response).status === "number") as Response|undefined;
+    let reqAndOrres: { res: Response; req: Request } | Response | Request | undefined;
+    if (res && req) {
+      reqAndOrres = { res, req };
+     } else if (!res && !req) {
+      reqAndOrres = undefined
+     } else if (res) {
+      reqAndOrres = res;
+     } else if (req) {
+      reqAndOrres = req;
+     }
+    if (reqAndOrres) {
+      this.Any(key || "Http", reqAndOrres as unknown as LogSerializable);
     }
-    this.Any(key || "Http", reqRes as unknown as LogSerializable);
     return this;
   }
   Pair(x: Record<string, unknown>): Logger {
@@ -464,8 +479,8 @@ class WithLoggerBuilder implements WithLogger {
     return this;
   }
 
-  Http(res: Response | Result<Response>, req?: Request, key?: string): WithLogger {
-    this._li.Http(res, req, key);
+  Http(...mix: (HttpType|string)[]): WithLogger {
+    this._li.Http(...mix);
     return this;
   }
   Pair(x: Record<string, unknown>): WithLogger {

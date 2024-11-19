@@ -1209,117 +1209,506 @@ describe("TestLogger", () => {
     ]);
   });
 
-  it("fetch-formatter", async () => {
+  class TestResponse extends Response {
+    readonly #url: string;
+    constructor(body?: BodyInit, init?: ResponseInit & { url: string }) {
+      super(body, init);
+      this.#url = init?.url || "";
+    }
+    get url(): string {
+      return this.#url;
+    }
+    // toJSON(): unknown {
+    // return super.toJSON();
+    // }
+  }
+
+  describe("fetch-formatter", async () => {
     // const result = await fetch("https://www.google.com")
-    const result = new Response("body", {
+    const resp = new TestResponse("body", {
       status: 200,
       statusText: "OK",
       headers: new Headers({
         "Content-Type": "text/html",
         "X-Test": "test",
       }),
+      url: "https://www.google.com",
     });
-    // logger.SetFormatter(new YAMLFormatter(logger.TxtEnDe(), 2));
-    logger.Error().Any("res", { the: result }).Msg("ok");
-    logger.Error().Http(Result.Ok(result)).Msg("1");
     const req = new Request("https://www.google.com", {
       method: "PUT",
       headers: new Headers({
         "Content-Type": "text/html",
         "X-Test": "xtest",
       }),
+      body: "String"
     });
-    logger.Error().Http(result, req, "Https").Msg("1");
-    await logger.Flush();
-    expect(
-      stripper(
-        ["isReloadNavigation", "reason", "targetAddressSpace", "attribute", "duplex"],
+
+    async function fixupLogs(): Promise<unknown> {
+      await logger.Flush();
+      return stripper(
+        [
+          "isReloadNavigation",
+          "reason",
+          "targetAddressSpace",
+          "attribute",
+          "duplex",
+          "cache",
+          "credentials",
+          "destination",
+        ],
         logCollector.Logs(true).map((i) => JSON.parse(i)),
-      ),
-    ).toEqual([
-      {
-        level: "error",
-        res: {
-          the: {
-            type: "default",
-            url: "",
-            redirected: false,
-            status: 200,
-            ok: true,
-            statusText: "OK",
-            headers: {
-              "content-type": "text/html",
-              "x-test": "test",
-            },
-            body: ">Stream<",
-            bodyUsed: false,
-          },
-        },
-        msg: "ok",
-      },
-      {
-        level: "error",
-        Http: {
-          type: "default",
-          url: "",
-          redirected: false,
-          status: 200,
-          ok: true,
-          statusText: "OK",
-          headers: {
-            "content-type": "text/html",
-            "x-test": "test",
-          },
-          body: ">Stream<",
-          bodyUsed: false,
-        },
-        msg: "1",
-      },
-      {
-        level: "error",
-        Https: {
+      )
+    }
+    it("res", async () => {
+      logger.Error().Any("res", { the: resp }).Msg("ok-the-res");
+      expect(await fixupLogs()).toEqual([
+        {
+          level: "error",
           res: {
-            type: "default",
-            url: "",
-            redirected: false,
-            status: 200,
-            ok: true,
-            statusText: "OK",
-            headers: {
+            the: {
+              type: "default",
+              // url: "",
+              redirected: false,
+              status: 200,
+              ok: true,
+              statusText: "OK",
+              headers: {
+                "content-type": "text/html",
+                "x-test": "test",
+              },
+              body: ">Stream<",
+              bodyUsed: false,
+            },
+          },
+          msg: "ok-the-res",
+        },
+      ]);
+    });
+
+    it("res", async () => {
+      logger.Error().Any("req", { the: req }).Msg("ok-the-req");
+      expect(await fixupLogs()).toEqual([
+        {
+          level: "error",
+          msg: "ok-the-req",
+          req: {
+            the: {
+              "body": ">Stream<",
+              "bodyUsed": false,
+              "headers": {
+                "content-type": "text/html",
+                "x-test": "xtest",
+              },
+              "keepalive": false,
+              "method": "PUT",
+              "mode": "cors",
+
+              "integrity": "",
+              "isHistoryNavigation": false,
+              "redirect": "follow",
+              "referrer": "about:client",
+              "referrerPolicy": "",
+              "signal": {
+                "aborted": false,
+                "onabort": "null",
+              },
+              "url": "https://www.google.com/",
+            },
+          },
+        },
+      ]);
+    });
+
+    it("req-res", async () => {
+      logger.Error().Any("req-res", { the: { req, res: resp } }).Msg("ok-the-req-res");
+      expect(await fixupLogs()).toEqual([
+        {
+          "level": "error",
+          "msg": "ok-the-req-res",
+          "req-res": {
+            "the": {
+              "req": {
+                "body": ">Stream<",
+                "bodyUsed": false,
+                "headers": {
+                  "content-type": "text/html",
+                  "x-test": "xtest",
+                },
+                "integrity": "",
+                "isHistoryNavigation": false,
+                "keepalive": false,
+                "method": "PUT",
+                "mode": "cors",
+                "redirect": "follow",
+                "referrer": "about:client",
+                "referrerPolicy": "",
+                "signal": {
+                  "aborted": false,
+                  "onabort": "null",
+                },
+                "url": "https://www.google.com/",
+              },
+              "res": {
+                "body": ">Stream<",
+                "bodyUsed": false,
+                "headers": {
+                  "content-type": "text/html",
+                  "x-test": "test",
+                },
+                "ok": true,
+                "redirected": false,
+                "status": 200,
+                "statusText": "OK",
+                "type": "default",
+                // "url": "",
+              },
+            }
+          }
+        },
+      ]);
+    });
+
+    it("req-res", async () => {
+      logger.Error().Http(Result.Ok(resp)).Msg("-1");
+      expect(await fixupLogs()).toEqual([
+        {
+          "Http": {
+            "body": ">Stream<",
+            "bodyUsed": false,
+            "headers": {
               "content-type": "text/html",
               "x-test": "test",
             },
-            body: ">Stream<",
-            bodyUsed: false,
+            "ok": true,
+            "redirected": false,
+            "status": 200,
+            "statusText": "OK",
+            "type": "default",
           },
-          req: {
-            method: "PUT",
-            url: "https://www.google.com/",
-            headers: {
+          "level": "error",
+          "msg": "-1",
+        },
+      ]);
+    });
+    it("0", async () => {
+      logger.Error().Http().Msg("0");
+      expect(await fixupLogs()).toEqual([
+        {
+          "level": "error",
+          "msg": "0",
+        },
+      ]);
+    });
+    it("1", async () => {
+      logger.Error().Http(resp, req, "Https").Msg("1");
+      expect(await fixupLogs()).toEqual([
+        {
+          "Https": {
+            "req": {
+              "body": ">Stream<",
+              "bodyUsed": false,
+              "headers": {
+                "content-type": "text/html",
+                "x-test": "xtest",
+              },
+              "integrity": "",
+              "isHistoryNavigation": false,
+              "keepalive": false,
+              "method": "PUT",
+              "mode": "cors",
+              "redirect": "follow",
+              "referrer": "about:client",
+              "referrerPolicy": "",
+              "signal": {
+                "aborted": false,
+                "onabort": "null",
+              },
+              "url": "https://www.google.com/",
+            },
+            "res": {
+              "body": ">Stream<",
+              "bodyUsed": false,
+              "headers": {
+                "content-type": "text/html",
+                "x-test": "test",
+              },
+              "ok": true,
+              "redirected": false,
+              "status": 200,
+              "statusText": "OK",
+              "type": "default",
+            },
+          },
+          "level": "error",
+          "msg": "1",
+        }
+      ]);
+    })
+    it("1.1", async () => {
+      logger.Error().Http("Yolo", Result.Ok(req), Result.Ok(resp)).Msg("1.1");
+      expect(await fixupLogs()).toEqual([
+        {
+          "Yolo": {
+            "req": {
+              "body": ">Stream<",
+              "bodyUsed": false,
+              "headers": {
+                "content-type": "text/html",
+                "x-test": "xtest",
+              },
+              "integrity": "",
+              "isHistoryNavigation": false,
+              "keepalive": false,
+              "method": "PUT",
+              "mode": "cors",
+              "redirect": "follow",
+              "referrer": "about:client",
+              "referrerPolicy": "",
+              "signal": {
+                "aborted": false,
+                "onabort": "null",
+              },
+              "url": "https://www.google.com/",
+            },
+            "res": {
+              "body": ">Stream<",
+              "bodyUsed": false,
+              "headers": {
+                "content-type": "text/html",
+                "x-test": "test",
+              },
+              "ok": true,
+              "redirected": false,
+              "status": 200,
+              "statusText": "OK",
+              "type": "default",
+            },
+          },
+          "level": "error",
+          "msg": "1.1",
+        },
+      ]);
+    })
+    it("1.2", async () => {
+      logger.Error().Http("Yerr", Result.Err<Response>("e1"), Result.Err<Request>("e2")).Msg("1.2");
+      expect(await fixupLogs()).toEqual([
+        {
+          "error": [
+            "e1",
+            "e2",
+          ],
+          "level": "error",
+          "msg": "1.2",
+        },
+      ]);
+    })
+    it("2", async () => {
+      logger.Error().Http(req, "Https").Msg("2");
+      expect(await fixupLogs()).toEqual([
+        {
+          "Https": {
+            "body": ">Stream<",
+            "bodyUsed": false,
+            "headers": {
               "content-type": "text/html",
               "x-test": "xtest",
             },
-            destination: "",
-            referrer: "about:client",
-            referrerPolicy: "",
-            mode: "cors",
-            credentials: "same-origin",
-            cache: "default",
-            redirect: "follow",
-            integrity: "",
-            keepalive: false,
-            isHistoryNavigation: false,
-            signal: {
-              aborted: false,
-              onabort: "null",
+            "integrity": "",
+            "isHistoryNavigation": false,
+            "keepalive": false,
+            "method": "PUT",
+            "mode": "cors",
+            "redirect": "follow",
+            "referrer": "about:client",
+            "referrerPolicy": "",
+            "signal": {
+              "aborted": false,
+              "onabort": "null",
             },
-            body: "null",
-            bodyUsed: false,
+            "url": "https://www.google.com/",
           },
+          "level": "error",
+          "msg": "2",
+        }
+      ]);
+    });
+    it("3", async () => {
+      logger.Error().Any("HttpReq", req).Msg("3");
+      expect(await fixupLogs()).toEqual([
+        {
+          "HttpReq": {
+            "body": ">Stream<",
+            "bodyUsed": false,
+            "headers": {
+              "content-type": "text/html",
+              "x-test": "xtest",
+            },
+            "integrity": "",
+            "isHistoryNavigation": false,
+            "keepalive": false,
+            "method": "PUT",
+            "mode": "cors",
+            "redirect": "follow",
+            "referrer": "about:client",
+            "referrerPolicy": "",
+            "signal": {
+              "aborted": false,
+              "onabort": "null",
+            },
+            "url": "https://www.google.com/",
+          },
+          "level": "error",
+          "msg": "3",
         },
-        msg: "1",
-      },
-    ]);
+      ]);
+    })
+    it("4", async () => {
+      logger.Error().Any("HttpRes", resp).Msg("4");
+      expect(await fixupLogs()).toEqual([
+        {
+          "HttpRes": {
+            "body": ">Stream<",
+            "bodyUsed": false,
+            "headers": {
+              "content-type": "text/html",
+              "x-test": "test",
+            },
+            "ok": true,
+            "redirected": false,
+            "status": 200,
+            "statusText": "OK",
+            "type": "default",
+          },
+          "level": "error",
+          "msg": "4",
+        },
+      ]);
+    })
+    // const x = [
+
+
+
+    //   {
+    //     level: "error",
+    //     Https: {
+    //       res: {
+    //         type: "default",
+    //         redirected: false,
+    //         status: 200,
+    //         ok: true,
+    //         statusText: "OK",
+    //         headers: {
+    //           "content-type": "text/html",
+    //           "x-test": "test",
+    //         },
+    //         body: ">Stream<",
+    //         bodyUsed: false,
+    //       },
+    //       req: {
+    //         "body": ">Stream<",
+    //         method: "PUT",
+    //         url: "https://www.google.com/",
+    //         headers: {
+    //           "content-type": "text/html",
+    //           "x-test": "xtest",
+    //         },
+    //         destination: "",
+    //         referrer: "about:client",
+    //         referrerPolicy: "",
+    //         mode: "cors",
+    //         credentials: "same-origin",
+    //         cache: "default",
+    //         redirect: "follow",
+    //         integrity: "",
+    //         keepalive: false,
+    //         isHistoryNavigation: false,
+    //         signal: {
+    //           aborted: false,
+    //           onabort: "null",
+    //         },
+    //         bodyUsed: false,
+    //       },
+    //     },
+    //     msg: "1",
+    //   },
+
+    //   {
+    //     "Http": {
+    //       "req": "Https",
+    //       "res": {
+    //         "body": ">Stream<",
+    //         "bodyUsed": false,
+    //         "cache": "default",
+    //         "credentials": "same-origin",
+    //         "destination": "",
+    //         "headers": {
+    //           "content-type": "text/html",
+    //           "x-test": "xtest",
+    //         },
+    //         "integrity": "",
+    //         "isHistoryNavigation": false,
+    //         "keepalive": false,
+    //         "method": "PUT",
+    //         "mode": "cors",
+    //         "redirect": "follow",
+    //         "referrer": "about:client",
+    //         "referrerPolicy": "",
+    //         "signal": {
+    //           "aborted": false,
+    //           "onabort": "null",
+    //         },
+    //         "url": "https://www.google.com/",
+    //       },
+    //     },
+    //     "level": "error",
+    //     "msg": "2",
+    //   },
+
+    //   {
+    //     "HttpReq": {
+    //       "body": ">Stream<",
+    //       "bodyUsed": false,
+    //       "headers": {
+    //         "content-type": "text/html",
+    //         "x-test": "xtest",
+    //       },
+    //       "integrity": "",
+    //       "isHistoryNavigation": false,
+    //       "keepalive": false,
+    //       "method": "PUT",
+    //       "mode": "cors",
+    //       "redirect": "follow",
+    //       "referrer": "about:client",
+    //       "referrerPolicy": "",
+    //       "signal": {
+    //         "aborted": false,
+    //         "onabort": "null",
+    //       },
+    //       "url": "https://www.google.com/",
+    //     },
+    //     "level": "error",
+    //     "msg": "3",
+    //   },
+    //   {
+    //     "HttpRes": {
+    //       "body": ">Stream<",
+    //       "bodyUsed": false,
+    //       "headers": {
+    //         "content-type": "text/html",
+    //         "x-test": "test",
+    //       },
+    //       "ok": true,
+    //       "redirected": false,
+    //       "status": 200,
+    //       "statusText": "OK",
+    //       "type": "default",
+    //       // "url": "",
+    //     },
+    //     "level": "error",
+    //     "msg": "4",
+    //   },
+
+    // ]
   });
 
   it("use toJSON", async () => {
@@ -1345,7 +1734,7 @@ describe("TestLogger", () => {
     constructor(
       public a: number,
       public b: URI,
-    ) {}
+    ) { }
     toJSON(): unknown {
       throw new Error("test");
     }
