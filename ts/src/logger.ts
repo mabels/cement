@@ -186,7 +186,7 @@ export interface LoggerInterface<R> {
   // first string is the key
   // first response is Response
   // first request is Request
-  Http(...mix: (HttpType|string)[]): R;
+  Http(...mix: (HttpType | string)[]): R;
   Pair(x: Record<string, unknown>): R;
 
   Error(): R;

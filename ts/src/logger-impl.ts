@@ -272,8 +272,8 @@ export class LoggerImpl implements Logger {
     return this;
   }
 
-  Http(...mix: (HttpType|string)[]): Logger {
-    const key: string|undefined = mix.find((x) => typeof x === "string");
+  Http(...mix: (HttpType | string)[]): Logger {
+    const key: string | undefined = mix.find((x) => typeof x === "string");
     mix = mix.filter((x) => typeof x !== "string");
     const resErrors = mix.filter((x) => Result.Is(x) && x.isErr()) as Result<unknown, Error>[];
     if (resErrors.length) {
@@ -281,21 +281,21 @@ export class LoggerImpl implements Logger {
       return this;
     }
     const req = mix
-      .map(reqOrResult => Result.Is(reqOrResult) ? reqOrResult.Ok() : reqOrResult)
-      .find((req) => typeof (req as Response).status !== "number") as Request|undefined
+      .map((reqOrResult) => (Result.Is(reqOrResult) ? reqOrResult.Ok() : reqOrResult))
+      .find((req) => typeof (req as Response).status !== "number") as Request | undefined;
     const res = mix
-      .map(resOrResult => Result.Is(resOrResult) ? resOrResult.Ok() : resOrResult)
-      .find((res) => typeof (res as Response).status === "number") as Response|undefined;
+      .map((resOrResult) => (Result.Is(resOrResult) ? resOrResult.Ok() : resOrResult))
+      .find((res) => typeof (res as Response).status === "number") as Response | undefined;
     let reqAndOrres: { res: Response; req: Request } | Response | Request | undefined;
     if (res && req) {
       reqAndOrres = { res, req };
-     } else if (!res && !req) {
-      reqAndOrres = undefined
-     } else if (res) {
+    } else if (!res && !req) {
+      reqAndOrres = undefined;
+    } else if (res) {
       reqAndOrres = res;
-     } else if (req) {
+    } else if (req) {
       reqAndOrres = req;
-     }
+    }
     if (reqAndOrres) {
       this.Any(key || "Http", reqAndOrres as unknown as LogSerializable);
     }
@@ -479,7 +479,7 @@ class WithLoggerBuilder implements WithLogger {
     return this;
   }
 
-  Http(...mix: (HttpType|string)[]): WithLogger {
+  Http(...mix: (HttpType | string)[]): WithLogger {
     this._li.Http(...mix);
     return this;
   }

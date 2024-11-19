@@ -1240,24 +1240,15 @@ describe("TestLogger", () => {
         "Content-Type": "text/html",
         "X-Test": "xtest",
       }),
-      body: "String"
+      body: "String",
     });
 
     async function fixupLogs(): Promise<unknown> {
       await logger.Flush();
       return stripper(
-        [
-          "isReloadNavigation",
-          "reason",
-          "targetAddressSpace",
-          "attribute",
-          "duplex",
-          "cache",
-          "credentials",
-          "destination",
-        ],
+        ["isReloadNavigation", "reason", "targetAddressSpace", "attribute", "duplex", "cache", "credentials", "destination"],
         logCollector.Logs(true).map((i) => JSON.parse(i)),
-      )
+      );
     }
     it("res", async () => {
       logger.Error().Any("res", { the: resp }).Msg("ok-the-res");
@@ -1293,26 +1284,26 @@ describe("TestLogger", () => {
           msg: "ok-the-req",
           req: {
             the: {
-              "body": ">Stream<",
-              "bodyUsed": false,
-              "headers": {
+              body: ">Stream<",
+              bodyUsed: false,
+              headers: {
                 "content-type": "text/html",
                 "x-test": "xtest",
               },
-              "keepalive": false,
-              "method": "PUT",
-              "mode": "cors",
+              keepalive: false,
+              method: "PUT",
+              mode: "cors",
 
-              "integrity": "",
-              "isHistoryNavigation": false,
-              "redirect": "follow",
-              "referrer": "about:client",
-              "referrerPolicy": "",
-              "signal": {
-                "aborted": false,
-                "onabort": "null",
+              integrity: "",
+              isHistoryNavigation: false,
+              redirect: "follow",
+              referrer: "about:client",
+              referrerPolicy: "",
+              signal: {
+                aborted: false,
+                onabort: "null",
               },
-              "url": "https://www.google.com/",
+              url: "https://www.google.com/",
             },
           },
         },
@@ -1320,50 +1311,53 @@ describe("TestLogger", () => {
     });
 
     it("req-res", async () => {
-      logger.Error().Any("req-res", { the: { req, res: resp } }).Msg("ok-the-req-res");
+      logger
+        .Error()
+        .Any("req-res", { the: { req, res: resp } })
+        .Msg("ok-the-req-res");
       expect(await fixupLogs()).toEqual([
         {
-          "level": "error",
-          "msg": "ok-the-req-res",
+          level: "error",
+          msg: "ok-the-req-res",
           "req-res": {
-            "the": {
-              "req": {
-                "body": ">Stream<",
-                "bodyUsed": false,
-                "headers": {
+            the: {
+              req: {
+                body: ">Stream<",
+                bodyUsed: false,
+                headers: {
                   "content-type": "text/html",
                   "x-test": "xtest",
                 },
-                "integrity": "",
-                "isHistoryNavigation": false,
-                "keepalive": false,
-                "method": "PUT",
-                "mode": "cors",
-                "redirect": "follow",
-                "referrer": "about:client",
-                "referrerPolicy": "",
-                "signal": {
-                  "aborted": false,
-                  "onabort": "null",
+                integrity: "",
+                isHistoryNavigation: false,
+                keepalive: false,
+                method: "PUT",
+                mode: "cors",
+                redirect: "follow",
+                referrer: "about:client",
+                referrerPolicy: "",
+                signal: {
+                  aborted: false,
+                  onabort: "null",
                 },
-                "url": "https://www.google.com/",
+                url: "https://www.google.com/",
               },
-              "res": {
-                "body": ">Stream<",
-                "bodyUsed": false,
-                "headers": {
+              res: {
+                body: ">Stream<",
+                bodyUsed: false,
+                headers: {
                   "content-type": "text/html",
                   "x-test": "test",
                 },
-                "ok": true,
-                "redirected": false,
-                "status": 200,
-                "statusText": "OK",
-                "type": "default",
+                ok: true,
+                redirected: false,
+                status: 200,
+                statusText: "OK",
+                type: "default",
                 // "url": "",
               },
-            }
-          }
+            },
+          },
         },
       ]);
     });
@@ -1372,21 +1366,21 @@ describe("TestLogger", () => {
       logger.Error().Http(Result.Ok(resp)).Msg("-1");
       expect(await fixupLogs()).toEqual([
         {
-          "Http": {
-            "body": ">Stream<",
-            "bodyUsed": false,
-            "headers": {
+          Http: {
+            body: ">Stream<",
+            bodyUsed: false,
+            headers: {
               "content-type": "text/html",
               "x-test": "test",
             },
-            "ok": true,
-            "redirected": false,
-            "status": 200,
-            "statusText": "OK",
-            "type": "default",
+            ok: true,
+            redirected: false,
+            status: 200,
+            statusText: "OK",
+            type: "default",
           },
-          "level": "error",
-          "msg": "-1",
+          level: "error",
+          msg: "-1",
         },
       ]);
     });
@@ -1394,8 +1388,8 @@ describe("TestLogger", () => {
       logger.Error().Http().Msg("0");
       expect(await fixupLogs()).toEqual([
         {
-          "level": "error",
-          "msg": "0",
+          level: "error",
+          msg: "0",
         },
       ]);
     });
@@ -1403,190 +1397,185 @@ describe("TestLogger", () => {
       logger.Error().Http(resp, req, "Https").Msg("1");
       expect(await fixupLogs()).toEqual([
         {
-          "Https": {
-            "req": {
-              "body": ">Stream<",
-              "bodyUsed": false,
-              "headers": {
+          Https: {
+            req: {
+              body: ">Stream<",
+              bodyUsed: false,
+              headers: {
                 "content-type": "text/html",
                 "x-test": "xtest",
               },
-              "integrity": "",
-              "isHistoryNavigation": false,
-              "keepalive": false,
-              "method": "PUT",
-              "mode": "cors",
-              "redirect": "follow",
-              "referrer": "about:client",
-              "referrerPolicy": "",
-              "signal": {
-                "aborted": false,
-                "onabort": "null",
+              integrity: "",
+              isHistoryNavigation: false,
+              keepalive: false,
+              method: "PUT",
+              mode: "cors",
+              redirect: "follow",
+              referrer: "about:client",
+              referrerPolicy: "",
+              signal: {
+                aborted: false,
+                onabort: "null",
               },
-              "url": "https://www.google.com/",
+              url: "https://www.google.com/",
             },
-            "res": {
-              "body": ">Stream<",
-              "bodyUsed": false,
-              "headers": {
+            res: {
+              body: ">Stream<",
+              bodyUsed: false,
+              headers: {
                 "content-type": "text/html",
                 "x-test": "test",
               },
-              "ok": true,
-              "redirected": false,
-              "status": 200,
-              "statusText": "OK",
-              "type": "default",
+              ok: true,
+              redirected: false,
+              status: 200,
+              statusText: "OK",
+              type: "default",
             },
           },
-          "level": "error",
-          "msg": "1",
-        }
+          level: "error",
+          msg: "1",
+        },
       ]);
-    })
+    });
     it("1.1", async () => {
       logger.Error().Http("Yolo", Result.Ok(req), Result.Ok(resp)).Msg("1.1");
       expect(await fixupLogs()).toEqual([
         {
-          "Yolo": {
-            "req": {
-              "body": ">Stream<",
-              "bodyUsed": false,
-              "headers": {
+          Yolo: {
+            req: {
+              body: ">Stream<",
+              bodyUsed: false,
+              headers: {
                 "content-type": "text/html",
                 "x-test": "xtest",
               },
-              "integrity": "",
-              "isHistoryNavigation": false,
-              "keepalive": false,
-              "method": "PUT",
-              "mode": "cors",
-              "redirect": "follow",
-              "referrer": "about:client",
-              "referrerPolicy": "",
-              "signal": {
-                "aborted": false,
-                "onabort": "null",
+              integrity: "",
+              isHistoryNavigation: false,
+              keepalive: false,
+              method: "PUT",
+              mode: "cors",
+              redirect: "follow",
+              referrer: "about:client",
+              referrerPolicy: "",
+              signal: {
+                aborted: false,
+                onabort: "null",
               },
-              "url": "https://www.google.com/",
+              url: "https://www.google.com/",
             },
-            "res": {
-              "body": ">Stream<",
-              "bodyUsed": false,
-              "headers": {
+            res: {
+              body: ">Stream<",
+              bodyUsed: false,
+              headers: {
                 "content-type": "text/html",
                 "x-test": "test",
               },
-              "ok": true,
-              "redirected": false,
-              "status": 200,
-              "statusText": "OK",
-              "type": "default",
+              ok: true,
+              redirected: false,
+              status: 200,
+              statusText: "OK",
+              type: "default",
             },
           },
-          "level": "error",
-          "msg": "1.1",
+          level: "error",
+          msg: "1.1",
         },
       ]);
-    })
+    });
     it("1.2", async () => {
       logger.Error().Http("Yerr", Result.Err<Response>("e1"), Result.Err<Request>("e2")).Msg("1.2");
       expect(await fixupLogs()).toEqual([
         {
-          "error": [
-            "e1",
-            "e2",
-          ],
-          "level": "error",
-          "msg": "1.2",
+          error: ["e1", "e2"],
+          level: "error",
+          msg: "1.2",
         },
       ]);
-    })
+    });
     it("2", async () => {
       logger.Error().Http(req, "Https").Msg("2");
       expect(await fixupLogs()).toEqual([
         {
-          "Https": {
-            "body": ">Stream<",
-            "bodyUsed": false,
-            "headers": {
+          Https: {
+            body: ">Stream<",
+            bodyUsed: false,
+            headers: {
               "content-type": "text/html",
               "x-test": "xtest",
             },
-            "integrity": "",
-            "isHistoryNavigation": false,
-            "keepalive": false,
-            "method": "PUT",
-            "mode": "cors",
-            "redirect": "follow",
-            "referrer": "about:client",
-            "referrerPolicy": "",
-            "signal": {
-              "aborted": false,
-              "onabort": "null",
+            integrity: "",
+            isHistoryNavigation: false,
+            keepalive: false,
+            method: "PUT",
+            mode: "cors",
+            redirect: "follow",
+            referrer: "about:client",
+            referrerPolicy: "",
+            signal: {
+              aborted: false,
+              onabort: "null",
             },
-            "url": "https://www.google.com/",
+            url: "https://www.google.com/",
           },
-          "level": "error",
-          "msg": "2",
-        }
+          level: "error",
+          msg: "2",
+        },
       ]);
     });
     it("3", async () => {
       logger.Error().Any("HttpReq", req).Msg("3");
       expect(await fixupLogs()).toEqual([
         {
-          "HttpReq": {
-            "body": ">Stream<",
-            "bodyUsed": false,
-            "headers": {
+          HttpReq: {
+            body: ">Stream<",
+            bodyUsed: false,
+            headers: {
               "content-type": "text/html",
               "x-test": "xtest",
             },
-            "integrity": "",
-            "isHistoryNavigation": false,
-            "keepalive": false,
-            "method": "PUT",
-            "mode": "cors",
-            "redirect": "follow",
-            "referrer": "about:client",
-            "referrerPolicy": "",
-            "signal": {
-              "aborted": false,
-              "onabort": "null",
+            integrity: "",
+            isHistoryNavigation: false,
+            keepalive: false,
+            method: "PUT",
+            mode: "cors",
+            redirect: "follow",
+            referrer: "about:client",
+            referrerPolicy: "",
+            signal: {
+              aborted: false,
+              onabort: "null",
             },
-            "url": "https://www.google.com/",
+            url: "https://www.google.com/",
           },
-          "level": "error",
-          "msg": "3",
+          level: "error",
+          msg: "3",
         },
       ]);
-    })
+    });
     it("4", async () => {
       logger.Error().Any("HttpRes", resp).Msg("4");
       expect(await fixupLogs()).toEqual([
         {
-          "HttpRes": {
-            "body": ">Stream<",
-            "bodyUsed": false,
-            "headers": {
+          HttpRes: {
+            body: ">Stream<",
+            bodyUsed: false,
+            headers: {
               "content-type": "text/html",
               "x-test": "test",
             },
-            "ok": true,
-            "redirected": false,
-            "status": 200,
-            "statusText": "OK",
-            "type": "default",
+            ok: true,
+            redirected: false,
+            status: 200,
+            statusText: "OK",
+            type: "default",
           },
-          "level": "error",
-          "msg": "4",
+          level: "error",
+          msg: "4",
         },
       ]);
-    })
+    });
     // const x = [
-
-
 
     //   {
     //     level: "error",
@@ -1734,7 +1723,7 @@ describe("TestLogger", () => {
     constructor(
       public a: number,
       public b: URI,
-    ) { }
+    ) {}
     toJSON(): unknown {
       throw new Error("test");
     }
