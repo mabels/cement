@@ -18,7 +18,6 @@ import {
 } from "@adviser/cement";
 import { WebSysAbstraction } from "@adviser/cement/web";
 import { stripper } from "./utils/stripper.js";
-import { string2stream } from "./utils/string2stream.js";
 
 describe("TestLogger", () => {
   let logCollector: LogCollector;
