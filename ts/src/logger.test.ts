@@ -18,6 +18,7 @@ import {
 } from "@adviser/cement";
 import { WebSysAbstraction } from "@adviser/cement/web";
 import { stripper } from "./utils/stripper.js";
+import { string2stream } from "./utils/string2stream.js";
 
 describe("TestLogger", () => {
   let logCollector: LogCollector;
@@ -1218,6 +1219,8 @@ describe("TestLogger", () => {
     get url(): string {
       return this.#url;
     }
+    // get body(): ReadableStream<Uint8Array> {
+
     // toJSON(): unknown {
     // return super.toJSON();
     // }
@@ -1575,129 +1578,38 @@ describe("TestLogger", () => {
         },
       ]);
     });
-    // const x = [
-
-    //   {
-    //     level: "error",
-    //     Https: {
-    //       res: {
-    //         type: "default",
-    //         redirected: false,
-    //         status: 200,
-    //         ok: true,
-    //         statusText: "OK",
+    // tricky problem
+    // it("if resp is !200 collect streams", async () => {
+    //   const resp = new TestResponse(string2stream("the body"), {
+    //     status: 407,
+    //     statusText: "Not OK",
+    //     headers: new Headers({
+    //       "Content-Type": "text/html",
+    //       "X-Test": "test",
+    //     }),
+    //     url: "https://www.google.com",
+    //   });
+    //   logger.Error().Any("HttpRes", resp).Msg("!200");
+    //   expect(await fixupLogs()).toEqual([
+    //     {
+    //       HttpRes: {
+    //         body: "the body",
+    //         bodyUsed: false,
     //         headers: {
     //           "content-type": "text/html",
     //           "x-test": "test",
     //         },
-    //         body: ">Stream<",
-    //         bodyUsed: false,
+    //         ok: false,
+    //         redirected: false,
+    //         status: 407,
+    //         statusText: "Not OK",
+    //         type: "default",
     //       },
-    //       req: {
-    //         "body": ">Stream<",
-    //         method: "PUT",
-    //         url: "https://www.google.com/",
-    //         headers: {
-    //           "content-type": "text/html",
-    //           "x-test": "xtest",
-    //         },
-    //         destination: "",
-    //         referrer: "about:client",
-    //         referrerPolicy: "",
-    //         mode: "cors",
-    //         credentials: "same-origin",
-    //         cache: "default",
-    //         redirect: "follow",
-    //         integrity: "",
-    //         keepalive: false,
-    //         isHistoryNavigation: false,
-    //         signal: {
-    //           aborted: false,
-    //           onabort: "null",
-    //         },
-    //         bodyUsed: false,
-    //       },
+    //       level: "error",
+    //       msg: "!200",
     //     },
-    //     msg: "1",
-    //   },
-
-    //   {
-    //     "Http": {
-    //       "req": "Https",
-    //       "res": {
-    //         "body": ">Stream<",
-    //         "bodyUsed": false,
-    //         "cache": "default",
-    //         "credentials": "same-origin",
-    //         "destination": "",
-    //         "headers": {
-    //           "content-type": "text/html",
-    //           "x-test": "xtest",
-    //         },
-    //         "integrity": "",
-    //         "isHistoryNavigation": false,
-    //         "keepalive": false,
-    //         "method": "PUT",
-    //         "mode": "cors",
-    //         "redirect": "follow",
-    //         "referrer": "about:client",
-    //         "referrerPolicy": "",
-    //         "signal": {
-    //           "aborted": false,
-    //           "onabort": "null",
-    //         },
-    //         "url": "https://www.google.com/",
-    //       },
-    //     },
-    //     "level": "error",
-    //     "msg": "2",
-    //   },
-
-    //   {
-    //     "HttpReq": {
-    //       "body": ">Stream<",
-    //       "bodyUsed": false,
-    //       "headers": {
-    //         "content-type": "text/html",
-    //         "x-test": "xtest",
-    //       },
-    //       "integrity": "",
-    //       "isHistoryNavigation": false,
-    //       "keepalive": false,
-    //       "method": "PUT",
-    //       "mode": "cors",
-    //       "redirect": "follow",
-    //       "referrer": "about:client",
-    //       "referrerPolicy": "",
-    //       "signal": {
-    //         "aborted": false,
-    //         "onabort": "null",
-    //       },
-    //       "url": "https://www.google.com/",
-    //     },
-    //     "level": "error",
-    //     "msg": "3",
-    //   },
-    //   {
-    //     "HttpRes": {
-    //       "body": ">Stream<",
-    //       "bodyUsed": false,
-    //       "headers": {
-    //         "content-type": "text/html",
-    //         "x-test": "test",
-    //       },
-    //       "ok": true,
-    //       "redirected": false,
-    //       "status": 200,
-    //       "statusText": "OK",
-    //       "type": "default",
-    //       // "url": "",
-    //     },
-    //     "level": "error",
-    //     "msg": "4",
-    //   },
-
-    // ]
+    //   ]);
+    // });
   });
 
   it("use toJSON", async () => {

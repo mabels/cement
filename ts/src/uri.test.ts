@@ -365,4 +365,54 @@ describe("URI", () => {
       bla: "defBla",
     });
   });
+
+  it("recorded getParamsResult with default", () => {
+    const url = URI.from("http://host/bla/blub?name=test&email=a@b.de&clock-id=123&server-id=456");
+    const res = url.getParamsResult({
+      name: "defName",
+      email: 0,
+      "clock-id": false,
+      "server-id": undefined,
+      bla: "defBla",
+    });
+    expect(res.isOk()).toBe(true);
+    expect(res.Ok()).toEqual({
+      name: "test",
+      email: "a@b.de",
+      "clock-id": "123",
+      "server-id": "456",
+      bla: "defBla",
+    });
+  });
+
+  it("recorded getParamsResult with default to empty string", () => {
+    const url = URI.from("http://host/bla/blub?name=test&email=a@b.de&clock-id=123&server-id=456");
+    const res = url.getParamsResult({
+      name: "defName",
+      email: 0,
+      "clock-id": false,
+      "server-id": undefined,
+      bla: "",
+    });
+    expect(res.isOk()).toBe(true);
+    expect(res.Ok()).toEqual({
+      name: "test",
+      email: "a@b.de",
+      "clock-id": "123",
+      "server-id": "456",
+      bla: "",
+    });
+  });
+
+  it("recorded getParamsResult with required default", () => {
+    const url = URI.from("http://host/bla/blub?name=test&email=a@b.de&clock-id=123&server-id=456");
+    const res = url.getParamsResult({
+      name: "defName",
+      email: 0,
+      "clock-id": false,
+      "server-id": undefined,
+      bla: 7,
+    });
+    expect(res.isErr()).toBe(true);
+  });
 });

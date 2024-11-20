@@ -238,7 +238,8 @@ function getParamResult(
 }
 
 type msgFn = (...keys: string[]) => string;
-type keysParam = (string | msgFn | Record<string, string>)[];
+// if right head of Record is string the key used and the value is the default value
+type keysParam = (string | msgFn | Record<string, unknown>)[];
 
 function getParamsResult(
   keys: keysParam,
@@ -249,7 +250,7 @@ function getParamsResult(
       if (typeof i === "string") {
         acc.push({ key: i });
       } else if (typeof i === "object") {
-        acc.push(...Object.keys(i).map((k) => ({ key: k, def: i[k] })));
+        acc.push(...Object.keys(i).map((k) => ({ key: k, def: typeof i[k] === "string" ? i[k] : undefined })));
       }
       return acc;
     },
@@ -267,7 +268,7 @@ function getParamsResult(
   for (const kd of keyDef) {
     const val = getParam.getParam(kd.key);
     if (val === undefined) {
-      if (kd.def) {
+      if (typeof kd.def === "string") {
         result[kd.key] = kd.def;
       } else {
         errors.push(kd.key);
