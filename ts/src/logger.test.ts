@@ -1655,4 +1655,24 @@ describe("TestLogger", () => {
       ].map((i) => JSON.stringify(i)),
     );
   });
+
+  it("if uint8array is json do not hexdump", async () => {
+    logger
+      .Error()
+      .Any("res", new TextEncoder().encode(JSON.stringify({ a: 1, b: { c: "x" } })))
+      .Msg("ok");
+    await logger.Flush();
+    expect(logCollector.Logs()).toEqual([
+      {
+        level: "error",
+        msg: "ok",
+        res: {
+          a: 1,
+          b: {
+            c: "x",
+          },
+        },
+      },
+    ]);
+  });
 });

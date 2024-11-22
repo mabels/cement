@@ -5,6 +5,23 @@ type NullOrUndef = null | undefined;
 
 type OneKey<K extends string, V = string> = Record<K, V>;
 
+export type MsgFn = (...keys: string[]) => string;
+/*
+  if KeyParam is a Object
+     if the right side is a string, it is the default value
+     if the right side is a !string, it is required
+*/
+export type KeysParam = (string | MsgFn | Record<string, unknown>)[];
+
+// type ReturnType<T extends (...args: KeysParam) => unknown> = T extends (...args: KeysParam) => infer R ? R : unknown;
+
+// function fetchData<T extends (...args: any[]) => Promise<any>>(fn: T): ReturnType<T> {
+//   return fn();
+// }
+// type ReturnObject<T extends KeysParam> = {
+//   [K in keyof T]: string;
+// };
+
 export interface URIInterface<R extends URIInterface<R>> {
   // readonly hostname: string;
   // readonly port: string;
@@ -16,7 +33,7 @@ export interface URIInterface<R extends URIInterface<R>> {
   hasParam(key: string): boolean;
   getParam<T extends string | undefined>(key: string | OneKey<string>, def?: T): T extends string ? string : string | undefined;
   getParamResult(key: string, msgFn?: (key: string) => string): Result<string>;
-  getParamsResult(...keys: keysParam): Result<Record<string, string>>;
+  getParamsResult(...keys: KeysParam): Result<Record<string, string>>;
   clone(): R;
   asURL(): URL;
   toString(): string;
@@ -237,12 +254,8 @@ function getParamResult(
   return Result.Ok(val);
 }
 
-type msgFn = (...keys: string[]) => string;
-// if right head of Record is string the key used and the value is the default value
-type keysParam = (string | msgFn | Record<string, unknown>)[];
-
 function getParamsResult(
-  keys: keysParam,
+  keys: KeysParam,
   getParam: { getParam: (key: string) => string | undefined },
 ): Result<Record<string, string>> {
   const keyDef = keys.flat().reduce(
@@ -425,7 +438,7 @@ export class BuildURI implements URIInterface<BuildURI> {
     return getParamResult(key, this.getParam(key), msgFn);
   }
 
-  getParamsResult(...keys: keysParam): Result<Record<string, string>> {
+  getParamsResult(...keys: KeysParam): Result<Record<string, string>> {
     return getParamsResult(keys, this);
   }
 
@@ -577,7 +590,7 @@ export class URI implements URIInterface<URI> {
     return getParamResult(key, this.getParam(key), msgFn);
   }
 
-  getParamsResult(...keys: keysParam): Result<Record<string, string>> {
+  getParamsResult(...keys: KeysParam): Result<Record<string, string>> {
     return getParamsResult(keys, this);
   }
 

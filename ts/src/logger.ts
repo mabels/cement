@@ -78,7 +78,16 @@ export function logValue(val: LogValueArg, state: Set<unknown> = new Set<unknown
         return new LogValue(() => "null");
       }
       if (ArrayBuffer.isView(val)) {
-        return logValue(bin2string(val, 512));
+        try {
+          // should be injected
+          const decoder = new TextDecoder();
+          const asStr = decoder.decode(val);
+          const obj = JSON.parse(asStr);
+          return logValue(obj, state);
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (e) {
+          return logValue(bin2string(val, 512));
+        }
       }
       if (Array.isArray(val)) {
         return new LogValue(() => (val as Serialized[]).map((v) => logValue(v).value() as Serialized));

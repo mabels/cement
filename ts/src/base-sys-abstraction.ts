@@ -126,6 +126,38 @@ export interface ExitService {
   exit(code: number): void;
 }
 
+// some black magic to make it work with CF workers
+function consumeReadableStream(
+  reader: ReadableStreamDefaultReader<Uint8Array>,
+  writeFn: (chunk: Uint8Array) => Promise<void>,
+): void {
+  reader
+    .read()
+    .then(({ done, value }) => {
+      if (done) {
+        return;
+      }
+      writeFn(value)
+        .then(() => {
+          consumeReadableStream(reader, writeFn);
+        })
+        .catch((e) => {
+          // eslint-disable-next-line no-console
+          console.error("consumeReadableStream:writeFn", e);
+        });
+    })
+    .catch((e) => {
+      // eslint-disable-next-line no-console
+      console.error("consumeReadableStream:read", e);
+    });
+}
+
+function CFWriteableStream(writeFn: (chunk: Uint8Array) => Promise<void>): WritableStream {
+  const ts = new TransformStream();
+  consumeReadableStream(ts.readable.getReader(), writeFn);
+  return ts.writable;
+}
+
 export class BaseSysAbstraction {
   readonly _time: SysTime = new SysTime();
   readonly _stdout: WritableStream;
@@ -142,6 +174,17 @@ export class BaseSysAbstraction {
     this._systemService = params.SystemService;
     this._txtEnDe = params.TxtEnDecoder;
     const decoder = this._txtEnDe;
+    this._stdout = CFWriteableStream(async (chunk) => {
+      const decoded = decoder.decode(chunk);
+      // eslint-disable-next-line no-console
+      console.log(decoded.trimEnd());
+    });
+    this._stderr = CFWriteableStream(async (chunk) => {
+      const decoded = decoder.decode(chunk);
+      // eslint-disable-next-line no-console
+      console.error(decoded.trimEnd());
+    });
+    /* this is not CF worker compatible
     this._stdout = new WritableStream({
       write(chunk): Promise<void> {
         return new Promise((resolve) => {
@@ -162,6 +205,7 @@ export class BaseSysAbstraction {
         });
       },
     });
+    */
   }
 }
 

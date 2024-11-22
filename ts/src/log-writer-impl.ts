@@ -9,7 +9,7 @@ export class LogWriterStream {
   write(encoded: Uint8Array): void {
     const my = async (): Promise<void> => {
       // const val = Math.random();
-      // console.log(">>>My:", val)
+      // console.log(">>>My:", encoded)
       try {
         const writer = this._out.getWriter();
         await writer.ready;
