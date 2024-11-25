@@ -80,7 +80,7 @@ export interface CTArrayBufferView {
   byteOffset: number;
 }
 
-export type CTBufferSource = CTArrayBufferView | ArrayBuffer;
+export type CTBufferSource = CTArrayBufferView | ArrayBuffer | Uint8Array;
 
 export interface CryptoRuntime {
   importKey(
