@@ -322,55 +322,18 @@ export class BuildURI implements URIInterface<BuildURI> {
     return this;
   }
 
-  // password(p: string) {
-  //   this._url.password = p;
-  //   return this;
-  // }
-
-  // port(p: string) {
-  //   this._url.port = p;
-  //   return this;
-  // }
-
-  // username(u: string) {
-  //   this._url.username = u;
-  //   return this;
-  // }
-
-  // search(s: string) {
-  //   this._url.search = s;
-  //   return this;
-  // }
-
   protocol(p: string): BuildURI {
+    if (!p.endsWith(":")) {
+      p = `${p}:`;
+    }
     this._url.protocol = p;
-    // if (!p.endsWith(":")) {
-    //   p = `${p}:`;
-    // }
-    // const mySrc = this._url.toString();
-    // const myDst = mySrc.replace(new RegExp(`^${this._url.protocol}`), `${p}`);
-    // this._url = new URL(myDst);
     return this;
   }
 
   pathname(p: string): BuildURI {
-    // const myp = this.URI().pathname;
-    // const mySrc = this._url.toString();
-    // const myDst = mySrc.replace(new RegExp(`^${this._url.protocol}//${myp}`), `${this._url.protocol}//${p}`);
-    // this._url = new URL(myDst);
     this._url.pathname = p;
     return this;
   }
-
-  // hash(h: string) {
-  //   this._url.hash = h;
-  //   return this;
-  // }
-
-  // host(h: string) {
-  //   this._url.host = h;
-  //   return this;
-  // }
 
   appendRelative(p: CoerceURI): BuildURI {
     const appendUrl = URI.from(p);
@@ -396,6 +359,13 @@ export class BuildURI implements URIInterface<BuildURI> {
     this.pathname(basePath + "/" + pathname);
     for (const [key, value] of appendUrl.getParams) {
       this.setParam(key, value);
+    }
+    return this;
+  }
+
+  cleanParams(): BuildURI {
+    for (const key of Array.from(this._url.searchParams.keys())) {
+      this._url.searchParams.delete(key);
     }
     return this;
   }

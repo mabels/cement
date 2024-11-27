@@ -415,4 +415,9 @@ describe("URI", () => {
     });
     expect(res.isErr()).toBe(true);
   });
+
+  it("cleanParams", () => {
+    const url = BuildURI.from("http://host/bla/blub?name=test&email=a@b.de&clock-id=123&server-id=456");
+    expect(url.cleanParams().toString()).toBe("http://host/bla/blub");
+  });
 });
