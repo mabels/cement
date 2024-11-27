@@ -2,9 +2,15 @@ export abstract class Result<T, E = Error> {
   static Ok<T = void>(t: T): Result<T, Error> {
     return new ResultOK(t);
   }
-  static Err<T, E extends Error = Error>(t: E | string): Result<T, E> {
+  static Err<T, E extends Error = Error>(t: E | string | Result<unknown, E>): Result<T, E> {
     if (typeof t === "string") {
       return new ResultError(new Error(t) as E);
+    }
+    if (Result.Is(t)) {
+      if (t.is_ok()) {
+        return new ResultError(new Error("Result Error is Ok") as E);
+      }
+      return t as Result<T, E>;
     }
     return new ResultError(t);
   }

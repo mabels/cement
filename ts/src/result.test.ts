@@ -93,6 +93,13 @@ it("result typ", () => {
   expect(err().Err().message).toBe("x");
 });
 
+it("Result.Err receive Result", () => {
+  expect(Result.Err(Result.Ok(1)).Err().message).toBe("Result Error is Ok");
+  const err = Result.Err("xxx");
+  expect(Result.Err(err)).toBe(err);
+  expect(Result.Err(err.Err())).toStrictEqual(err);
+});
+
 // it("Result.OK with void", () => {
 //   const result = Result.Ok();
 //   expect(result.isOk()).toBe(true);

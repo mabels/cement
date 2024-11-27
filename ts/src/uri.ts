@@ -9,9 +9,11 @@ export type MsgFn = (...keys: string[]) => string;
 /*
   if KeyParam is a Object
      if the right side is a string, it is the default value
-     if the right side is a !string, it is required
+     if the right side is a !string | REQUIRED, it is required
 */
-export type KeysParam = (string | MsgFn | Record<string, unknown>)[];
+export const REQUIRED = 4711; // must be !string
+
+export type KeysParam = (string | MsgFn | Record<string, typeof REQUIRED | unknown>)[];
 
 // type ReturnType<T extends (...args: KeysParam) => unknown> = T extends (...args: KeysParam) => infer R ? R : unknown;
 

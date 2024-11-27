@@ -1,4 +1,4 @@
-import { BuildURI, HostURIObject, MutableURL, PathURIObject, URI } from "@adviser/cement";
+import { BuildURI, HostURIObject, MutableURL, PathURIObject, REQUIRED, URI } from "@adviser/cement";
 
 describe("BuildURI", () => {
   let uri: BuildURI;
@@ -370,7 +370,7 @@ describe("URI", () => {
     const url = URI.from("http://host/bla/blub?name=test&email=a@b.de&clock-id=123&server-id=456");
     const res = url.getParamsResult({
       name: "defName",
-      email: 0,
+      email: REQUIRED,
       "clock-id": false,
       "server-id": undefined,
       bla: "defBla",
@@ -389,7 +389,7 @@ describe("URI", () => {
     const url = URI.from("http://host/bla/blub?name=test&email=a@b.de&clock-id=123&server-id=456");
     const res = url.getParamsResult({
       name: "defName",
-      email: 0,
+      email: REQUIRED,
       "clock-id": false,
       "server-id": undefined,
       bla: "",
@@ -408,10 +408,10 @@ describe("URI", () => {
     const url = URI.from("http://host/bla/blub?name=test&email=a@b.de&clock-id=123&server-id=456");
     const res = url.getParamsResult({
       name: "defName",
-      email: 0,
+      email: true,
       "clock-id": false,
       "server-id": undefined,
-      bla: 7,
+      bla: REQUIRED,
     });
     expect(res.isErr()).toBe(true);
   });
