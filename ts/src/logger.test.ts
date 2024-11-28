@@ -54,7 +54,7 @@ describe("TestLogger", () => {
     it("should set the error from bool", async () => {
       logger.Err(false).Msg("");
       await logger.Flush();
-      expect(logCollector.Logs()).toEqual([{ error: "false" }]);
+      expect(logCollector.Logs()).toEqual([{ error: false }]);
     });
   });
 
@@ -1672,6 +1672,28 @@ describe("TestLogger", () => {
             c: "x",
           },
         },
+      },
+    ]);
+  });
+  it("Result received ResolveError with Error is Object", async () => {
+    const x = Result.Err({
+      type: "error",
+      tid: "z3AHk4H2a8",
+      message: "Method not implemented.",
+      version: "FP-MSG-1.0",
+    } as unknown as Error);
+    logger.Error().Result("res", x).Msg("1");
+    await logger.Flush();
+    expect(logCollector.Logs()).toEqual([
+      {
+        error: {
+          message: "Method not implemented.",
+          tid: "z3AHk4H2a8",
+          type: "error",
+          version: "FP-MSG-1.0",
+        },
+        level: "error",
+        msg: "1",
       },
     ]);
   });

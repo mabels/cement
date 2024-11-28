@@ -235,19 +235,22 @@ export class LoggerImpl implements Logger {
     return this;
   }
   Err(err: unknown | Result<unknown> | Error): Logger {
+    let key = "error";
     if (Result.Is(err)) {
       if (err.isOk()) {
-        this.Result("noerror", err);
+        key = "noerror";
+        err = err.Ok();
       } else {
-        this.Result("error", err);
+        err = err.Err();
       }
-    } else if (err instanceof Error) {
-      this._attributes["error"] = logValue(err.message);
+    }
+    if (err instanceof Error) {
+      this._attributes[key] = logValue(err.message);
       if (this._levelHandler.isStackExposed) {
         this._attributes["stack"] = logValue(err.stack?.split("\n").map((s) => s.trim()));
       }
     } else {
-      this._attributes["error"] = logValue("" + err);
+      this.Any(key, err as LogSerializable);
     }
     return this;
   }
