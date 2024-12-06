@@ -1247,12 +1247,29 @@ describe("TestLogger", () => {
 
     async function fixupLogs(): Promise<unknown> {
       await logger.Flush();
+      // return logCollector.Logs()
       return stripper(
-        ["isReloadNavigation", "reason", "targetAddressSpace", "attribute", "duplex", "cache", "credentials", "destination"],
-        logCollector.Logs(true).map((i) => JSON.parse(i)),
+        [
+          "isReloadNavigation",
+          "reason",
+          "targetAddressSpace",
+          "attribute",
+          "duplex",
+          "cache",
+          "credentials",
+          "destination",
+          "integrity",
+          "isHistoryNavigation",
+          "keepalive",
+          "mode",
+          "redirect",
+          "referrer",
+          "referrerPolicy",
+        ],
+        logCollector.Logs() /*.map((i) => JSON.parse(i))*/,
       );
     }
-    it("res", async () => {
+    it("ok-the-res", async () => {
       logger.Error().Any("res", { the: resp }).Msg("ok-the-res");
       expect(await fixupLogs()).toEqual([
         {
@@ -1278,7 +1295,7 @@ describe("TestLogger", () => {
       ]);
     });
 
-    it("res", async () => {
+    it("ok-the-req", async () => {
       logger.Error().Any("req", { the: req }).Msg("ok-the-req");
       expect(await fixupLogs()).toEqual([
         {
@@ -1292,15 +1309,7 @@ describe("TestLogger", () => {
                 "content-type": "text/html",
                 "x-test": "xtest",
               },
-              keepalive: false,
               method: "PUT",
-              mode: "cors",
-
-              integrity: "",
-              isHistoryNavigation: false,
-              redirect: "follow",
-              referrer: "about:client",
-              referrerPolicy: "",
               signal: {
                 aborted: false,
                 onabort: "null",
@@ -1312,7 +1321,7 @@ describe("TestLogger", () => {
       ]);
     });
 
-    it("req-res", async () => {
+    it("the-req-res", async () => {
       logger
         .Error()
         .Any("req-res", { the: { req, res: resp } })
@@ -1330,14 +1339,7 @@ describe("TestLogger", () => {
                   "content-type": "text/html",
                   "x-test": "xtest",
                 },
-                integrity: "",
-                isHistoryNavigation: false,
-                keepalive: false,
                 method: "PUT",
-                mode: "cors",
-                redirect: "follow",
-                referrer: "about:client",
-                referrerPolicy: "",
                 signal: {
                   aborted: false,
                   onabort: "null",
@@ -1364,7 +1366,7 @@ describe("TestLogger", () => {
       ]);
     });
 
-    it("req-res", async () => {
+    it("result-req-res", async () => {
       logger.Error().Http(Result.Ok(resp)).Msg("-1");
       expect(await fixupLogs()).toEqual([
         {
@@ -1407,14 +1409,7 @@ describe("TestLogger", () => {
                 "content-type": "text/html",
                 "x-test": "xtest",
               },
-              integrity: "",
-              isHistoryNavigation: false,
-              keepalive: false,
               method: "PUT",
-              mode: "cors",
-              redirect: "follow",
-              referrer: "about:client",
-              referrerPolicy: "",
               signal: {
                 aborted: false,
                 onabort: "null",
@@ -1452,14 +1447,7 @@ describe("TestLogger", () => {
                 "content-type": "text/html",
                 "x-test": "xtest",
               },
-              integrity: "",
-              isHistoryNavigation: false,
-              keepalive: false,
               method: "PUT",
-              mode: "cors",
-              redirect: "follow",
-              referrer: "about:client",
-              referrerPolicy: "",
               signal: {
                 aborted: false,
                 onabort: "null",
@@ -1506,14 +1494,7 @@ describe("TestLogger", () => {
               "content-type": "text/html",
               "x-test": "xtest",
             },
-            integrity: "",
-            isHistoryNavigation: false,
-            keepalive: false,
             method: "PUT",
-            mode: "cors",
-            redirect: "follow",
-            referrer: "about:client",
-            referrerPolicy: "",
             signal: {
               aborted: false,
               onabort: "null",
@@ -1536,14 +1517,7 @@ describe("TestLogger", () => {
               "content-type": "text/html",
               "x-test": "xtest",
             },
-            integrity: "",
-            isHistoryNavigation: false,
-            keepalive: false,
             method: "PUT",
-            mode: "cors",
-            redirect: "follow",
-            referrer: "about:client",
-            referrerPolicy: "",
             signal: {
               aborted: false,
               onabort: "null",

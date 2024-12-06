@@ -5,7 +5,7 @@ export class LevelHandlerImpl implements LevelHandler {
   readonly _globalLevels: Set<Level> = new Set<Level>([Level.INFO, Level.ERROR, Level.WARN]);
   readonly _modules: Map<string, Set<Level>> = new Map<string, Set<Level>>();
 
-  ignoreAttr = Option.Some(/^_/);
+  ignoreAttr: Option<RegExp> = Option.Some(/^_/);
   isStackExposed = false;
   enableLevel(level: Level, ...modules: string[]): void {
     if (modules.length == 0) {
