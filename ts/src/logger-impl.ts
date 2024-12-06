@@ -18,6 +18,7 @@ import {
   LogFormatter,
   LogValueArg,
   HttpType,
+  LogValueState,
 } from "./logger.js";
 import { WebSysAbstraction } from "./web/web-sys-abstraction.js";
 import { SysAbstraction } from "./sys-abstraction.js";
@@ -29,20 +30,20 @@ import { LogWriterStream } from "./log-writer-impl.js";
 import { TxtEnDecoder, Utf8EnDecoderSingleton } from "./txt-en-decoder.js";
 import { LevelHandlerSingleton } from "./log-level-impl.js";
 
-function getLen(value: unknown): LogValue {
+function getLen(value: unknown, lvs: LogValueState): LogValue {
   if (Array.isArray(value)) {
-    return logValue(() => value.length);
+    return logValue(() => value.length, lvs);
   } else if (typeof value === "string") {
-    return logValue(() => value.length);
+    return logValue(() => value.length, lvs);
   } else if (typeof value === "object" && value !== null) {
     if (typeof (value as Sized).size === "number") {
-      return logValue(() => (value as Sized).size);
+      return logValue(() => (value as Sized).size, lvs);
     } else if (typeof (value as Lengthed).length === "number") {
-      return logValue(() => (value as Lengthed).length);
+      return logValue(() => (value as Lengthed).length, lvs);
     }
-    return logValue(() => Object.keys(value).length);
+    return logValue(() => Object.keys(value).length, lvs);
   }
-  return logValue(() => -1);
+  return logValue(() => -1, lvs);
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -100,12 +101,18 @@ export interface LoggerImplParams {
   readonly formatter?: LogFormatter;
 }
 
+function toLogValueCtx(lvh: LevelHandler): LogValueState {
+  return {
+    ignoreAttr: lvh.ignoreAttr,
+  };
+}
+
 export class LoggerImpl implements Logger {
   readonly _sys: SysAbstraction;
   readonly _attributes: LogSerializable = {};
   readonly _withAttributes: LogSerializable;
   readonly _logWriter: LogWriterStream;
-  readonly _levelHandler: LevelHandler;
+  readonly levelHandler: LevelHandler;
   readonly _txtEnDe: TxtEnDecoder;
   _formatter: LogFormatter;
   // readonly _id: string = "logger-" + Math.random().toString(36)
@@ -157,9 +164,9 @@ export class LoggerImpl implements Logger {
     }
     this._attributes = { ...this._withAttributes };
     if (params.levelHandler) {
-      this._levelHandler = params.levelHandler;
+      this.levelHandler = params.levelHandler;
     } else {
-      this._levelHandler = LevelHandlerSingleton();
+      this.levelHandler = LevelHandlerSingleton();
     }
     // console.log("LoggerImpl", this._id, this._attributes, this._withAttributes)
   }
@@ -182,27 +189,32 @@ export class LoggerImpl implements Logger {
   }
 
   SetExposeStack(enable?: boolean): Logger {
-    this._levelHandler.setExposeStack(enable);
+    this.levelHandler.setExposeStack(enable);
     return this;
   }
 
   EnableLevel(level: Level, ...modules: string[]): Logger {
-    this._levelHandler.enableLevel(level, ...modules);
+    this.levelHandler.enableLevel(level, ...modules);
     return this;
   }
   DisableLevel(level: Level, ...modules: string[]): Logger {
-    this._levelHandler.disableLevel(level, ...modules);
+    this.levelHandler.disableLevel(level, ...modules);
     return this;
   }
 
   Module(key: string): Logger {
-    this._attributes["module"] = logValue(key);
-    this._withAttributes["module"] = logValue(key);
+    this._attributes["module"] = logValue(key, toLogValueCtx(this.levelHandler));
+    this._withAttributes["module"] = logValue(key, toLogValueCtx(this.levelHandler));
     return this;
   }
   // if the string is "*" it will enable for all modules
   SetDebug(...modules: (string | string[])[]): Logger {
-    this._levelHandler.setDebug(...modules);
+    this.levelHandler.setDebug(...modules);
+    return this;
+  }
+
+  SetIgnoreAttribute(re?: RegExp): Logger {
+    this.levelHandler.setIgnoreAttr(re);
     return this;
   }
 
@@ -212,26 +224,26 @@ export class LoggerImpl implements Logger {
   }
 
   Timestamp(): Logger {
-    this._attributes["ts"] = logValue(() => this._sys.Time().Now().toISOString());
+    this._attributes["ts"] = logValue(() => this._sys.Time().Now().toISOString(), toLogValueCtx(this.levelHandler));
     return this;
   }
   Warn(): Logger {
-    this._attributes["level"] = logValue(Level.WARN);
+    this._attributes["level"] = logValue(Level.WARN, toLogValueCtx(this.levelHandler));
     return this;
   }
   Log(): Logger {
     return this;
   }
   Debug(): Logger {
-    this._attributes["level"] = logValue(Level.DEBUG);
+    this._attributes["level"] = logValue(Level.DEBUG, toLogValueCtx(this.levelHandler));
     return this;
   }
   Error(): Logger {
-    this._attributes["level"] = logValue(Level.ERROR);
+    this._attributes["level"] = logValue(Level.ERROR, toLogValueCtx(this.levelHandler));
     return this;
   }
   Info(): Logger {
-    this._attributes["level"] = logValue(Level.INFO);
+    this._attributes["level"] = logValue(Level.INFO, toLogValueCtx(this.levelHandler));
     return this;
   }
   Err(err: unknown | Result<unknown> | Error): Logger {
@@ -245,9 +257,12 @@ export class LoggerImpl implements Logger {
       }
     }
     if (err instanceof Error) {
-      this._attributes[key] = logValue(err.message);
-      if (this._levelHandler.isStackExposed) {
-        this._attributes["stack"] = logValue(err.stack?.split("\n").map((s) => s.trim()));
+      this._attributes[key] = logValue(err.message, toLogValueCtx(this.levelHandler));
+      if (this.levelHandler.isStackExposed) {
+        this._attributes["stack"] = logValue(
+          err.stack?.split("\n").map((s) => s.trim()),
+          toLogValueCtx(this.levelHandler),
+        );
       }
     } else {
       this.Any(key, err as LogSerializable);
@@ -255,17 +270,17 @@ export class LoggerImpl implements Logger {
     return this;
   }
   WithLevel(l: Level): Logger {
-    this._attributes["level"] = logValue(l);
+    this._attributes["level"] = logValue(l, toLogValueCtx(this.levelHandler));
     return this;
   }
 
   Ref(key: string, action: { toString: () => string } | FnSerialized): Logger {
     if (typeof action === "function") {
-      this._attributes[key] = logValue(action as FnSerialized);
+      this._attributes[key] = logValue(action as FnSerialized, toLogValueCtx(this.levelHandler));
     } else if (typeof action.toString === "function") {
-      this._attributes[key] = logValue(() => action.toString());
+      this._attributes[key] = logValue(() => action.toString(), toLogValueCtx(this.levelHandler));
     } else {
-      this._attributes[key] = logValue("INVALID REF");
+      this._attributes[key] = logValue("INVALID REF", toLogValueCtx(this.levelHandler));
     }
     return this;
   }
@@ -322,7 +337,7 @@ export class LoggerImpl implements Logger {
 
   Result<T>(key: string, res: Result<T, Error>): Logger {
     if (res.isOk()) {
-      this._attributes[key] = logValue(res.Ok() as Serialized);
+      this._attributes[key] = logValue(res.Ok() as Serialized, toLogValueCtx(this.levelHandler));
     } else {
       this.Err(res.Err());
     }
@@ -330,12 +345,14 @@ export class LoggerImpl implements Logger {
   }
 
   Len(value: unknown, key = "len"): Logger {
-    this._attributes[key] = getLen(value);
+    this._attributes[key] = getLen(value, toLogValueCtx(this.levelHandler));
     return this;
   }
 
   Hash(value: unknown, key = "hash"): Logger {
-    this._attributes[key] = asyncLogValue(async () => `${getLen(value).value()}:${await hash(value)}`);
+    this._attributes[key] = asyncLogValue(
+      async () => `${getLen(value, toLogValueCtx(this.levelHandler)).value()}:${await hash(value)}`,
+    );
     return this;
   }
 
@@ -346,7 +363,7 @@ export class LoggerImpl implements Logger {
 
   private coerceKey(key: string | Record<string, unknown>, value?: unknown): void {
     if (typeof key === "string") {
-      this._attributes[key] = logValue(value as LogValueArg);
+      this._attributes[key] = logValue(value as LogValueArg, toLogValueCtx(this.levelHandler));
     } else {
       this.Pair(key);
     }
@@ -363,7 +380,7 @@ export class LoggerImpl implements Logger {
     return this;
   }
   Dur(key: string, nsec: number): Logger {
-    this._attributes[key] = logValue(`${nsec}ms`);
+    this._attributes[key] = logValue(`${nsec}ms`, toLogValueCtx(this.levelHandler));
     // new Intl.DurationFormat("en", { style: "narrow" }).format(nsec);
     return this;
   }
@@ -388,7 +405,7 @@ export class LoggerImpl implements Logger {
       new LoggerImpl({
         logWriter: this._logWriter,
         sys: this._sys,
-        levelHandler: this._levelHandler,
+        levelHandler: this.levelHandler,
         formatter: this._formatter,
         withAttributes: {
           module: this._attributes["module"],
@@ -410,11 +427,11 @@ export class LoggerImpl implements Logger {
 
   Msg(...args: string[]): AsError {
     const fnError = this._resetAttributes(() => {
-      const doWrite = this._levelHandler.isEnabled(
+      const doWrite = this.levelHandler.isEnabled(
         toLogValue(this._attributes["level"])?.value(),
         toLogValue(this._attributes["module"])?.value(),
       );
-      this._attributes["msg"] = logValue(args.join(" "));
+      this._attributes["msg"] = logValue(args.join(" "), toLogValueCtx(this.levelHandler));
       const msg = this._attributes["msg"].value();
       if (typeof msg === "string" && !msg.trim().length) {
         delete this._attributes["msg"];
@@ -437,8 +454,10 @@ export class LoggerImpl implements Logger {
 
 class WithLoggerBuilder implements WithLogger {
   readonly _li: LoggerImpl;
+  readonly levelHandler: LevelHandler;
   constructor(li: LoggerImpl) {
     this._li = li;
+    this.levelHandler = li.levelHandler;
   }
 
   TxtEnDe(): TxtEnDecoder {
@@ -455,7 +474,12 @@ class WithLoggerBuilder implements WithLogger {
   }
 
   SetExposeStack(enable?: boolean): WithLogger {
-    this._li._levelHandler.setExposeStack(enable);
+    this._li.levelHandler.setExposeStack(enable);
+    return this;
+  }
+
+  SetIgnoreAttribute(re?: RegExp): WithLogger {
+    this._li.levelHandler.setIgnoreAttr(re);
     return this;
   }
 
@@ -465,11 +489,11 @@ class WithLoggerBuilder implements WithLogger {
   }
 
   EnableLevel(level: Level, ...modules: string[]): WithLogger {
-    this._li._levelHandler.enableLevel(level, ...modules);
+    this._li.levelHandler.enableLevel(level, ...modules);
     return this;
   }
   DisableLevel(level: Level, ...modules: string[]): WithLogger {
-    this._li._levelHandler.enableLevel(level, ...modules);
+    this._li.levelHandler.enableLevel(level, ...modules);
     return this;
   }
 

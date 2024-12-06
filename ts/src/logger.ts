@@ -1,4 +1,5 @@
 import { bin2string } from "./bin2text.js";
+import { Option } from "./option.js";
 import { Result } from "./result.js";
 import { TxtEnDecoder } from "./txt-en-decoder.js";
 import { CoerceURI } from "./uri.js";
@@ -50,7 +51,25 @@ export function asyncLogValue(val: () => Promise<Serialized>): Promise<LogValue>
 
 export type LogValueArg = LogValue | Serialized | Serialized[] | FnSerialized | undefined | null;
 
-export function logValue(val: LogValueArg, state: Set<unknown> = new Set<unknown>([Math.random()])): LogValue {
+export interface LogValueState {
+  readonly state?: Set<unknown>;
+  readonly ignoreAttr: Option<RegExp>;
+}
+
+export function logValue(val: LogValueArg, ctx: LogValueState): LogValue {
+  return logValueInternal(val, {
+    ...ctx,
+    state: ctx.state || new Set<unknown>([Math.random()]),
+  });
+}
+
+type LogValueStateInternal = LogValueState & { readonly state: Set<unknown> };
+
+function logValueInternal(val: LogValueArg, ctx: LogValueStateInternal): LogValue {
+  ctx = {
+    ...ctx,
+    state: ctx.state || new Set<unknown>([Math.random()]),
+  } satisfies LogValueStateInternal;
   switch (typeof val) {
     case "function":
       return new LogValue(val);
@@ -58,7 +77,7 @@ export function logValue(val: LogValueArg, state: Set<unknown> = new Set<unknown
       try {
         const ret = JSON.parse(val);
         if (typeof ret === "object" && ret !== null) {
-          return logValue(ret, state);
+          return logValueInternal(ret, ctx);
         }
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (e) {
@@ -83,14 +102,16 @@ export function logValue(val: LogValueArg, state: Set<unknown> = new Set<unknown
           const decoder = new TextDecoder();
           const asStr = decoder.decode(val);
           const obj = JSON.parse(asStr);
-          return logValue(obj, state);
+          return logValueInternal(obj, ctx);
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (e) {
-          return logValue(bin2string(val, 512));
+          return logValueInternal(bin2string(val, 512), ctx);
         }
       }
       if (Array.isArray(val)) {
-        return new LogValue(() => (val as Serialized[]).map((v) => logValue(v).value() as Serialized));
+        return new LogValue(() =>
+          (val as Serialized[]).map((v) => logValue(v, { ...ctx, state: undefined }).value() as Serialized),
+        );
       }
       // if (val instanceof Response) {
       //   // my = my.clone() as unknown as LogValue | Serialized[] | null
@@ -109,10 +130,10 @@ export function logValue(val: LogValueArg, state: Set<unknown> = new Set<unknown
       }
 
       // Duplicate reference found, discard key
-      if (state.has(val)) {
+      if (ctx.state?.has(val)) {
         return new LogValue(() => "...");
       }
-      state.add(val);
+      ctx.state?.add(val);
       if (typeof val.toJSON === "function") {
         return new LogValue(() => val.toJSON());
       }
@@ -120,14 +141,16 @@ export function logValue(val: LogValueArg, state: Set<unknown> = new Set<unknown
       const res: Record<string, LogValue> = {};
       const typedVal = val as unknown as Record<string, LogValueArg>;
       for (const key in typedVal) {
+        if (ctx.ignoreAttr.IsSome() && ctx.ignoreAttr.unwrap().test(key)) {
+          continue;
+        }
         const element = typedVal[key];
         if (element instanceof LogValue) {
           res[key] = element;
         } else {
           if (typeof element !== "function") {
-            res[key] = logValue(element, state);
+            res[key] = logValueInternal(element, ctx);
           }
-          // res[key] = logValue(element, state);
         }
       }
       // ugly as hell cast but how declare a self-referencing type?
@@ -157,6 +180,8 @@ export interface LevelHandler {
   enableLevel(level: Level, ...modules: string[]): void;
   disableLevel(level: Level, ...modules: string[]): void;
   setExposeStack(enable?: boolean): void;
+  setIgnoreAttr(re?: RegExp): void;
+  ignoreAttr: Option<RegExp>;
   isStackExposed: boolean;
   setDebug(...modules: (string | string[])[]): void;
   isEnabled(ilevel: unknown, module: unknown): boolean;
@@ -165,6 +190,7 @@ export interface LevelHandler {
 export type HttpType = Response | Result<Response> | Request | Result<Request>;
 
 export interface LoggerInterface<R> {
+  readonly levelHandler: LevelHandler;
   TxtEnDe(): TxtEnDecoder;
   Module(key: string): R;
   // if modules is empty, set for all Levels
@@ -174,6 +200,8 @@ export interface LoggerInterface<R> {
   Attributes(): Record<string, unknown>;
 
   SetDebug(...modules: (string | string[])[]): R;
+  // default is /^_/
+  SetIgnoreAttribute(re?: RegExp): R;
   SetExposeStack(enable?: boolean): R;
   SetFormatter(fmt: LogFormatter): R;
 

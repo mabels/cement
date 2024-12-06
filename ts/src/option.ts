@@ -11,6 +11,13 @@ export abstract class Option<T> {
     return t instanceof Option;
   }
 
+  static From<T>(t?: T): Option<T> {
+    if (!t) {
+      return new None();
+    }
+    return new Some(t);
+  }
+
   IsNone(): boolean {
     return this.is_none();
   }

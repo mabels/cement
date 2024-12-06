@@ -1,8 +1,11 @@
 import { LevelHandler, Level } from "./logger.js";
+import { Option } from "./option.js";
 
 export class LevelHandlerImpl implements LevelHandler {
   readonly _globalLevels: Set<Level> = new Set<Level>([Level.INFO, Level.ERROR, Level.WARN]);
   readonly _modules: Map<string, Set<Level>> = new Map<string, Set<Level>>();
+
+  ignoreAttr = Option.Some(/^_/);
   isStackExposed = false;
   enableLevel(level: Level, ...modules: string[]): void {
     if (modules.length == 0) {
@@ -33,6 +36,10 @@ export class LevelHandlerImpl implements LevelHandler {
 
   setExposeStack(enable?: boolean): void {
     this.isStackExposed = !!enable;
+  }
+
+  setIgnoreAttr(re?: RegExp): void {
+    this.ignoreAttr = Option.From(re);
   }
 
   forModules(level: Level, fnAction: (p: string) => void, ...modules: (string | string[])[]): void {

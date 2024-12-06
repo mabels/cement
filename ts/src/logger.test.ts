@@ -431,11 +431,11 @@ describe("TestLogger", () => {
     const g1 = new LoggerImpl().EnableLevel(Level.DEBUG) as LoggerImpl;
     const g2 = new LoggerImpl();
     const g3 = g2.With().Module("X").Logger() as LoggerImpl;
-    expect(g1._levelHandler).toBe(g2._levelHandler);
-    expect(g1._levelHandler).toBe(g3._levelHandler);
-    expect((g1._levelHandler as LevelHandlerImpl)._globalLevels.has(Level.DEBUG)).toBeTruthy();
-    expect((g2._levelHandler as LevelHandlerImpl)._globalLevels.has(Level.DEBUG)).toBeTruthy();
-    expect((g3._levelHandler as LevelHandlerImpl)._globalLevels.has(Level.DEBUG)).toBeTruthy();
+    expect(g1.levelHandler).toBe(g2.levelHandler);
+    expect(g1.levelHandler).toBe(g3.levelHandler);
+    expect((g1.levelHandler as LevelHandlerImpl)._globalLevels.has(Level.DEBUG)).toBeTruthy();
+    expect((g2.levelHandler as LevelHandlerImpl)._globalLevels.has(Level.DEBUG)).toBeTruthy();
+    expect((g3.levelHandler as LevelHandlerImpl)._globalLevels.has(Level.DEBUG)).toBeTruthy();
   });
 
   it("isLogger", () => {
@@ -740,7 +740,7 @@ describe("TestLogger", () => {
       " testx",
       "test1x , , test2x,, test3x ,,,morex",
     ]);
-    expect(Array.from(((logger as LoggerImpl)._levelHandler as LevelHandlerImpl)._modules.keys())).toEqual([
+    expect(Array.from(((logger as LoggerImpl).levelHandler as LevelHandlerImpl)._modules.keys())).toEqual([
       "test",
       "test1",
       "test2",
@@ -760,9 +760,9 @@ describe("TestLogger", () => {
         m: 1,
         nested: {
           m: 2,
-          mfn: logValue(() => 23),
+          mfn: logValue(() => 23, logger.levelHandler),
         },
-        mfn: logValue(() => 19),
+        mfn: logValue(() => 19, logger.levelHandler),
       })
       .Msg("1");
     await logger.Flush();
@@ -844,7 +844,7 @@ describe("TestLogger", () => {
   it("self-ref", async () => {
     const nested: Record<string, unknown> = {
       m: 2,
-      mfn: logValue(() => 23),
+      mfn: logValue(() => 23, logger.levelHandler),
     };
     nested.flat = nested;
     nested.layer = {
@@ -856,7 +856,7 @@ describe("TestLogger", () => {
       .Any("sock", {
         m: 1,
         nested: nested,
-        mfn: logValue(() => 19),
+        mfn: logValue(() => 19, logger.levelHandler),
       })
       .Msg("1");
     await logger.Flush();
@@ -1694,6 +1694,65 @@ describe("TestLogger", () => {
         },
         level: "error",
         msg: "1",
+      },
+    ]);
+  });
+
+  it("default ignore _attributes in any", async () => {
+    logger
+      .Error()
+      .Any("res", {
+        empty: {
+          _bla: 5,
+        },
+        realEmpty: {},
+        test: {
+          empty: {
+            _bla: 5,
+          },
+          realEmpty: {},
+          _attributes: 1,
+          jo: 42,
+        },
+        _bla: 5,
+      })
+      .Msg("1");
+    await logger.Flush();
+    expect(logCollector.Logs()).toEqual([
+      {
+        level: "error",
+        msg: "1",
+        res: {
+          empty: {},
+          realEmpty: {},
+          test: {
+            empty: {},
+            realEmpty: {},
+            jo: 42,
+          },
+        },
+      },
+    ]);
+  });
+
+  it("switch of ignore _attributes in any", async () => {
+    logger.SetIgnoreAttribute();
+    logger
+      .Error()
+      .Any("res", { test: { _attributes: 1, jo: 42 }, _bla: 5 })
+      .Msg("1");
+    await logger.Flush();
+    expect(logCollector.Logs()).toEqual([
+      {
+        level: "error",
+        msg: "1",
+        res: {
+          _bla: 5,
+          test: {
+            jo: 42,
+            _attributes: 1,
+          },
+        },
       },
     ]);
   });
