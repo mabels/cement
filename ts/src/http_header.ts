@@ -6,21 +6,21 @@ export class HeadersImpl extends Headers {
     this._headers = init;
   }
 
-  [Symbol.iterator](): HeadersIterator<[string, string]> {
+  override [Symbol.iterator](): IterableIterator<[string, string]> {
     return this.entries();
   }
 
-  entries(): HeadersIterator<[string, string]> {
+  override entries(): IterableIterator<[string, string]> {
     return this._headers.entries();
   }
-  keys(): HeadersIterator<string> {
+  override keys(): IterableIterator<string> {
     return this._headers.keys();
   }
-  values(): HeadersIterator<string> {
+  override values(): IterableIterator<string> {
     return this._headers.values();
   }
 
-  append(key: string, value: string | string[] | undefined): HeadersImpl {
+  override append(key: string, value: string | string[] | undefined): HeadersImpl {
     const values = this._headers.get(key);
     if (typeof value === "undefined") {
       value = "";
@@ -57,10 +57,10 @@ export class HttpHeader {
         }
       } else {
         for (const k in headers) {
-          const v = headers[k];
-          if (v) {
+          const v = (headers as Record<string, string | string[]>)[k];
+          (Array.isArray(v) ? v : [v]).forEach((v) => {
             h.Add(k, v);
-          }
+          });
         }
       }
     }

@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bashi
 
 pnpm run build
 rm -rf pubdir 
