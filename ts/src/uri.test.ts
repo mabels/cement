@@ -270,11 +270,11 @@ describe("URI", () => {
 
   describe("URI appendRelative", () => {
     const cases = [
-      ["", "", "/"],
-      ["/", "", "/"],
+      ["", "", "", "/"],
+      ["/", "", "", "/"],
       ["", "/", "/"],
       ["/", "/", "/"],
-      ["ab", "", "/ab"],
+      ["ab", "", "ab", "/ab"],
       ["ab", "/", "/ab"],
       ["cd", "/ab", "/ab/cd"],
       ["cd", "/ab", "/ab/cd"],
@@ -283,12 +283,12 @@ describe("URI", () => {
       ["/cd", "/ab/", "/ab/cd"],
       ["/cd/", "/ab/", "/ab/cd/"],
     ];
-    for (const [relative, path, result] of cases) {
+    for (const [relative, path, result, httpResult] of cases) {
       it(`[${path}] [${relative}] -> ${result}`, () => {
         const noHost = BuildURI.from(`file://${path}`).appendRelative(relative).URI();
         expect(noHost.pathname).toBe(result);
         const host = BuildURI.from(`https://wurst`).pathname(path).appendRelative(relative).URI();
-        expect(host.pathname).toBe(result);
+        expect(host.pathname).toBe(httpResult || result);
       });
     }
   });
@@ -419,5 +419,36 @@ describe("URI", () => {
   it("cleanParams", () => {
     const url = BuildURI.from("http://host/bla/blub?name=test&email=a@b.de&clock-id=123&server-id=456");
     expect(url.cleanParams().toString()).toBe("http://host/bla/blub");
+  });
+
+  it("illegal url relative", () => {
+    expect(URI.from("bla").toString()).equal("file://bla");
+  });
+  it("illegal url absolute", () => {
+    expect(URI.from("/bla").toString()).equal("file:///bla");
+  });
+
+  describe("applyBase", () => {
+    let base: BuildURI;
+    let ref: BuildURI;
+    beforeEach(() => {
+      base = BuildURI.from("http://example.com/blabla?sock=4");
+      ref = base.clone();
+    });
+    it("toResolv empty -> base", () => {
+      expect(base.resolve("").toString()).toBe(base.toString());
+    });
+    it("toResolv absolute -> absolute", () => {
+      expect(base.resolve("http://murks.com/huhu?sock=4").toString()).toBe("http://murks.com/huhu?sock=4");
+    });
+    it("toResolv relative with out leading / -> base + relative", () => {
+      expect(base.resolve("/meno/huhu").toString()).toBe(ref.pathname("/meno/huhu").toString());
+    });
+    it("toResolv relative without leading / -> base - path + relative", () => {
+      expect(base.resolve("meno/huhu").toString()).toBe(ref.appendRelative("/meno/huhu").toString());
+    });
+    it("toResolv relative with leading ./ -> base - path + relative", () => {
+      expect(base.resolve("./meno/huhu").toString()).toBe(ref.appendRelative("/meno/huhu").toString());
+    });
   });
 });

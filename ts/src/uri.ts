@@ -1,4 +1,5 @@
 import { exception2Result, Result } from "./result.js";
+import { relativePath } from "./utils/relative-path.js";
 import { StripCommand, stripper } from "./utils/stripper.js";
 
 type NullOrUndef = null | undefined;
@@ -337,10 +338,30 @@ export class BuildURI implements URIInterface<BuildURI> {
     return this;
   }
 
+  // could pass a relative path or a full URL
+  // if relative path, it will be appended to the current path
+  resolve(p: CoerceURI): BuildURI {
+    if (!p) {
+      return this;
+    }
+    if (typeof p === "string") {
+      // relative path
+      if (!p.match(/^[a-zA-Z0-9]+:/)) {
+        if (p.startsWith("/")) {
+          this.pathname(p);
+          return this;
+        }
+        return this.appendRelative(p);
+      }
+    }
+    this._url = new MutableURL(p.toString());
+    return this;
+  }
+
   appendRelative(p: CoerceURI): BuildURI {
     const appendUrl = URI.from(p);
-    let pathname = appendUrl.pathname;
-    let basePath = this._url.pathname;
+    const pathname = "./" + appendUrl.pathname;
+    const basePath = this._url.pathname;
     /*
      * cases
      *  pathname "" basePAth "" -> ""
@@ -352,13 +373,14 @@ export class BuildURI implements URIInterface<BuildURI> {
      *  pathname "ab" basePath "/ab/" -> "/ab/ab"
      *  pathname "/ab/" basePath "/ab/" -> "/ab/ab/"
      */
-    if (pathname.startsWith("/")) {
-      pathname = pathname.replace(/^\//, "");
-    }
-    if (basePath.length > 0) {
-      basePath = basePath.replace(/\/$/, "");
-    }
-    this.pathname(basePath + "/" + pathname);
+    this.pathname(relativePath(basePath, pathname));
+    // if (pathname.startsWith("/")) {
+    //   pathname = pathname.replace(/^\//, "");
+    // }
+    // if (basePath.length > 0) {
+    //   basePath = basePath.replace(/\/$/, "");
+    // }
+    // this.pathname(basePath + "/" + pathname);
     for (const [key, value] of appendUrl.getParams) {
       this.setParam(key, value);
     }
