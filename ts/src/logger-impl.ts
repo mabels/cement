@@ -257,7 +257,14 @@ export class LoggerImpl implements Logger {
       }
     }
     if (err instanceof Error) {
-      this._attributes[key] = logValue(err.message, toLogValueCtx(this.levelHandler));
+      if (err.cause) {
+        this.coerceKey(key, {
+          message: err.message,
+          cause: err.cause,
+        });
+      } else {
+        this._attributes[key] = logValue(err.message, toLogValueCtx(this.levelHandler));
+      }
       if (this.levelHandler.isStackExposed) {
         this._attributes["stack"] = logValue(
           err.stack?.split("\n").map((s) => s.trim()),

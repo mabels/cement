@@ -1730,4 +1730,20 @@ describe("TestLogger", () => {
       },
     ]);
   });
+  it("error with cause", async () => {
+    const e = new Error("test");
+    e.cause = "yes -- cause";
+    logger.Error().Err(e).Msg("1");
+    await logger.Flush();
+    expect(logCollector.Logs()).toEqual([
+      {
+        error: {
+          cause: "yes -- cause",
+          message: "test",
+        },
+        level: "error",
+        msg: "1",
+      },
+    ]);
+  });
 });
