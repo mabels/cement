@@ -9,6 +9,8 @@ it("Create Future Happy", async () => {
     promise.then(resolve).catch(reject);
   });
   future.resolve("Hello World");
+  future.resolve("1 Ignores");
+  future.resolve("2 Ignores");
 
   expect(await asynced).toBe("Hello World");
 });
@@ -22,6 +24,8 @@ it("Create Future Sad", async () => {
     promise.then(resolve).catch(reject);
   });
   future.reject("Sad World");
+  future.reject("1 Ignores");
+  future.reject("2 Ignores");
 
   try {
     await asynced;
