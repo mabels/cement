@@ -95,4 +95,11 @@ describe("HttpHeader", () => {
     expect(Array.from(ah.keys())).toEqual(["a", "v"]);
     expect(Array.from(ah.values())).toEqual(["b, c, d, e", "w"]);
   });
+
+  it("From receives HttpHeader", () => {
+    const sh = HttpHeader.from(HttpHeader.from({ "Content-Type": "application/json" }));
+    const h = HttpHeader.from(sh);
+    expect(h).not.toBe(sh);
+    expect(h.Items()).toEqual([["content-type", ["application/json"]]]);
+  });
 });
