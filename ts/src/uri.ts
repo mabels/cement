@@ -12,9 +12,18 @@ export type MsgFn = (...keys: string[]) => string;
      if the right side is a string, it is the default value
      if the right side is a !string | REQUIRED, it is required
 */
-export const REQUIRED = 4711; // must be !string
+class _REQUIRED {
+  readonly val = "REQUIRED";
+}
+class _OPTIONAL {
+  readonly val = "OPTIONAL";
+}
+export const key = {
+  REQUIRED: new _REQUIRED(),
+  OPTIONAL: new _OPTIONAL(),
+};
 
-export type KeysParam = (string | MsgFn | Record<string, typeof REQUIRED | unknown>)[];
+export type KeysParam = (string | MsgFn | Record<string, _REQUIRED | _OPTIONAL | unknown>)[];
 
 // type ReturnType<T extends (...args: KeysParam) => unknown> = T extends (...args: KeysParam) => infer R ? R : unknown;
 
@@ -264,13 +273,19 @@ function getParamsResult(
   const keyDef = keys.flat().reduce(
     (acc, i) => {
       if (typeof i === "string") {
-        acc.push({ key: i });
+        acc.push({ key: i, def: undefined, isOptional: false });
       } else if (typeof i === "object") {
-        acc.push(...Object.keys(i).map((k) => ({ key: k, def: typeof i[k] === "string" ? i[k] : undefined })));
+        acc.push(
+          ...Object.keys(i).map((k) => ({
+            key: k,
+            def: typeof i[k] === "string" ? i[k] : undefined,
+            isOptional: i[k] instanceof _OPTIONAL,
+          })),
+        );
       }
       return acc;
     },
-    [] as { key: string; def?: string }[],
+    [] as { key: string; def?: string; isOptional: boolean }[],
   );
   //.filter((k) => typeof k === "string");
   const msgFn =
@@ -287,7 +302,9 @@ function getParamsResult(
       if (typeof kd.def === "string") {
         result[kd.key] = kd.def;
       } else {
-        errors.push(kd.key);
+        if (!kd.isOptional) {
+          errors.push(kd.key);
+        }
       }
     } else {
       result[kd.key] = val;

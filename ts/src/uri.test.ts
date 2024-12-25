@@ -1,4 +1,4 @@
-import { BuildURI, HostURIObject, MutableURL, PathURIObject, REQUIRED, URI } from "@adviser/cement";
+import { BuildURI, HostURIObject, key, MutableURL, PathURIObject, URI } from "@adviser/cement";
 
 describe("BuildURI", () => {
   let uri: BuildURI;
@@ -370,7 +370,7 @@ describe("URI", () => {
     const url = URI.from("http://host/bla/blub?name=test&email=a@b.de&clock-id=123&server-id=456");
     const res = url.getParamsResult({
       name: "defName",
-      email: REQUIRED,
+      email: key.REQUIRED,
       "clock-id": false,
       "server-id": undefined,
       bla: "defBla",
@@ -389,7 +389,7 @@ describe("URI", () => {
     const url = URI.from("http://host/bla/blub?name=test&email=a@b.de&clock-id=123&server-id=456");
     const res = url.getParamsResult({
       name: "defName",
-      email: REQUIRED,
+      email: key.REQUIRED,
       "clock-id": false,
       "server-id": undefined,
       bla: "",
@@ -411,9 +411,27 @@ describe("URI", () => {
       email: true,
       "clock-id": false,
       "server-id": undefined,
-      bla: REQUIRED,
+      bla: key.REQUIRED,
     });
     expect(res.isErr()).toBe(true);
+  });
+
+  it("recorded getParamsResult optional", () => {
+    const url = URI.from("http://host/bla/blub?name=test&email=a@b.de&clock-id=123&server-id=456");
+    const res = url.getParamsResult({
+      name: "defName",
+      huhu: "defHuhu",
+      "clock-id": key.REQUIRED,
+      email: key.OPTIONAL,
+      maler: key.OPTIONAL,
+    });
+    expect(res.isOk()).toBeTruthy();
+    expect(res.Ok()).toEqual({
+      "clock-id": "123",
+      name: "test",
+      huhu: "defHuhu",
+      email: "a@b.de",
+    });
   });
 
   it("cleanParams", () => {
