@@ -18,7 +18,13 @@ class _REQUIRED {
 class _OPTIONAL {
   readonly val = "OPTIONAL";
 }
-export const key = {
+
+interface _key {
+  REQUIRED: _REQUIRED;
+  OPTIONAL: _OPTIONAL;
+}
+
+export const key: _key = {
   REQUIRED: new _REQUIRED(),
   OPTIONAL: new _OPTIONAL(),
 };
