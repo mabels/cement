@@ -37,7 +37,7 @@ export class NodeEnvActions implements EnvActions {
     return runtimeFn().isNodeIsh;
     // typeof this.#node === "object" && typeof this.#node.process === "object" && typeof this.#node.process.env === "object";
   }
-  readonly _env = this.active() ? this.#node.process.env : {};
+  readonly _env: Record<string, string> = this.active() ? this.#node.process.env : {};
   keys(): string[] {
     return Object.keys(this._env);
   }
