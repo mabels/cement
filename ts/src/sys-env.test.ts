@@ -1,4 +1,4 @@
-import { BrowserEnvActions, EnvImpl, envFactory } from "@adviser/cement";
+import { BrowserEnvActions, Env, EnvActions, EnvFactoryOpts, EnvImpl, envFactory, registerEnvAction } from "@adviser/cement";
 
 describe("sys_env", () => {
   let key: string;
@@ -49,5 +49,47 @@ describe("sys_env", () => {
     env.delete(key);
     expect(fn).toBeCalledTimes(3);
     expect(fn.mock.calls[2]).toEqual([key, undefined]);
+  });
+  it("test register", () => {
+    class TestEnvActions implements EnvActions {
+      readonly #map: Map<string, string>;
+
+      constructor(opts: Partial<EnvFactoryOpts>) {
+        this.#map = opts.presetEnv || new Map<string, string>();
+      }
+
+      register(env: Env): Env {
+        return env;
+      }
+
+      active(): boolean {
+        return true;
+      }
+      keys(): string[] {
+        return Array.from(this.#map.keys());
+      }
+      get(key: string): string | undefined {
+        return this.#map.get(key);
+      }
+      set(key: string, value?: string): void {
+        if (value) {
+          this.#map.set(key, value);
+        }
+      }
+      delete(key: string): void {
+        this.#map.delete(key);
+      }
+    }
+    let tea: TestEnvActions = {} as TestEnvActions;
+    const unreg = registerEnvAction((opts) => {
+      tea = new TestEnvActions(opts);
+      return tea;
+    });
+    const env = envFactory({
+      presetEnv: new Map([[key, "value"]]),
+    });
+    expect(env.get(key)).toBe("value");
+    expect(tea.get(key)).toBe("value");
+    unreg();
   });
 });

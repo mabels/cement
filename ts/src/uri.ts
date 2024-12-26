@@ -20,8 +20,8 @@ class _OPTIONAL {
 }
 
 interface _key {
-  REQUIRED: _REQUIRED;
-  OPTIONAL: _OPTIONAL;
+  readonly REQUIRED: _REQUIRED;
+  readonly OPTIONAL: _OPTIONAL;
 }
 
 export const key: _key = {

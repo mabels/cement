@@ -126,10 +126,31 @@ export interface Env extends EnvMap {
   onSet(fn: OnSetFn, ...filter: string[]): void;
 }
 
+export type EnvFactoryFn = (opts: Partial<EnvFactoryOpts>) => EnvActions;
+
+const envActions: { id: string; fn: EnvFactoryFn }[] = [
+  { id: "node", fn: (opts: Partial<EnvFactoryOpts>): EnvActions => new NodeEnvActions(opts) },
+  { id: "deno", fn: (opts: Partial<EnvFactoryOpts>): EnvActions => new DenoEnvActions(opts) },
+  { id: "browser", fn: (opts: Partial<EnvFactoryOpts>): EnvActions => new BrowserEnvActions(opts) },
+];
+
+export function registerEnvAction(fn: EnvFactoryFn): () => void {
+  const id = `id-${Math.random()}`;
+  envActions.unshift({ id, fn });
+  // rerun envFactory
+  _envFactory.reset();
+  return () => {
+    const index = envActions.findIndex((i) => i.id === id);
+    if (index >= 0) {
+      envActions.splice(index, 1);
+    }
+  };
+}
+
 const _envFactory = new ResolveOnce<Env>();
 export function envFactory(opts: Partial<EnvFactoryOpts> = {}): Env {
   return _envFactory.once(() => {
-    const found = [new NodeEnvActions(opts), new DenoEnvActions(opts), new BrowserEnvActions(opts)].find((env) => env.active());
+    const found = envActions.map((facItem) => facItem.fn(opts)).find((env) => env.active());
     if (!found) {
       throw new Error("SysContainer:envFactory: no env available");
     }
