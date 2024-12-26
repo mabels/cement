@@ -55,7 +55,7 @@ jobs:
           pnpm run prettier --check
           pnpm run lint
           pnpm run build
-#         deno publish --dry-run --unstable-sloppy-imports --allow-dirty
+          # deno publish --dry-run --unstable-sloppy-imports --allow-dirty
           pnpm run test
           # deno throws an error as side effect node-sys-abstraction
           # pnpm run test:deno || true
