@@ -809,7 +809,9 @@ describe("TestLogger", () => {
     logger.SetExposeStack(false);
     logger.Error().Err(e).Msg("3");
     await logger.Flush();
-    expect(logCollector.Logs()).toEqual([
+    const logs = logCollector.Logs();
+    logs[1].stack = logs[1].stack?.map((s: string) => s.toLowerCase());
+    expect(logs).toEqual([
       {
         error: "test",
         level: "error",
@@ -819,7 +821,7 @@ describe("TestLogger", () => {
         error: "test",
         level: "error",
         msg: "2",
-        stack: e.stack?.split("\n").map((s) => s.trim()),
+        stack: e.stack?.split("\n").map((s) => s.trim().toLowerCase()),
       },
       {
         error: "test",
@@ -1256,6 +1258,10 @@ describe("TestLogger", () => {
           "attribute",
           "duplex",
           "cache",
+          "type",
+          "fetcher",
+          "cf",
+          "webSocket",
           "credentials",
           "destination",
           "integrity",
@@ -1276,8 +1282,6 @@ describe("TestLogger", () => {
           level: "error",
           res: {
             the: {
-              type: "default",
-              // url: "",
               redirected: false,
               status: 200,
               ok: true,
@@ -1357,8 +1361,6 @@ describe("TestLogger", () => {
                 redirected: false,
                 status: 200,
                 statusText: "OK",
-                type: "default",
-                // "url": "",
               },
             },
           },
@@ -1381,7 +1383,6 @@ describe("TestLogger", () => {
             redirected: false,
             status: 200,
             statusText: "OK",
-            type: "default",
           },
           level: "error",
           msg: "-1",
@@ -1427,7 +1428,6 @@ describe("TestLogger", () => {
               redirected: false,
               status: 200,
               statusText: "OK",
-              type: "default",
             },
           },
           level: "error",
@@ -1465,7 +1465,6 @@ describe("TestLogger", () => {
               redirected: false,
               status: 200,
               statusText: "OK",
-              type: "default",
             },
           },
           level: "error",
@@ -1544,7 +1543,6 @@ describe("TestLogger", () => {
             redirected: false,
             status: 200,
             statusText: "OK",
-            type: "default",
           },
           level: "error",
           msg: "4",

@@ -1,0 +1,10 @@
+name = "cf-storage"
+main = "cf-test-main.ts"
+compatibility_date = "2024-04-19"
+compatibility_flags = ["nodejs_compat"]
+# upload_source_maps = true
+
+[observability]
+enabled = true
+head_sampling_rate = 1
+

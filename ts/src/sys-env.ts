@@ -1,4 +1,8 @@
-import { ResolveOnce } from "./resolve-once.js";
+import { DenoEnvActions } from "./node/deno-sys-abstraction.js";
+import { NodeEnvActions } from "./node/node-sys-abstraction.js";
+import { BrowserEnvActions } from "./web/web-sys-abstraction.js";
+import { CFEnvActions } from "./cf/cf-sys-abstraction.js";
+import { KeyedResolvOnce } from "./resolve-once.js";
 
 export interface EnvMap {
   get(key: string): string | undefined;
@@ -9,106 +13,6 @@ export interface EnvMap {
 export interface EnvActions extends EnvMap {
   active(): boolean;
   register(env: Env): Env;
-}
-
-class NodeEnvActions implements EnvActions {
-  readonly #node = globalThis as unknown as { process: { env: Record<string, string> } };
-
-  // eslint-disable-next-line @typescript-eslint/no-useless-constructor, @typescript-eslint/no-unused-vars
-  constructor(opts: Partial<EnvFactoryOpts>) {
-    // do nothing
-  }
-
-  register(env: Env): Env {
-    return env;
-  }
-
-  active(): boolean {
-    return typeof this.#node === "object" && typeof this.#node.process === "object" && typeof this.#node.process.env === "object";
-  }
-  readonly _env = this.active() ? this.#node.process.env : {};
-  keys(): string[] {
-    return Object.keys(this._env);
-  }
-  get(key: string): string | undefined {
-    return this._env[key];
-  }
-  set(key: string, value?: string): void {
-    if (value) {
-      this._env[key] = value;
-    }
-  }
-  delete(key: string): void {
-    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-    delete this._env[key];
-  }
-}
-
-class DenoEnvActions implements EnvActions {
-  readonly #deno = globalThis as unknown as { Deno: { env: Map<string, string> } };
-
-  get _env(): Map<string, string> {
-    return this.#deno.Deno.env;
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-useless-constructor, @typescript-eslint/no-unused-vars
-  constructor(opts: Partial<EnvFactoryOpts>) {
-    // do nothing
-  }
-
-  register(env: Env): Env {
-    return env;
-  }
-  active(): boolean {
-    return typeof this.#deno === "object" && typeof this.#deno.Deno === "object" && typeof this.#deno.Deno.env === "object";
-  }
-  keys(): string[] {
-    return Array.from(this._env.keys());
-  }
-  get(key: string): string | undefined {
-    return this._env.get(key);
-  }
-  set(key: string, value?: string): void {
-    if (value) {
-      this._env.set(key, value);
-    }
-  }
-  delete(key: string): void {
-    this._env.delete(key);
-  }
-}
-
-export class BrowserEnvActions implements EnvActions {
-  readonly env: Map<string, string> = new Map<string, string>();
-  readonly opts: Partial<EnvFactoryOpts>;
-  constructor(opts: Partial<EnvFactoryOpts>) {
-    this.opts = opts;
-  }
-
-  get(key: string): string | undefined {
-    return this.env.get(key);
-  }
-  set(key: string, value?: string): void {
-    if (value) {
-      this.env.set(key, value);
-    }
-  }
-  delete(key: string): void {
-    this.env.delete(key);
-  }
-  keys(): string[] {
-    return Array.from(this.env.keys());
-  }
-  active(): boolean {
-    return true; // that should work on every runtime
-  }
-
-  register(env: Env): Env {
-    const sym = Symbol.for(this.opts.symbol || "CP_ENV");
-    const browser = globalThis as unknown as Record<symbol, Env>;
-    browser[sym] = env;
-    return env;
-  }
 }
 
 export interface EnvFactoryOpts {
@@ -129,16 +33,17 @@ export interface Env extends EnvMap {
 export type EnvFactoryFn = (opts: Partial<EnvFactoryOpts>) => EnvActions;
 
 const envActions: { id: string; fn: EnvFactoryFn }[] = [
-  { id: "node", fn: (opts: Partial<EnvFactoryOpts>): EnvActions => new NodeEnvActions(opts) },
-  { id: "deno", fn: (opts: Partial<EnvFactoryOpts>): EnvActions => new DenoEnvActions(opts) },
-  { id: "browser", fn: (opts: Partial<EnvFactoryOpts>): EnvActions => new BrowserEnvActions(opts) },
+  { id: "cf", fn: (opts: Partial<EnvFactoryOpts>): EnvActions => CFEnvActions.new(opts) },
+  { id: "node", fn: (opts: Partial<EnvFactoryOpts>): EnvActions => NodeEnvActions.new(opts) },
+  { id: "deno", fn: (opts: Partial<EnvFactoryOpts>): EnvActions => DenoEnvActions.new(opts) },
+  { id: "browser", fn: (opts: Partial<EnvFactoryOpts>): EnvActions => BrowserEnvActions.new(opts) },
 ];
 
 export function registerEnvAction(fn: EnvFactoryFn): () => void {
   const id = `id-${Math.random()}`;
   envActions.unshift({ id, fn });
   // rerun envFactory
-  _envFactory.reset();
+  _envFactories.unget(id);
   return () => {
     const index = envActions.findIndex((i) => i.id === id);
     if (index >= 0) {
@@ -147,15 +52,16 @@ export function registerEnvAction(fn: EnvFactoryFn): () => void {
   };
 }
 
-const _envFactory = new ResolveOnce<Env>();
+const _envFactories = new KeyedResolvOnce<Env>();
 export function envFactory(opts: Partial<EnvFactoryOpts> = {}): Env {
-  return _envFactory.once(() => {
-    const found = envActions.map((facItem) => facItem.fn(opts)).find((env) => env.active());
-    if (!found) {
-      throw new Error("SysContainer:envFactory: no env available");
-    }
-    const ret = new EnvImpl(found, opts);
-    found.register(ret);
+  const found = envActions.find((fi) => fi.fn(opts).active());
+  if (!found) {
+    throw new Error("SysContainer:envFactory: no env available");
+  }
+  return _envFactories.get(found.id).once(() => {
+    const action = found.fn(opts);
+    const ret = new EnvImpl(action, opts);
+    action.register(ret);
     return ret;
   });
 }

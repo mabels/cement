@@ -146,7 +146,7 @@ export class LoggerImpl implements Logger {
         if (rt.isBrowser) {
           stream = new ConsoleWriterStream();
         } else {
-          if (rt.isNodeIsh || rt.isReactNative || rt.isDeno) {
+          if (rt.isNodeIsh || rt.isReactNative || rt.isDeno || rt.isCFWorker) {
             stream = this._sys.Stdout();
           } else {
             throw new Error("No output defined for runtime");
@@ -267,7 +267,7 @@ export class LoggerImpl implements Logger {
       }
       if (this.levelHandler.isStackExposed) {
         this._attributes["stack"] = logValue(
-          err.stack?.split("\n").map((s) => s.trim()),
+          err.stack?.split(/[\r\n]+/).map((s) => s.trim()),
           toLogValueCtx(this.levelHandler),
         );
       }

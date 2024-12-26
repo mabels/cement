@@ -1,4 +1,6 @@
-import { BrowserEnvActions, Env, EnvActions, EnvFactoryOpts, EnvImpl, envFactory, registerEnvAction } from "@adviser/cement";
+import { Env, EnvActions, EnvFactoryOpts, EnvImpl, envFactory, registerEnvAction, runtimeFn } from "@adviser/cement";
+import { CFEnvActions } from "./cf/cf-sys-abstraction.js";
+import { BrowserEnvActions } from "./web/web-sys-abstraction.js";
 
 describe("sys_env", () => {
   let key: string;
@@ -16,7 +18,7 @@ describe("sys_env", () => {
     expect(envImpl.get(key)).toBeUndefined();
   });
   it("preset", () => {
-    const env = new EnvImpl(new BrowserEnvActions({}), {
+    const env = new EnvImpl(BrowserEnvActions.new({}), {
       presetEnv: new Map([[key, "value"]]),
     });
     expect(env.get(key)).toBe("value");
@@ -36,7 +38,7 @@ describe("sys_env", () => {
     );
   });
   it("onSet filter", () => {
-    const env = new EnvImpl(new BrowserEnvActions({}), {
+    const env = new EnvImpl(BrowserEnvActions.new({}), {
       presetEnv: new Map([[key, "value"]]),
     });
     const fn = vi.fn();
@@ -92,4 +94,18 @@ describe("sys_env", () => {
     expect(tea.get(key)).toBe("value");
     unreg();
   });
+  if (runtimeFn().isCFWorker) {
+    it("CFWorker env", () => {
+      const env = envFactory();
+      const onSet = vi.fn();
+      env.onSet(onSet);
+
+      CFEnvActions.inject({ "cf-key": "cf-value" });
+
+      env.set("cf-key-1", "cf-value-2");
+
+      expect(onSet).toBeCalledWith("cf-key", "cf-value");
+      expect(env.get("cf-key")).toBe("cf-value");
+    });
+  }
 });

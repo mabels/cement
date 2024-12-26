@@ -3,6 +3,7 @@ export interface Runtime {
   isBrowser: boolean;
   isDeno: boolean;
   isReactNative: boolean;
+  isCFWorker: boolean;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -17,20 +18,29 @@ function isSet(value: string, ref: any = globalThis): boolean {
   return false;
 }
 
+// caches.default or WebSocketPair
+
 export function runtimeFn(): Runtime {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const gt: any = globalThis;
-  const isReactNative =
+  let isReactNative =
     isSet("navigator.product") && typeof gt["navigator"] === "object" && gt["navigator"]["product"] === "ReactNative";
   let isNodeIsh = false;
   if (!isSet("Deno")) {
     isNodeIsh = isSet("process.versions.node") && !isReactNative;
   }
-  const isDeno = isSet("Deno");
+  let isDeno = isSet("Deno");
+  const isCFWorker = isSet("caches.default") && isSet("WebSocketPair");
+  if (isCFWorker) {
+    isDeno = false;
+    isNodeIsh = false;
+    isReactNative = false;
+  }
   return {
     isNodeIsh,
-    isBrowser: !(isNodeIsh || isDeno) && !isReactNative,
+    isBrowser: !(isNodeIsh || isDeno || isCFWorker || isReactNative),
     isDeno,
     isReactNative,
+    isCFWorker,
   };
 }

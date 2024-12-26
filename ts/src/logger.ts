@@ -81,10 +81,17 @@ function logValueInternal(val: LogValueArg, ctx: LogValueStateInternal): LogValu
         }
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (e) {
-        if (val.match(/[\n\r]/)) {
-          const lines = val.trimEnd().split(/[\n\r]/);
-          return new LogValue(() => lines);
+        try {
+          const url = new URL(val);
+          return new LogValue(() => url.toString());
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (e) {
+          // ignore
         }
+      }
+      if (val.match(/[\n\r]/)) {
+        const lines = val.split(/[\n\r]+/).map((v) => v.trim());
+        return new LogValue(() => lines);
       }
       return new LogValue(() => val.toString());
     }
