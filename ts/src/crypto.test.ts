@@ -4,7 +4,13 @@ it("not extractable import -> export", async () => {
   const cp = toCryptoRuntime();
   const key = cp.randomBytes(32);
   const x = await cp.importKey("raw", key, "AES-CBC", false, ["encrypt"]);
-  expect(cp.exportKey("raw", x)).rejects.toThrowError(/(key is not extractable|non-extractable)/i);
+  try {
+    await cp.exportKey("raw", x);
+    assert(false, "should not reach here");
+  } catch (ie) {
+    const e = ie as Error;
+    expect(e.message).toMatch(/(key is not extractable|non-extractable)/i);
+  }
 });
 
 it("extractable import -> export", async () => {

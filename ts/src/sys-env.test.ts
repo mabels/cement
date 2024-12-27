@@ -1,6 +1,6 @@
 import { Env, EnvActions, EnvFactoryOpts, EnvImpl, envFactory, registerEnvAction, runtimeFn } from "@adviser/cement";
-import { CFEnvActions } from "./cf/cf-sys-abstraction.js";
-import { BrowserEnvActions } from "./web/web-sys-abstraction.js";
+import { CFEnvActions } from "./cf/cf-env-actions.js";
+import { BrowserEnvActions } from "./web/web-env-actions.js";
 
 describe("sys_env", () => {
   let key: string;

@@ -1,7 +1,7 @@
-import { DenoEnvActions } from "./deno/deno-sys-abstraction.js";
-import { NodeEnvActions } from "./node/node-sys-abstraction.js";
-import { BrowserEnvActions } from "./web/web-sys-abstraction.js";
-import { CFEnvActions } from "./cf/cf-sys-abstraction.js";
+import { DenoEnvActions } from "./deno/deno-env-actions.js";
+import { NodeEnvActions } from "./node/node-env-actions.js";
+import { BrowserEnvActions } from "./web/web-env-actions.js";
+import { CFEnvActions } from "./cf/cf-env-actions.js";
 import { KeyedResolvOnce } from "./resolve-once.js";
 
 export interface EnvMap {

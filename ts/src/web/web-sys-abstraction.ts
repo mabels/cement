@@ -1,48 +1,8 @@
 import { BaseSysAbstraction, WrapperSysAbstraction, WrapperSysAbstractionParams } from "../base-sys-abstraction.js";
 import { FileService, NamedWritableStream } from "../file-service.js";
-import { ResolveOnce } from "../resolve-once.js";
 import { SysAbstraction, SystemService, VoidFunc } from "../sys-abstraction.js";
-import { Env, EnvActions, envFactory, EnvFactoryOpts } from "../sys-env.js";
+import { Env, envFactory } from "../sys-env.js";
 import { Utf8EnDecoderSingleton } from "../txt-en-decoder.js";
-
-const once = new ResolveOnce<BrowserEnvActions>();
-export class BrowserEnvActions implements EnvActions {
-  readonly env: Map<string, string> = new Map<string, string>();
-  readonly opts: Partial<EnvFactoryOpts>;
-
-  static new(opts: Partial<EnvFactoryOpts>): EnvActions {
-    return once.once(() => new BrowserEnvActions(opts));
-  }
-
-  private constructor(opts: Partial<EnvFactoryOpts>) {
-    this.opts = opts;
-  }
-
-  get(key: string): string | undefined {
-    return this.env.get(key);
-  }
-  set(key: string, value?: string): void {
-    if (value) {
-      this.env.set(key, value);
-    }
-  }
-  delete(key: string): void {
-    this.env.delete(key);
-  }
-  keys(): string[] {
-    return Array.from(this.env.keys());
-  }
-  active(): boolean {
-    return true; // that should work on every runtime
-  }
-
-  register(env: Env): Env {
-    const sym = Symbol.for(this.opts.symbol || "CP_ENV");
-    const browser = globalThis as unknown as Record<symbol, Env>;
-    browser[sym] = env;
-    return env;
-  }
-}
 
 export class WebFileService implements FileService {
   get baseDir(): string {
