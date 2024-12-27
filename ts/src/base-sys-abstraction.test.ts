@@ -1,7 +1,9 @@
-import { runtimeFn, IDMode, TimeMode, RandomMode } from "@adviser/cement";
-import { DenoSysAbstraction, NodeSysAbstraction } from "@adviser/cement/node";
 import { WebSysAbstraction } from "@adviser/cement/web";
 import { CFSysAbstraction } from "@adviser/cement/cf";
+import { DenoSysAbstraction } from "@adviser/cement/deno";
+import { NodeSysAbstraction } from "@adviser/cement/node";
+import { runtimeFn } from "./runtime.js";
+import { IDMode, TimeMode, RandomMode } from "./sys-abstraction.js";
 
 const abstractions = [];
 

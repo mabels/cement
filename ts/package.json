@@ -20,6 +20,11 @@
       "require": "./utils/index.cjs",
       "import": "./utils/index.js"
     },
+    "./cf": {
+      "types": "./cf/index.d.ts",
+      "require": "./cf/index.cjs",
+      "import": "./cf/index.js"
+    },
     "./node": {
       "types": "./node/index.d.ts",
       "require": "./node/index.cjs",
@@ -38,7 +43,7 @@
     "xbuild:js": "tsup",
     "build:js": "tsup --out-dir dist/pkg src/index.ts src/*/index.ts --sourcemap --format cjs,esm --dts --clean --external node:fs --external node:path",
     "build:deno": "deno publish --dry-run --unstable-sloppy-imports --allow-dirty",
-    "test": "pnpm run test:js",
+    "test": "pnpm run test:js; pnpm run test:deno",
     "test:deno": "deno run --quiet --allow-net --allow-write --allow-run  --allow-sys --allow-ffi  --allow-read --allow-env  ./node_modules/vitest/vitest.mjs --run --project node",
     "test:js": "vitest --run",
     "pubdir": "bash -xe ./prepare-pubdir.sh",
@@ -78,6 +83,6 @@
     "webdriverio": "^9.4.5"
   },
   "engines": {
-    "node": ">=16"
+    "node": ">=20"
   }
 }

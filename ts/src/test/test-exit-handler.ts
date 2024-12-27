@@ -14,7 +14,7 @@ const gts = globalThis as unknown /*Deno*/ as {
 };
 
 (async (): Promise<void> => {
-  const sa = await import(runtimeFn().isDeno ? "../node/deno-sys-abstraction.ts" : "../node/node-sys-abstraction.ts");
+  const sa = await import(runtimeFn().isDeno ? "../deno/deno-sys-abstraction.ts" : "../node/node-sys-abstraction.ts");
 
   const my = runtimeFn().isDeno ? sa.DenoSysAbstraction() : sa.NodeSysAbstraction();
 

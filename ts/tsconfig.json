@@ -33,6 +33,7 @@
     "paths": {
       "@adviser/cement": ["./src/index.js"],
       "@adviser/cement/node": ["./src/node/index.js"],
+      "@adviser/cement/deno": ["./src/deno/index.js"],
       "@adviser/cement/web": ["./src/web/index.js"],
       "@adviser/cement/cf": ["./src/cf/index.js"]
     } /* Specify a set of entries that re-map imports to additional lookup locations. */,

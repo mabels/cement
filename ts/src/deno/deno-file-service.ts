@@ -1,6 +1,6 @@
+import * as path from "node:path";
 import { FileService, NamedWritableStream } from "../file-service.js";
 import { TxtEnDecoder, Utf8EnDecoderSingleton } from "../txt-en-decoder.js";
-import * as path from "node:path";
 
 const Deno = (globalThis as unknown as { Deno: unknown }).Deno as {
   cwd(): string;
@@ -64,7 +64,7 @@ export class DenoFileService implements FileService {
     return path.isAbsolute(fname);
   }
 
-  async writeFileString(fname: string, content: string, ende = Utf8EnDecoderSingleton()): Promise<void> {
+  async writeFileString(fname: string, content: string, ende: TxtEnDecoder = Utf8EnDecoderSingleton()): Promise<void> {
     const o = await this.create(fname);
     const wr = o.stream.getWriter();
     await wr.write(ende.encode(content));

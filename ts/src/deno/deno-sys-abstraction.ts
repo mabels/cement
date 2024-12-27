@@ -1,32 +1,45 @@
-import { SysAbstraction, SystemService, VoidFunc } from "../sys-abstraction.js";
 import {
-  BaseSysAbstraction,
-  ExitHandler,
   ExitService,
-  WrapperSysAbstraction,
+  ExitHandler,
+  BaseSysAbstraction,
   WrapperSysAbstractionParams,
+  WrapperSysAbstraction,
 } from "../base-sys-abstraction.js";
+import { ResolveOnce } from "../resolve-once.js";
+import { runtimeFn } from "../runtime.js";
+import { SysAbstraction, SystemService, VoidFunc } from "../sys-abstraction.js";
 import { Env, EnvActions, envFactory, EnvFactoryOpts } from "../sys-env.js";
 import { Utf8EnDecoderSingleton } from "../txt-en-decoder.js";
-import * as process from "node:process";
+// import * as process from "node:process";
 import { DenoFileService } from "./deno-file-service.js";
-import { runtimeFn } from "../runtime.js";
-import { ResolveOnce } from "../resolve-once.js";
 
 const Deno = (globalThis as unknown as { Deno: unknown }).Deno as {
   addSignalListener(sig: string, hdl: () => void): void;
   exit(code?: number): void;
+  args: string[];
 };
+
+interface DenoEnv {
+  get: (key: string) => string | undefined;
+  toObject: () => Record<string, string>;
+  set: (key: string, value: string) => void;
+  has: (key: string) => boolean;
+  delete: (key: string) => void;
+}
 
 const once = new ResolveOnce<DenoEnvActions>();
 export class DenoEnvActions implements EnvActions {
-  readonly #deno = globalThis as unknown as { Deno: { env: Map<string, string> } };
+  readonly #deno = globalThis as unknown as {
+    Deno: {
+      env: DenoEnv;
+    };
+  };
 
   static new(opts: Partial<EnvFactoryOpts>): EnvActions {
     return once.once(() => new DenoEnvActions(opts));
   }
 
-  get _env(): Map<string, string> {
+  get _env(): DenoEnv {
     return this.#deno.Deno.env;
   }
 
@@ -45,7 +58,7 @@ export class DenoEnvActions implements EnvActions {
     return runtimeFn().isDeno;
   }
   keys(): string[] {
-    return Array.from(this._env.keys());
+    return Object.keys(this._env.toObject());
   }
   get(key: string): string | undefined {
     return this._env.get(key);
@@ -145,7 +158,7 @@ export class DenoSystemService implements SystemService {
   }
 
   Args(): string[] {
-    return process.argv;
+    return Deno.args;
   }
 
   OnExit(hdl: VoidFunc): VoidFunc {
