@@ -31,9 +31,9 @@
       "import": "./node/index.js"
     },
     "./deno": {
-      "types": "./node/index.d.ts",
-      "require": "./node/index.cjs",
-      "import": "./node/index.js"
+      "types": "./deno/index.d.ts",
+      "require": "./deno/index.cjs",
+      "import": "./deno/index.js"
     }
   },
   "scripts": {
