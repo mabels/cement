@@ -8,6 +8,7 @@ import { WebFileService } from "../web/web-sys-abstraction.js";
 
 const once = new ResolveOnce<CFEnvActions>();
 export class CFEnvActions implements EnvActions {
+  readonly injectOnRegister: Record<string, string> = {};
   readonly cfEnv: Map<string, string>;
   env?: EnvImpl;
   static new(opts: Partial<EnvFactoryOpts>): EnvActions {
@@ -18,7 +19,11 @@ export class CFEnvActions implements EnvActions {
     for (const key in o) {
       const value = o[key];
       if (typeof value === "string") {
-        env.env?.set(key, value);
+        if (env.env) {
+          env.env.set(key, value);
+        } else {
+          env.injectOnRegister[key] = value;
+        }
       }
     }
   }
@@ -30,6 +35,9 @@ export class CFEnvActions implements EnvActions {
   }
   register(env: Env): Env {
     this.env = env as EnvImpl;
+    for (const key in this.injectOnRegister) {
+      env.set(key, this.injectOnRegister[key]);
+    }
     return env;
   }
   get(key: string): string | undefined {
