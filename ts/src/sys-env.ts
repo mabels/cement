@@ -3,6 +3,10 @@ import { NodeEnvActions } from "./node/node-env-actions.js";
 import { BrowserEnvActions } from "./web/web-env-actions.js";
 import { CFEnvActions } from "./cf/cf-env-actions.js";
 import { KeyedResolvOnce } from "./resolve-once.js";
+import { Result } from "./result.js";
+import { getParamsResult, KeysParam } from "./utils/get-params-result.js";
+
+export type EnvTuple = ([string, string] | [string, string][] | Record<string, string> | Iterator<[string, string]>)[];
 
 export interface EnvMap {
   get(key: string): string | undefined;
@@ -28,6 +32,9 @@ export interface OnSetItem {
 
 export interface Env extends EnvMap {
   onSet(fn: OnSetFn, ...filter: string[]): void;
+
+  gets(...kparams: KeysParam): Result<Record<string, string>>;
+  sets(...keys: EnvTuple): void;
 }
 
 export type EnvFactoryFn = (opts: Partial<EnvFactoryOpts>) => EnvActions;
@@ -66,11 +73,64 @@ export function envFactory(opts: Partial<EnvFactoryOpts> = {}): Env {
   });
 }
 
+function isIterable(obj: unknown): obj is Iterable<[string, string]> {
+  // checks for null and undefined
+  if (obj == null) {
+    return false;
+  }
+  return typeof (obj as Record<symbol, unknown>)[Symbol.iterator] === "function";
+}
+
 export class EnvImpl implements Env {
   readonly _map: EnvMap;
   constructor(map: EnvMap, opts: Partial<EnvFactoryOpts> = {}) {
     this._map = map;
     this._updatePresets(opts.presetEnv);
+  }
+  gets(...kparams: KeysParam): Result<Record<string, string>> {
+    return getParamsResult(kparams, {
+      getParam: (k) => this.get(k),
+    });
+  }
+  sets(...keys: EnvTuple): void {
+    keys.forEach((key) => {
+      if (Array.isArray(key)) {
+        if (key.length === 2) {
+          const [k, v] = key;
+          if (typeof k === "string" && typeof v === "string") {
+            this.set(k, v);
+            return;
+          }
+        }
+        for (const item of key) {
+          if (Array.isArray(item)) {
+            // [string, string]
+            if (item.length === 2) {
+              const [k, v] = item;
+              if (typeof k === "string" && typeof v === "string") {
+                this.set(k, v);
+              }
+            }
+          }
+        }
+      } else {
+        if (isIterable(key)) {
+          for (const [k, v] of key) {
+            if (typeof k === "string" && typeof v === "string") {
+              this.set(k, v);
+            }
+          }
+        } else {
+          const rKey = key as Record<string, string>;
+          for (const k in rKey) {
+            const v = rKey[k];
+            if (typeof k === "string" && typeof v === "string") {
+              this.set(k, v);
+            }
+          }
+        }
+      }
+    });
   }
   _updatePresets(presetEnv?: Map<string, string>): void {
     if (!presetEnv) {

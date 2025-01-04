@@ -13,10 +13,10 @@ export class MockFileService extends NodeFileService {
   //   return this.join("/mock/", fname);
   // }
 
-  override async create(fname: string): Promise<NamedWritableStream> {
+  override create(fname: string): Promise<NamedWritableStream> {
     let oName = fname;
     if (!this.isAbsolute(fname)) {
-      oName = await this.abs(fname);
+      oName = this.abs(fname);
     }
 
     const fc = {
@@ -27,7 +27,7 @@ export class MockFileService extends NodeFileService {
     this.files[fname] = fc;
     const decoder = new TextDecoder();
 
-    return {
+    return Promise.resolve({
       name: oName,
       stream: new WritableStream<Uint8Array>({
         write(chunk): void {
@@ -40,6 +40,6 @@ export class MockFileService extends NodeFileService {
           throw new Error("not implemented");
         },
       }),
-    };
+    });
   }
 }

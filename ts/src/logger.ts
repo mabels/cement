@@ -75,7 +75,7 @@ function logValueInternal(val: LogValueArg, ctx: LogValueStateInternal): LogValu
       return new LogValue(val);
     case "string": {
       try {
-        const ret = JSON.parse(val);
+        const ret = JSON.parse(val) as LogValueArg;
         if (typeof ret === "object" && ret !== null) {
           return logValueInternal(ret, ctx);
         }
@@ -108,7 +108,7 @@ function logValueInternal(val: LogValueArg, ctx: LogValueStateInternal): LogValu
           // should be injected
           const decoder = new TextDecoder();
           const asStr = decoder.decode(val);
-          const obj = JSON.parse(asStr);
+          const obj = JSON.parse(asStr) as LogValueArg;
           return logValueInternal(obj, ctx);
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (e) {
@@ -239,7 +239,7 @@ export interface LoggerInterface<R> {
   Log(): R;
   WithLevel(level: Level): R;
 
-  Err(err: unknown | Result<unknown> | Error): R; // could be Error, or something which coerces to string
+  Err<T>(err: T | Result<T> | Error): R; // could be Error, or something which coerces to string
   Info(): R;
   Timestamp(): R;
   Dur(key: string, nsec: number): R;
@@ -266,8 +266,7 @@ export function IsLogger(obj: unknown): obj is Logger {
       "Dur",
       "Uint64",
     ]
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .map((fn) => typeof (obj as any)[fn] === "function")
+      .map((fn) => typeof (obj as Record<string, unknown>)[fn] === "function")
       .reduce((a, b) => a && b, true)
   );
 }

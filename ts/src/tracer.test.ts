@@ -19,10 +19,10 @@ describe("trace", () => {
       trace.span("test", (trace) => {
         const r1 = trace.span("test.1", () => {
           return 1;
-        }) as number;
+        });
         const r2 = trace.span("test.2", () => {
           return 1;
-        }) as number;
+        });
         return r1 + r2;
       }),
     ).toBe(2);
@@ -80,9 +80,9 @@ describe("trace", () => {
   it("a async simple trace", async () => {
     const log = trace.ctx.logger?.With().Str("value", "test").Logger();
     const ret = await trace.span(trace.ctxWith("test", log), async (trace) => {
-      const r1 = trace.span(trace.ctxWith("test.1"), () => 1) as number;
+      const r1 = trace.span(trace.ctxWith("test.1"), () => 1);
       const log2 = trace.ctx.logger?.With().Module("xxx").Str("r2", "test.2").Logger();
-      const r2 = (await trace.span(trace.ctxWith("test.2", log2), async () => {
+      const r2 = await trace.span(trace.ctxWith("test.2", log2), async () => {
         time.Now();
         await new Promise<void>((resolve) =>
           setTimeout(() => {
@@ -92,7 +92,7 @@ describe("trace", () => {
           }, 100),
         );
         return 1;
-      })) as number;
+      });
       return r1 + r2;
     });
     expect(ret).toBe(2);
@@ -160,7 +160,7 @@ describe("trace", () => {
             }
             trace.metrics.get("i.1").add([i]);
             return 1;
-          }) as number;
+          });
         } catch (e) {
           if (i % 2) {
             expect((e as Error).message).toEqual("test.1");
@@ -179,7 +179,7 @@ describe("trace", () => {
                   trace.metrics.get("i.2").add(i);
                   resolve();
                 } else {
-                  reject("test.2");
+                  reject(new Error("test.2"));
                 }
               }, 10),
             );
@@ -189,7 +189,7 @@ describe("trace", () => {
           if (i % 2) {
             assert(false, "should not happen");
           } else {
-            expect(e).toEqual("test.2");
+            expect((e as Error).message).toEqual("test.2");
           }
         }
       }
@@ -309,6 +309,6 @@ describe("metrics", () => {
   });
   it("typed span promise or literal", async () => {
     expect(trace.span("test", () => "1")).toBe("1");
-    expect(await trace.span("test", async () => 1)).toBe(1);
+    expect(await trace.span("test", () => Promise.resolve(1))).toBe(1);
   });
 });

@@ -24,7 +24,7 @@ export class FanoutWriteStream implements WritableStreamDefaultWriter<Uint8Array
     this._writers.map((w) => w.releaseLock());
   }
 
-  write(chunk?: Uint8Array | undefined): Promise<void> {
+  write(chunk?: Uint8Array): Promise<void> {
     return Promise.all(this._writers.map((w) => w.write(chunk))).then(() => {
       /* do nothing */
     });

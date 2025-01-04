@@ -71,15 +71,11 @@ it("sync exception2Result throw", () => {
 });
 
 it("async exception2Result ok", async () => {
-  expect(await exception2Result(async () => 1)).toEqual(Result.Ok(1));
+  expect(await exception2Result(() => Promise.resolve(1))).toEqual(Result.Ok(1));
 });
 
 it("async exception2Result throw", async () => {
-  expect(
-    await exception2Result(async () => {
-      throw new Error("x");
-    }),
-  ).toEqual(Result.Err("x"));
+  expect(await exception2Result(() => Promise.reject(new Error("x")))).toEqual(Result.Err("x"));
 });
 
 it("result typ", () => {

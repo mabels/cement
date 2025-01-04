@@ -6,14 +6,13 @@ export interface Runtime {
   isCFWorker: boolean;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function isSet(value: string, ref: any = globalThis): boolean {
+function isSet(value: string, ref: Record<string, unknown> = globalThis): boolean {
   const [head, ...tail] = value.split(".");
   if (["object", "function"].includes(typeof ref) && ref && ["object", "function"].includes(typeof ref[head]) && ref[head]) {
     if (tail.length <= 1) {
       return true;
     }
-    return isSet(tail.join("."), ref[head]);
+    return isSet(tail.join("."), ref[head] as Record<string, unknown>);
   }
   return false;
 }
@@ -24,6 +23,7 @@ export function runtimeFn(): Runtime {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const gt: any = globalThis;
   let isReactNative =
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     isSet("navigator.product") && typeof gt["navigator"] === "object" && gt["navigator"]["product"] === "ReactNative";
   let isNodeIsh = false;
   if (!isSet("Deno")) {

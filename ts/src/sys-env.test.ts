@@ -1,6 +1,7 @@
 import { Env, EnvActions, EnvFactoryOpts, EnvImpl, envFactory, registerEnvAction, runtimeFn } from "@adviser/cement";
 import { CFEnvActions } from "./cf/cf-env-actions.js";
 import { BrowserEnvActions } from "./web/web-env-actions.js";
+import { param } from "./utils/get-params-result.js";
 
 describe("sys_env", () => {
   let key: string;
@@ -29,7 +30,9 @@ describe("sys_env", () => {
     const fn = vi.fn();
     envImpl.onSet(fn);
     expect(fn).toBeCalledTimes(envImpl.keys().length);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     expect(fn.mock.calls.map((i) => i[0]).sort()).toEqual(envImpl.keys().sort());
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     expect(fn.mock.calls.map((i) => i[1]).sort()).toEqual(
       envImpl
         .keys()
@@ -108,4 +111,88 @@ describe("sys_env", () => {
       expect(env.get("cf-key")).toBe("cf-value");
     });
   }
+  it("gets ok", () => {
+    const res0 = envImpl.gets({ key: param.REQUIRED });
+    expect(res0.isErr()).toBeTruthy();
+    envImpl.set("key", "value");
+    const res = envImpl.gets({ key: param.REQUIRED });
+    expect(res.isOk()).toBeTruthy();
+    expect(res.unwrap()).toEqual({ key: "value" });
+  });
+
+  it("gets error", () => {
+    envImpl.set("key", "value");
+    const res = envImpl.gets({
+      unk1: param.REQUIRED,
+      unk2: param.REQUIRED,
+      key: param.REQUIRED,
+    });
+    expect(res.isErr()).toBeTruthy();
+    expect(res.Err().message).toEqual("missing parameters: unk1,unk2");
+  });
+
+  it("sets array flat tuple", () => {
+    envImpl.sets(["key1", "value1"], ["key2", "value2"]);
+    expect(envImpl.get("key1")).toBe("value1");
+    expect(envImpl.get("key2")).toBe("value2");
+  });
+  it("sets array array tuple", () => {
+    envImpl.sets([
+      ["key1", "value1"],
+      ["key2", "value2"],
+    ]);
+    expect(envImpl.get("key1")).toBe("value1");
+    expect(envImpl.get("key2")).toBe("value2");
+  });
+
+  it("sets object", () => {
+    envImpl.sets({
+      key1: "value1",
+      key2: "value2",
+    });
+    expect(envImpl.get("key1")).toBe("value1");
+    expect(envImpl.get("key2")).toBe("value2");
+  });
+
+  it("sets iterator", () => {
+    envImpl.sets(
+      new Map(
+        Object.entries({
+          key1: "value1",
+          key2: "value2",
+        }),
+      ).entries(),
+    );
+    expect(envImpl.get("key1")).toBe("value1");
+    expect(envImpl.get("key2")).toBe("value2");
+  });
+
+  it("sets combination", () => {
+    envImpl.sets(
+      new Map(
+        Object.entries({
+          key1: "value1",
+          key2: "value2",
+        }),
+      ).entries(),
+      {
+        key3: "value3",
+        key4: "value4",
+      },
+      ["key5", "value5"],
+      ["key6", "value6"],
+      [
+        ["key7", "value7"],
+        ["key8", "value8"],
+      ],
+    );
+    expect(envImpl.get("key1")).toBe("value1");
+    expect(envImpl.get("key2")).toBe("value2");
+    expect(envImpl.get("key3")).toBe("value3");
+    expect(envImpl.get("key4")).toBe("value4");
+    expect(envImpl.get("key5")).toBe("value5");
+    expect(envImpl.get("key6")).toBe("value6");
+    expect(envImpl.get("key7")).toBe("value7");
+    expect(envImpl.get("key8")).toBe("value8");
+  });
 });

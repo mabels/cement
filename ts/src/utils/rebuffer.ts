@@ -33,29 +33,35 @@ interface pumpState {
 }
 
 function pump(ps: pumpState, controller: ReadableStreamDefaultController<Uint8Array>, next: () => void): void {
-  ps.reader.read().then(({ done, value }) => {
-    if (done) {
-      if (ps.tmpLen > 0) {
-        controller.enqueue(reChunk(ps.tmp, ps.tmpLen).chunk);
+  ps.reader
+    .read()
+    .then(({ done, value }) => {
+      if (done) {
+        if (ps.tmpLen > 0) {
+          controller.enqueue(reChunk(ps.tmp, ps.tmpLen).chunk);
+        }
+        controller.close();
+        next();
+        return;
       }
-      controller.close();
+      if (ps.tmpLen + value.length > ps.chunkSize) {
+        ps.tmp.push(value);
+        const res = reChunk(ps.tmp, ps.chunkSize);
+        controller.enqueue(res.chunk);
+        ps.tmp = [res.rest];
+        ps.tmpLen = res.rest.length;
+        next();
+        return;
+      } else if (value.length) {
+        ps.tmp.push(value);
+        ps.tmpLen += value.length;
+      }
+      pump(ps, controller, next);
+    })
+    .catch((err) => {
+      controller.error(err);
       next();
-      return;
-    }
-    if (ps.tmpLen + value.length > ps.chunkSize) {
-      ps.tmp.push(value);
-      const res = reChunk(ps.tmp, ps.chunkSize);
-      controller.enqueue(res.chunk);
-      ps.tmp = [res.rest];
-      ps.tmpLen = res.rest.length;
-      next();
-      return;
-    } else if (value.length) {
-      ps.tmp.push(value);
-      ps.tmpLen += value.length;
-    }
-    pump(ps, controller, next);
-  });
+    });
 }
 
 export function rebuffer(a: ReadableStream<Uint8Array>, chunkSize: number): ReadableStream<Uint8Array> {

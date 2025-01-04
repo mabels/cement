@@ -29,7 +29,7 @@ export class WebFileService implements FileService {
     throw new Error("join-Method not implemented.");
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  relative(from: string, to?: string | undefined): string {
+  relative(from: string, to?: string): string {
     throw new Error("relative-Method not implemented.");
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

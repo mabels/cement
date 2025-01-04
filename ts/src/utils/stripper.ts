@@ -1,6 +1,6 @@
 export type StripCommand = string | RegExp;
 
-export function stripper<T extends unknown | ArrayLike<unknown>>(
+export function stripper<T extends ArrayLike<S> | S, S>(
   strip: StripCommand | StripCommand[],
   obj: T,
 ): T extends ArrayLike<unknown> ? Record<string, unknown>[] : Record<string, unknown> {
@@ -49,7 +49,7 @@ function localStripper<T>(path: string | undefined, restrips: RegExp[], obj: T):
       }
       if (typeof ret[key] === "object") {
         if (Array.isArray(ret[key])) {
-          ret[key] = ret[key].reduce((acc, v, i) => {
+          ret[key] = ret[key].reduce((acc: unknown[], v, i) => {
             const toDelete = matcher(key, `${nextPath}[${i}]`);
             if (!toDelete) {
               acc.push(localStripper(`${nextPath}[${i}]`, restrips, v));

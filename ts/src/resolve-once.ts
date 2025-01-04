@@ -14,10 +14,10 @@ export class ResolveSeq<T, C = void> {
   reset(): void {
     /* noop */
   }
-  async _step(item?: ResolveSeqItem<T, C> | undefined): Promise<void> {
+  _step(item?: ResolveSeqItem<T, C>): Promise<void> {
     if (!item) {
       // done
-      return;
+      return Promise.resolve();
     }
     item
       .fn(this.ctx)
@@ -25,15 +25,16 @@ export class ResolveSeq<T, C = void> {
       .catch((e) => item.future.reject(e as Error))
       .finally(() => {
         this._seqFutures.shift();
-        this._step(this._seqFutures[0]);
+        void this._step(this._seqFutures[0]);
       });
+    return Promise.resolve();
   }
   readonly _seqFutures: ResolveSeqItem<T, C>[] = [];
   async add(fn: (c: C) => Promise<T>, id?: number): Promise<T> {
     const future = new Future<T>();
     this._seqFutures.push({ future, fn, id });
     if (this._seqFutures.length === 1) {
-      this._step(this._seqFutures[0]);
+      void this._step(this._seqFutures[0]);
     }
     return future.asPromise();
   }
@@ -99,7 +100,7 @@ export class ResolveOnce<T, CTX = void> {
         this._onceFutures.length = 0;
       };
       const catchFn = (e: Error): void => {
-        this._onceError = e as Error;
+        this._onceError = e;
         this._onceOk = false;
         this._onceValue = undefined;
         this._onceDone = true;

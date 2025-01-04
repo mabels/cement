@@ -20,3 +20,6 @@ export * from "./bin2text.js";
 export * from "./version.js";
 export * from "./http_header.js";
 export * as utils from "./utils/index.js";
+// ugly
+import * as utils from "./utils/index.js";
+export const param = utils.param;

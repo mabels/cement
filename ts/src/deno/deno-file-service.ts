@@ -6,7 +6,7 @@ const Deno = (globalThis as unknown as { Deno: unknown }).Deno as {
   cwd(): string;
   readFile(fname: string): Promise<Uint8Array>;
   mkdir(base: string, options: { recursive: boolean }): Promise<void>;
-  open(fname: string, options: { write: boolean; create: boolean; truncate: boolean }): Promise<WritableStream>;
+  open(fname: string, options: { write: boolean; create: boolean; truncate: boolean }): Promise<WritableStream<Uint8Array>>;
 };
 
 export class DenoFileService implements FileService {

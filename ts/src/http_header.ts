@@ -44,7 +44,7 @@ export class HttpHeader {
     const h = new HttpHeader();
     if (headers) {
       if (Array.isArray(headers)) {
-        for (const [k, v] of headers) {
+        for (const [k, v] of headers as [string, string][]) {
           if (v) {
             h.Add(k, v);
           }

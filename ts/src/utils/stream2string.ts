@@ -19,7 +19,7 @@ export async function stream2string(stream?: ReadableStream<Uint8Array> | null, 
       rSize += read.value.length;
       res += block;
     } catch (err) {
-      return Promise.reject(err);
+      return Promise.reject(err as Error);
     }
   }
   return Promise.resolve(res);
@@ -40,7 +40,7 @@ export async function stream2uint8array(stream?: ReadableStream<Uint8Array> | nu
       }
       res = new Uint8Array([...res, ...value]);
     } catch (err) {
-      return Promise.reject(err);
+      return Promise.reject(err as Error);
     }
   }
   return Promise.resolve(res);

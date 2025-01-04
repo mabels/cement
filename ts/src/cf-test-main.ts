@@ -1,5 +1,5 @@
 export default {
-  async fetch(): Promise<Response> {
+  fetch(): Response {
     return new Response("Hello World!");
   },
 };

@@ -3,7 +3,7 @@ import { NodeSysAbstraction } from "@adviser/cement/node";
 import { DenoSysAbstraction } from "@adviser/cement/deno";
 import { VERSION, LoggerImpl, Result, Option, Level, runtimeFn } from "@adviser/cement";
 
-(async (): Promise<void> => {
+function main(): void {
   const none = Option.None();
   const result = Result.Ok(none);
   if (!result.isOk()) {
@@ -29,4 +29,5 @@ import { VERSION, LoggerImpl, Result, Option, Level, runtimeFn } from "@adviser/
     const sys = WebSysAbstraction();
     log.Info().Str("id", sys.NextId()).Msg("Web-Alright");
   }
-})();
+}
+main();

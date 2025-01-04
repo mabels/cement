@@ -1,4 +1,5 @@
 import { runtimeFn } from "../runtime.js";
+import { SysAbstraction } from "../sys-abstraction.js";
 
 const gts = globalThis as unknown /*Deno*/ as {
   Deno: {
@@ -13,8 +14,15 @@ const gts = globalThis as unknown /*Deno*/ as {
   };
 };
 
-(async (): Promise<void> => {
-  const sa = await import(runtimeFn().isDeno ? "../deno/deno-sys-abstraction.ts" : "../node/node-sys-abstraction.ts");
+async function main(): Promise<void> {
+  const modPath = runtimeFn().isDeno
+    ? new URL("../deno/deno-sys-abstraction.ts", import.meta.url).pathname
+    : new URL("../node/node-sys-abstraction.ts", import.meta.url).pathname;
+  // console.log("modPath", modPath);
+  const sa = (await import(modPath)) as {
+    DenoSysAbstraction: () => SysAbstraction;
+    NodeSysAbstraction: () => SysAbstraction;
+  };
 
   const my = runtimeFn().isDeno ? sa.DenoSysAbstraction() : sa.NodeSysAbstraction();
 
@@ -80,4 +88,8 @@ const gts = globalThis as unknown /*Deno*/ as {
     default:
       my.System().Exit(24);
   }
-})();
+  return;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-floating-promises
+main();

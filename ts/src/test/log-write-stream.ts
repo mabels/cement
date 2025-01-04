@@ -61,7 +61,7 @@ export class LogCollector implements WritableStream<Uint8Array> {
 
   getWriter(): WritableStreamDefaultWriter<Uint8Array> {
     if (!this._writer) {
-      const dests: WritableStreamDefaultWriter[] = [new LogWriteStream(this._bufferArr)];
+      const dests: WritableStreamDefaultWriter<Uint8Array>[] = [new LogWriteStream(this._bufferArr)];
       if (this._pass) {
         dests.push(this._pass);
       }
@@ -87,6 +87,7 @@ export class LogCollector implements WritableStream<Uint8Array> {
     if (!notJsonLine) {
       const splitStr = jsonNlStr.split("\n");
       const filterStr = splitStr.filter((a) => a.length);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return
       const mapStr = filterStr.map((a) => JSON.parse(a));
       return mapStr;
     }

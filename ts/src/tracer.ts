@@ -38,14 +38,12 @@ export class Metric<T> {
   add<R extends number | ArrayLike<T>>(value: R): void {
     if (typeof value === "number") {
       if (this.value === undefined) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        this.value = 0 as any;
+        this.value = 0 as T;
       }
-      (this.value as number) = ((this.value as number) + value) as number;
+      this.value = ((this.value as number) + value) as T;
     } else if (Array.isArray(value)) {
       if (!Array.isArray(this.value)) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        this.value = [] as any;
+        this.value = [] as T;
       }
       (this.value as T[]).push(...value);
     } else {
@@ -145,7 +143,7 @@ export class TraceNode {
     const spanRefs = this.metrics.toJSON.call({ map: this.metrics.spanRefs });
     const metricsRefs = Object.keys(spanRefs).length > 0 ? { metricRefs: spanRefs } : {};
     return {
-      ctx: cleanCtx as CleanCtx,
+      ctx: cleanCtx,
       invokations: this.invokations,
       ...metricsRefs,
     };

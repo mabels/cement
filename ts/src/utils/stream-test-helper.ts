@@ -14,38 +14,46 @@ export interface streamingTestState {
 }
 
 export async function receiveFromStream(reb: ReadableStream<Uint8Array>, state: streamingTestState): Promise<void> {
-  return new Promise<void>((resolve) => {
+  return new Promise<void>((resolve, reject) => {
     let reBufferCalls = 0;
     const reader = reb.getReader();
     function pump(): void {
-      reader.read().then(({ done, value }) => {
-        state.CollectorFn({ done, value, fillCalls: state.fillCalls, reBufferCalls });
-        reBufferCalls++;
-        if (done) {
-          resolve();
-          return;
-        }
-        pump();
-      });
+      reader
+        .read()
+        .then(({ done, value }) => {
+          state.CollectorFn({ done, value, fillCalls: state.fillCalls, reBufferCalls });
+          reBufferCalls++;
+          if (done) {
+            resolve();
+            return;
+          }
+          pump();
+        })
+        .catch(reject);
     }
     pump();
   });
 }
 
 export async function sendToStream(reb: WritableStream<Uint8Array>, state: streamingTestState): Promise<void> {
-  return new Promise<void>((resolve) => {
+  return new Promise((resolve, reject) => {
     const writer = reb.getWriter();
     function pump(i: number): void {
       if (i >= state.sendChunks) {
-        writer.close();
-        resolve();
+        writer.close().then(resolve).catch(reject);
         return;
       }
-      writer.ready.then(() => {
-        state.fillCalls++;
-        writer.write(new Uint8Array(Array(state.sendChunkSize).fill(i)));
-        pump(i + 1);
-      });
+      writer.ready
+        .then(() => {
+          state.fillCalls++;
+          writer
+            .write(new Uint8Array(Array(state.sendChunkSize).fill(i)))
+            .then(() => {
+              pump(i + 1);
+            })
+            .catch(reject);
+        })
+        .catch(reject);
     }
     pump(0);
   });

@@ -12,7 +12,7 @@ function exitHandler(errCode: number, larg: string, done: () => void) {
         .split("\n")
         .filter((line) => line.trim())
         .map((line) => {
-          const out = JSON.parse(line);
+          const out = JSON.parse(line) as { pid?: number };
           return out;
         })
         .map((obj) => {

@@ -809,7 +809,7 @@ describe("TestLogger", () => {
     logger.SetExposeStack(false);
     logger.Error().Err(e).Msg("3");
     await logger.Flush();
-    const logs = logCollector.Logs();
+    const logs = logCollector.Logs() as ({ stack?: string[] } & Record<string, unknown>)[];
     logs[1].stack = logs[1].stack?.map((s: string) => s.toLowerCase());
     expect(logs).toEqual([
       {
@@ -831,7 +831,7 @@ describe("TestLogger", () => {
     ]);
   });
 
-  it("which writer for which runtime", async () => {
+  it("which writer for which runtime", () => {
     const logger = new LoggerImpl();
     if (runtimeFn().isNodeIsh) {
       expect(logger._logWriter._out instanceof WritableStream).toBeTruthy();
@@ -883,7 +883,7 @@ describe("TestLogger", () => {
     ]);
   });
 
-  it("serialize json as string", async () => {
+  it("serialize json as string", () => {
     const suri = "file://./doof?test=1";
     const auri = JSON.stringify({ uri: suri });
     const buri = BuildURI.from(suri);
@@ -892,7 +892,7 @@ describe("TestLogger", () => {
     expect(JSON.stringify({ uri })).toEqual(auri);
   });
 
-  it("emits attributes", async () => {
+  it("emits attributes", () => {
     const log = logger
       .With()
       .Str("str", "a str")
@@ -1227,7 +1227,7 @@ describe("TestLogger", () => {
     // }
   }
 
-  describe("fetch-formatter", async () => {
+  describe("fetch-formatter", () => {
     // const result = await fetch("https://www.google.com")
     const resp = new TestResponse("body", {
       status: 200,

@@ -39,7 +39,7 @@ describe("resolve-once", () => {
       await Promise.all(
         Array(100)
           .fill(fn)
-          .map((fn) => fn()),
+          .map((fn: () => Promise<number>) => fn()),
       ),
     ).toEqual(Array(100).fill(42));
     expect(reallyOnce).toHaveBeenCalledTimes(1);
@@ -63,7 +63,7 @@ describe("resolve-once", () => {
       await Promise.all(
         Array(100)
           .fill(fn)
-          .map((fn) => fn()),
+          .map((fn: () => Promise<number>) => fn()),
       ),
     ).toEqual(Array(100).fill(undefined));
     expect(reallyOnce).toHaveBeenCalledTimes(1);
@@ -123,7 +123,7 @@ describe("resolve-once", () => {
       await Promise.all(
         Array(100)
           .fill(fn)
-          .map((fn) => fn()),
+          .map((fn: () => Promise<number>) => fn()),
       ),
     ).toEqual(
       Array(100)
@@ -168,7 +168,7 @@ describe("resolve-once", () => {
     expect(diff).toBeGreaterThanOrEqual(99);
     expect(diff).toBeLessThan(150);
     expect(orderFn).toHaveBeenCalledTimes(100);
-    expect(orderFn.mock.calls.map(([i]) => i)).toEqual(
+    expect(orderFn.mock.calls.map(([i]) => i as number)).toEqual(
       Array(100)
         .fill(0)
         .map((_, i) => i),
@@ -177,29 +177,29 @@ describe("resolve-once", () => {
 
   it("reset", async () => {
     const once = new ResolveOnce<number>();
-    const orderFn = vi.fn(async () => 42);
-    once.once(orderFn);
-    once.once(orderFn);
-    once.once(orderFn);
+    const orderFn = vi.fn(() => Promise.resolve(42));
+    await once.once(orderFn);
+    await once.once(orderFn);
+    await once.once(orderFn);
     once.reset();
-    once.once(orderFn);
-    once.once(orderFn);
+    await once.once(orderFn);
+    await once.once(orderFn);
     once.reset();
-    once.once(orderFn);
-    once.once(orderFn);
+    await once.once(orderFn);
+    await once.once(orderFn);
     once.reset();
     expect(orderFn).toHaveBeenCalledTimes(3);
   });
 
   it("keyed", async () => {
     const keyed = new KeyedResolvOnce<number>();
-    const a_orderFn = vi.fn(async () => 42);
-    const b_orderFn = vi.fn(async () => 42);
+    const a_orderFn = vi.fn(() => Promise.resolve(42));
+    const b_orderFn = vi.fn(() => Promise.resolve(42));
     for (let i = 0; i < 5; i++) {
-      keyed.get("a").once(a_orderFn);
-      keyed.get(() => "a").once(a_orderFn);
-      keyed.get("b").once(b_orderFn);
-      keyed.get(() => "b").once(b_orderFn);
+      await keyed.get("a").once(a_orderFn);
+      await keyed.get(() => "a").once(a_orderFn);
+      await keyed.get("b").once(b_orderFn);
+      await keyed.get(() => "b").once(b_orderFn);
       expect(a_orderFn).toHaveBeenCalledTimes(i + 1);
       expect(b_orderFn).toHaveBeenCalledTimes(i + 1);
       keyed.reset();
@@ -208,8 +208,8 @@ describe("resolve-once", () => {
 
   it("keyed with pass ctx", async () => {
     const keyed = new KeyedResolvOnce<number>();
-    const a_orderFn = vi.fn(async (key) => key);
-    const b_orderFn = vi.fn(async (key) => key);
+    const a_orderFn = vi.fn((key) => Promise.resolve(key));
+    const b_orderFn = vi.fn((key) => Promise.resolve(key));
     await Promise.all([
       keyed.get("a").once(a_orderFn),
       keyed.get(() => "a").once(a_orderFn),
@@ -224,25 +224,21 @@ describe("resolve-once", () => {
 
   it("keyed asyncGet", async () => {
     const keyed = new KeyedResolvOnce<number>();
-    const a_orderFn = vi.fn(async (key) => key);
-    const b_orderFn = vi.fn(async (key) => key);
+    const a_orderFn = vi.fn((key) => Promise.resolve(key));
+    const b_orderFn = vi.fn((key) => Promise.resolve(key));
     await Promise.all([
       keyed
         .asyncGet(async () => {
           await new Promise((resolve) => setTimeout(resolve, 100));
           return "a";
         })
-        .then((resolveOnce) => {
-          resolveOnce.once(a_orderFn);
-        }),
+        .then((resolveOnce) => resolveOnce.once(a_orderFn)),
       keyed
         .asyncGet(async () => {
           await new Promise((resolve) => setTimeout(resolve, 50));
           return "b";
         })
-        .then((resolveOnce) => {
-          resolveOnce.once(b_orderFn);
-        }),
+        .then((resolveOnce) => resolveOnce.once(b_orderFn)),
     ]);
     expect(a_orderFn).toHaveBeenCalledTimes(1);
     expect(a_orderFn).toHaveBeenCalledWith("a");

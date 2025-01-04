@@ -23,7 +23,7 @@ export class ConsoleWriterStreamDefaultWriter implements WritableStreamDefaultWr
     this.ready = Promise.resolve(undefined);
     this.closed = Promise.resolve(undefined);
   }
-  async write(chunk?: Uint8Array | undefined): Promise<void> {
+  write(chunk?: Uint8Array): Promise<void> {
     let strObj: string | { level: string } = this.decoder.decode(chunk).trimEnd();
     let output = "log";
     try {
@@ -46,6 +46,7 @@ export class ConsoleWriterStreamDefaultWriter implements WritableStreamDefaultWr
         // eslint-disable-next-line no-console
         console.log(strObj);
     }
+    return Promise.resolve();
   }
 }
 
@@ -56,8 +57,8 @@ export class ConsoleWriterStream implements WritableStream<Uint8Array> {
   abort(reason?: any): Promise<void> {
     throw new Error("Method not implemented.");
   }
-  async close(): Promise<void> {
-    return;
+  close(): Promise<void> {
+    return Promise.resolve();
   }
   getWriter(): WritableStreamDefaultWriter<Uint8Array> {
     if (this.locked) {

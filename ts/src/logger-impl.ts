@@ -13,7 +13,6 @@ import {
   Sized,
   Lengthed,
   LogValue,
-  asyncLogValue,
   LevelHandler,
   LogFormatter,
   LogValueArg,
@@ -176,7 +175,7 @@ export class LoggerImpl implements Logger {
   }
 
   Attributes(): Record<string, unknown> {
-    return JSON.parse(JSON.stringify(this._attributes, null));
+    return JSON.parse(JSON.stringify(this._attributes, null)) as Record<string, unknown>;
     // return Array.from(Object.entries(this._attributes)).reduce(
     //   (acc, [key, value]) => {
     //     if (value instanceof LogValue) {
@@ -246,7 +245,7 @@ export class LoggerImpl implements Logger {
     this._attributes["level"] = logValue(Level.INFO, toLogValueCtx(this.levelHandler));
     return this;
   }
-  Err(err: unknown | Result<unknown> | Error): Logger {
+  Err<T>(err: T | Result<T> | Error): Logger {
     let key = "error";
     if (Result.Is(err)) {
       if (err.isOk()) {
@@ -356,11 +355,13 @@ export class LoggerImpl implements Logger {
     return this;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   Hash(value: unknown, key = "hash"): Logger {
-    this._attributes[key] = asyncLogValue(
-      async () => `${getLen(value, toLogValueCtx(this.levelHandler)).value()}:${await hash(value)}`,
-    );
-    return this;
+    throw new Error("Not implemented");
+    // this._attributes[key] = asyncLogValue(
+    //   async () => `${getLen(value, toLogValueCtx(this.levelHandler)).value()}:${await hash(value)}`,
+    // );
+    // return this;
   }
 
   Url(url: CoerceURI, key = "url"): Logger {
@@ -592,7 +593,7 @@ class WithLoggerBuilder implements WithLogger {
     this._li.Timestamp();
     return this;
   }
-  Any(key: string | Record<string, unknown>, value?: unknown | LogSerializable): WithLogger {
+  Any<T>(key: string | Record<string, unknown>, value?: T | LogSerializable): WithLogger {
     this._li.Any(key, value);
     return this;
   }

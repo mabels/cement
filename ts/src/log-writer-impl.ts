@@ -14,7 +14,7 @@ export class LogWriterStream {
         const writer = this._out.getWriter();
         await writer.ready;
         await writer.write(encoded);
-        await writer.releaseLock();
+        writer.releaseLock();
       } catch (err) {
         // eslint-disable-next-line no-console
         console.error("Chunk error:", err);
@@ -50,9 +50,14 @@ export class LogWriterStream {
 
     // console.log(">>>Msg:", this._toFlush.length)
     const my = this._toFlush.shift();
-    my?.().finally(() => {
-      // console.log("<<<Msg:", this._toFlush.length)
-      this._flush(this._toFlush);
-    });
+    my?.()
+      .catch((e) => {
+        // eslint-disable-next-line no-console
+        console.error("Flush error:", e);
+      })
+      .finally(() => {
+        // console.log("<<<Msg:", this._toFlush.length)
+        this._flush(this._toFlush);
+      });
   }
 }

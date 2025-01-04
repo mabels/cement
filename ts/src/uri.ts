@@ -1,4 +1,5 @@
 import { exception2Result, Result } from "./result.js";
+import { getParamsResult, KeysParam, param } from "./utils/get-params-result.js";
 import { relativePath } from "./utils/relative-path.js";
 import { StripCommand, stripper } from "./utils/stripper.js";
 
@@ -6,30 +7,14 @@ type NullOrUndef = null | undefined;
 
 type OneKey<K extends string, V = string> = Record<K, V>;
 
-export type MsgFn = (...keys: string[]) => string;
+/** @deprecated use param from get-params-result */
+export const key = param;
+
 /*
   if KeyParam is a Object
      if the right side is a string, it is the default value
      if the right side is a !string | REQUIRED, it is required
 */
-class _REQUIRED {
-  readonly val = "REQUIRED";
-}
-class _OPTIONAL {
-  readonly val = "OPTIONAL";
-}
-
-interface _key {
-  readonly REQUIRED: _REQUIRED;
-  readonly OPTIONAL: _OPTIONAL;
-}
-
-export const key: _key = {
-  REQUIRED: new _REQUIRED(),
-  OPTIONAL: new _OPTIONAL(),
-};
-
-export type KeysParam = (string | MsgFn | Record<string, _REQUIRED | _OPTIONAL | unknown>)[];
 
 // type ReturnType<T extends (...args: KeysParam) => unknown> = T extends (...args: KeysParam) => infer R ? R : unknown;
 
@@ -270,56 +255,6 @@ function getParamResult(
     return Result.Err(msgFn(key));
   }
   return Result.Ok(val);
-}
-
-function getParamsResult(
-  keys: KeysParam,
-  getParam: { getParam: (key: string) => string | undefined },
-): Result<Record<string, string>> {
-  const keyDef = keys.flat().reduce(
-    (acc, i) => {
-      if (typeof i === "string") {
-        acc.push({ key: i, def: undefined, isOptional: false });
-      } else if (typeof i === "object") {
-        acc.push(
-          ...Object.keys(i).map((k) => ({
-            key: k,
-            def: typeof i[k] === "string" ? i[k] : undefined,
-            isOptional: i[k] instanceof _OPTIONAL,
-          })),
-        );
-      }
-      return acc;
-    },
-    [] as { key: string; def?: string; isOptional: boolean }[],
-  );
-  //.filter((k) => typeof k === "string");
-  const msgFn =
-    keys.find((k) => typeof k === "function") ||
-    ((...keys: string[]): string => {
-      const msg = keys.join(",");
-      return `missing parameters: ${msg}`;
-    });
-  const errors: string[] = [];
-  const result: Record<string, string> = {};
-  for (const kd of keyDef) {
-    const val = getParam.getParam(kd.key);
-    if (val === undefined) {
-      if (typeof kd.def === "string") {
-        result[kd.key] = kd.def;
-      } else {
-        if (!kd.isOptional) {
-          errors.push(kd.key);
-        }
-      }
-    } else {
-      result[kd.key] = val;
-    }
-  }
-  if (errors.length) {
-    return Result.Err(msgFn(...errors));
-  }
-  return Result.Ok(result);
 }
 
 export class BuildURI implements URIInterface<BuildURI> {

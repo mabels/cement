@@ -38,7 +38,7 @@ export class Path {
     if (this.parts.includes(PartType.Root) && part === PartType.Root) {
       throw new Error("Cannot add absolute part to absolute path");
     }
-    const last = this.parts[this.parts.length - 1] as number;
+    const last = this.parts[this.parts.length - 1] as PartType;
     if (last & PartType.Slash && part === PartType.Slash) {
       return;
     }
