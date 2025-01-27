@@ -1244,6 +1244,7 @@ describe("TestLogger", () => {
         "Content-Type": "text/html",
         "X-Test": "xtest",
       }),
+      // duplex: true,
       body: "String",
     });
 

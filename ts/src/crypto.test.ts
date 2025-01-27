@@ -9,7 +9,7 @@ it("not extractable import -> export", async () => {
     assert(false, "should not reach here");
   } catch (ie) {
     const e = ie as Error;
-    expect(e.message).toMatch(/(key is not extractable|non-extractable)/i);
+    expect(e.message).toMatch(/(key is not extractable|non-extractable|the underlying object)/i);
   }
 });
 

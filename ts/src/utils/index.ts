@@ -5,3 +5,4 @@ export * from "./string2stream.js";
 export * from "./console-write-stream.js";
 export * from "./fanout-write-stream.js";
 export * from "./get-params-result.js";
+export * from "./stripper.js";
