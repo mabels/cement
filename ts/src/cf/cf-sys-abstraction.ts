@@ -1,7 +1,7 @@
 import { BaseSysAbstraction, WrapperSysAbstraction, WrapperSysAbstractionParams } from "../base-sys-abstraction.js";
 import { SysAbstraction, SystemService, VoidFunc } from "../sys-abstraction.js";
 import { Env, envFactory } from "../sys-env.js";
-import { Utf8EnDecoderSingleton } from "../txt-en-decoder.js";
+import { TxtEnDecoderSingleton } from "../txt-en-decoder.js";
 import { WebFileService } from "../web/web-sys-abstraction.js";
 
 export class CFSystemService implements SystemService {
@@ -25,7 +25,7 @@ let my: BaseSysAbstraction | undefined = undefined;
 export function CFSysAbstraction(param?: WrapperSysAbstractionParams): SysAbstraction {
   if (!my) {
     my = new BaseSysAbstraction({
-      TxtEnDecoder: param?.TxtEnDecoder || Utf8EnDecoderSingleton(),
+      TxtEnDecoder: param?.TxtEnDecoder || TxtEnDecoderSingleton(),
       FileSystem: new WebFileService(),
       SystemService: new CFSystemService(),
     });

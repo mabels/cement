@@ -26,7 +26,7 @@ import { CoerceURI, URI } from "./uri.js";
 import { runtimeFn } from "./runtime.js";
 import { ConsoleWriterStream } from "./utils/console-write-stream.js";
 import { LogWriterStream } from "./log-writer-impl.js";
-import { TxtEnDecoder, Utf8EnDecoderSingleton } from "./txt-en-decoder.js";
+import { TxtEnDecoder, TxtEnDecoderSingleton } from "./txt-en-decoder.js";
 import { LevelHandlerSingleton } from "./log-level-impl.js";
 
 function getLen(value: unknown, lvs: LogValueState): LogValue {
@@ -126,7 +126,7 @@ export class LoggerImpl implements Logger {
       this._sys = params.sys;
     }
     if (!params.txtEnDe) {
-      this._txtEnDe = Utf8EnDecoderSingleton();
+      this._txtEnDe = TxtEnDecoderSingleton();
     } else {
       this._txtEnDe = params.txtEnDe;
     }

@@ -1,6 +1,6 @@
-import { TxtEnDecoder, Utf8EnDecoderSingleton } from "../txt-en-decoder.js";
+import { TxtEnDecoder, TxtEnDecoderSingleton } from "../txt-en-decoder.js";
 
-export function string2stream(str: string, ende: TxtEnDecoder = Utf8EnDecoderSingleton()): ReadableStream<Uint8Array> {
+export function string2stream(str: string, ende: TxtEnDecoder = TxtEnDecoderSingleton()): ReadableStream<Uint8Array> {
   return uint8array2stream(ende.encode(str));
 }
 

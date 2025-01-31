@@ -1,6 +1,6 @@
 import { FanoutWriteStream } from "../utils/fanout-write-stream.js";
 import { Future } from "../future.js";
-import { TxtEnDecoder, Utf8EnDecoderSingleton } from "../txt-en-decoder.js";
+import { TxtEnDecoder, TxtEnDecoderSingleton } from "../txt-en-decoder.js";
 
 export class LogWriteStream implements WritableStreamDefaultWriter<Uint8Array> {
   private readonly _bufferArr: Uint8Array[];
@@ -42,7 +42,7 @@ export class LogCollector implements WritableStream<Uint8Array> {
 
   constructor(pass?: WritableStreamDefaultWriter<Uint8Array>, txtEnDe?: TxtEnDecoder) {
     this._pass = pass;
-    this._txtEnDe = txtEnDe || Utf8EnDecoderSingleton();
+    this._txtEnDe = txtEnDe || TxtEnDecoderSingleton();
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

@@ -7,7 +7,7 @@ import {
 } from "../base-sys-abstraction.js";
 import { SysAbstraction, SystemService, VoidFunc } from "../sys-abstraction.js";
 import { Env, envFactory } from "../sys-env.js";
-import { Utf8EnDecoderSingleton } from "../txt-en-decoder.js";
+import { TxtEnDecoderSingleton } from "../txt-en-decoder.js";
 // import * as process from "node:process";
 import { DenoFileService } from "./deno-file-service.js";
 
@@ -125,7 +125,7 @@ let my: BaseSysAbstraction | undefined = undefined;
 export function DenoSysAbstraction(param?: WrapperSysAbstractionParams): SysAbstraction {
   if (!my) {
     my = new BaseSysAbstraction({
-      TxtEnDecoder: param?.TxtEnDecoder || Utf8EnDecoderSingleton(),
+      TxtEnDecoder: param?.TxtEnDecoder || TxtEnDecoderSingleton(),
       FileSystem: new DenoFileService(),
       SystemService: new DenoSystemService(),
     });

@@ -1,7 +1,7 @@
 import { exception2Result, Result } from "./result.js";
-import { AsyncToEnDecoder, ToEnDecoder, TxtEnDecoder, Utf8EnDecoderSingleton } from "./txt-en-decoder.js";
+import { AsyncToEnDecoder, ToEnDecoder, TxtEnDecoder, TxtEnDecoderSingleton as TxtEnDecoderSingleton } from "./txt-en-decoder.js";
 
-export interface JSONEndeCoder {
+export interface JSONEnDecoder {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   stringify<T>(input: Result<T> | T, replacer?: (this: any, key: string, value: any) => any, space?: string | number): string;
   asyncStringify<T>(
@@ -25,7 +25,7 @@ export interface JSONEndeCoder {
   asyncParse<T>(input: AsyncToEnDecoder, reviver?: (this: any, key: string, value: any) => any): Promise<Result<T>>;
 }
 
-class JSONOps implements JSONEndeCoder {
+class JSONOps implements JSONEnDecoder {
   readonly txtOps: TxtEnDecoder;
   constructor(txtOps: TxtEnDecoder) {
     this.txtOps = txtOps;
@@ -68,16 +68,16 @@ class JSONOps implements JSONEndeCoder {
   }
 }
 
-let jsonEnCoder: JSONEndeCoder;
-export function JSONEnDecoderSingleton(txtEnde?: TxtEnDecoder): JSONEndeCoder {
+let jsonEnDecoder: JSONEnDecoder;
+export function JSONEnDecoderSingleton(txtEnde?: TxtEnDecoder): JSONEnDecoder {
   let needNew = false;
-  if (txtEnde && txtEnde !== Utf8EnDecoderSingleton()) {
+  if (txtEnde && txtEnde !== TxtEnDecoderSingleton()) {
     needNew = !!txtEnde;
-    txtEnde = txtEnde ?? Utf8EnDecoderSingleton();
+    txtEnde = txtEnde ?? TxtEnDecoderSingleton();
   }
   if (needNew && txtEnde) {
     return new JSONOps(txtEnde);
   }
-  jsonEnCoder = jsonEnCoder ?? new JSONOps(Utf8EnDecoderSingleton());
-  return jsonEnCoder;
+  jsonEnDecoder = jsonEnDecoder ?? new JSONOps(TxtEnDecoderSingleton());
+  return jsonEnDecoder;
 }

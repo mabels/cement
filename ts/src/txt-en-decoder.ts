@@ -10,7 +10,7 @@ export interface TxtEnDecoder {
   asyncDecode(input: AsyncToEnDecoder): Promise<string>;
 }
 
-class Utf8EnDecoder implements TxtEnDecoder {
+class TxtOps implements TxtEnDecoder {
   readonly encoder = new TextEncoder();
   readonly decoder = new TextDecoder();
 
@@ -43,8 +43,8 @@ class Utf8EnDecoder implements TxtEnDecoder {
   }
 }
 
-let utf8EnDecoder: TxtEnDecoder;
-export function Utf8EnDecoderSingleton(): TxtEnDecoder {
-  utf8EnDecoder = utf8EnDecoder ?? new Utf8EnDecoder();
-  return utf8EnDecoder;
+let txtEnDecoder: TxtEnDecoder;
+export function TxtEnDecoderSingleton(): TxtEnDecoder {
+  txtEnDecoder = txtEnDecoder ?? new TxtOps();
+  return txtEnDecoder;
 }

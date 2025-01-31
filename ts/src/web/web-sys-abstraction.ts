@@ -2,7 +2,7 @@ import { BaseSysAbstraction, WrapperSysAbstraction, WrapperSysAbstractionParams 
 import { FileService, NamedWritableStream } from "../file-service.js";
 import { SysAbstraction, SystemService, VoidFunc } from "../sys-abstraction.js";
 import { Env, envFactory } from "../sys-env.js";
-import { Utf8EnDecoderSingleton } from "../txt-en-decoder.js";
+import { TxtEnDecoderSingleton } from "../txt-en-decoder.js";
 
 export class WebFileService implements FileService {
   get baseDir(): string {
@@ -71,7 +71,7 @@ let my: BaseSysAbstraction | undefined = undefined;
 export function WebSysAbstraction(param?: WrapperSysAbstractionParams): SysAbstraction {
   if (!my) {
     my = new BaseSysAbstraction({
-      TxtEnDecoder: param?.TxtEnDecoder || Utf8EnDecoderSingleton(),
+      TxtEnDecoder: param?.TxtEnDecoder || TxtEnDecoderSingleton(),
       FileSystem: new WebFileService(),
       SystemService: new WebSystemService(),
     });
