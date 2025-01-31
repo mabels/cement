@@ -1,6 +1,9 @@
 #!/bin/bashi
 
-pnpm run build
+if [ "$IN_CI" != "in_ci" ]
+then
+  pnpm run build
+fi
 rm -rf pubdir 
 mkdir -p pubdir
 

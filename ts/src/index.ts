@@ -19,7 +19,11 @@ export * from "./base-sys-abstraction.js";
 export * from "./bin2text.js";
 export * from "./version.js";
 export * from "./http_header.js";
-export * as utils from "./utils/index.js";
+export * from "./path-ops.js";
+export * from "./json-en-decoder.js";
+
 // ugly
+export * as utils from "./utils/index.js";
 import * as utils from "./utils/index.js";
+
 export const param = utils.param;

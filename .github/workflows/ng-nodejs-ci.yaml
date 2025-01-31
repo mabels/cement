@@ -6,7 +6,8 @@ name: Build - @adviser/cement
 on:
   push:
   pull_request:
-
+env:
+  IN_CI="in_ci"
 jobs:
   build:
     permissions:

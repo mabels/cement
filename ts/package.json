@@ -41,7 +41,7 @@
     "build": "pnpm run build:tsc; pnpm run build:js; pnpm run build:deno",
     "build:tsc": "tsc",
     "xbuild:js": "tsup",
-    "build:js": "tsup --out-dir dist/pkg src/index.ts src/*/index.ts --sourcemap --format cjs,esm --dts --clean --external node:fs --external node:path",
+    "build:js": "tsup --metafile --out-dir dist/pkg src/index.ts src/*/index.ts --sourcemap --format cjs,esm --dts --clean --external node:fs --external node:path",
     "build:deno": "deno publish --dry-run --unstable-sloppy-imports --allow-dirty",
     "test": "pnpm run test:js; pnpm run test:deno",
     "test:deno": "deno run --quiet --allow-net --allow-write --allow-run  --allow-sys --allow-ffi  --allow-read --allow-env  ./node_modules/vitest/vitest.mjs --run --project node",
