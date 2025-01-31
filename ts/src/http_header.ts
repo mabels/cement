@@ -37,7 +37,7 @@ export class HeadersImpl extends Headers {
 export class HttpHeader {
   readonly _headers: Map<string, string[]> = new Map<string, string[]>();
 
-  static from(headers?: HeadersInit | NodeJS.Dict<string | string[]> | Headers | HttpHeader): HttpHeader {
+  static from(headers?: HeadersInit | Headers | HttpHeader): HttpHeader {
     if (headers instanceof HttpHeader) {
       return headers.Clone();
     }
