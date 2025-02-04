@@ -314,4 +314,31 @@ describe("resolve-once", () => {
     expect(() => once.once(fn)).toThrowError("nope 42");
     expect(() => once.once(fn)).toThrowError("nope 42");
   });
+
+  it("with unget", async () => {
+    const once = new KeyedResolvOnce();
+    let triggerUnget = true;
+    const fn = vitest.fn();
+    function onceFn(): Promise<string> {
+      if (triggerUnget) {
+        fn("first");
+        once.unget("a");
+        return Promise.resolve("first");
+      }
+      fn("second");
+      return Promise.resolve("second");
+    }
+    expect(await once.get("a").once(onceFn)).toBe("first");
+    expect(fn).toHaveBeenCalledTimes(1);
+    expect(await once.get("a").once(onceFn)).toBe("first");
+    expect(fn).toHaveBeenCalledTimes(2);
+    triggerUnget = false;
+    expect(await once.get("a").once(onceFn)).toBe("second");
+    expect(fn).toHaveBeenCalledTimes(3);
+    expect(await once.get("a").once(onceFn)).toBe("second");
+    expect(fn).toHaveBeenCalledTimes(3);
+    once.unget("a");
+    expect(await once.get("a").once(onceFn)).toBe("second");
+    expect(fn).toHaveBeenCalledTimes(4);
+  });
 });

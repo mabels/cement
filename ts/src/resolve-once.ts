@@ -47,6 +47,7 @@ export class ResolveOnce<T, CTX = void> {
   _onceValue?: T;
   _onceError?: Error;
   _isPromise = false;
+  _inProgress?: Future<T>;
 
   readonly ctx: CTX;
 
@@ -63,7 +64,15 @@ export class ResolveOnce<T, CTX = void> {
     this._onceOk = false;
     this._onceValue = undefined;
     this._onceError = undefined;
-    this._onceFutures.length = 0;
+    if (this._inProgress) {
+      const idx = this._onceFutures.findIndex((f) => f === this._inProgress);
+      if (idx >= 0) {
+        // leave the current in progress future
+        this._onceFutures.push(...this._onceFutures.splice(2).slice(1));
+      }
+    } else {
+      this._onceFutures.length = 0;
+    }
   }
 
   // T extends Option<infer U> ? U : T
@@ -110,6 +119,7 @@ export class ResolveOnce<T, CTX = void> {
         }
         this._onceFutures.length = 0;
       };
+      this._inProgress = future;
       try {
         const ret = fn(this.ctx);
         if (typeof (ret as Promise<T>).then === "function") {
@@ -121,6 +131,7 @@ export class ResolveOnce<T, CTX = void> {
       } catch (e) {
         catchFn(e as Error);
       }
+      this._inProgress = undefined;
     }
     if (this._isPromise) {
       return future.asPromise() as unknown as R;
