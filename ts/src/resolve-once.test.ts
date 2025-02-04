@@ -315,30 +315,61 @@ describe("resolve-once", () => {
     expect(() => once.once(fn)).toThrowError("nope 42");
   });
 
-  it("with unget", async () => {
+  it.each([(): Promise<void> => new Promise((resolve) => setTimeout(resolve, 10)), (): Promise<void> => Promise.resolve()])(
+    "async with unget",
+    async (sleeper) => {
+      const once = new KeyedResolvOnce();
+      let triggerUnget = true;
+      const fn = vitest.fn();
+      async function onceFn(): Promise<string> {
+        await sleeper();
+        if (triggerUnget) {
+          fn("first");
+          once.unget("a");
+          return await sleeper().then(() => "first");
+        }
+        fn("second");
+        return await sleeper().then(() => "second");
+      }
+      expect(await once.get("a").once(onceFn)).toBe("first");
+      expect(fn).toHaveBeenCalledTimes(1);
+      expect(await once.get("a").once(onceFn)).toBe("first");
+      expect(fn).toHaveBeenCalledTimes(2);
+      triggerUnget = false;
+      expect(await once.get("a").once(onceFn)).toBe("second");
+      expect(fn).toHaveBeenCalledTimes(3);
+      expect(await once.get("a").once(onceFn)).toBe("second");
+      expect(fn).toHaveBeenCalledTimes(3);
+      once.unget("a");
+      expect(await once.get("a").once(onceFn)).toBe("second");
+      expect(fn).toHaveBeenCalledTimes(4);
+    },
+  );
+
+  it("sync with unget", () => {
     const once = new KeyedResolvOnce();
     let triggerUnget = true;
     const fn = vitest.fn();
-    function onceFn(): Promise<string> {
+    function onceFn(): string {
       if (triggerUnget) {
         fn("first");
         once.unget("a");
-        return Promise.resolve("first");
+        return "first";
       }
       fn("second");
-      return Promise.resolve("second");
+      return "second";
     }
-    expect(await once.get("a").once(onceFn)).toBe("first");
+    expect(once.get("a").once(onceFn)).toBe("first");
     expect(fn).toHaveBeenCalledTimes(1);
-    expect(await once.get("a").once(onceFn)).toBe("first");
+    expect(once.get("a").once(onceFn)).toBe("first");
     expect(fn).toHaveBeenCalledTimes(2);
     triggerUnget = false;
-    expect(await once.get("a").once(onceFn)).toBe("second");
+    expect(once.get("a").once(onceFn)).toBe("second");
     expect(fn).toHaveBeenCalledTimes(3);
-    expect(await once.get("a").once(onceFn)).toBe("second");
+    expect(once.get("a").once(onceFn)).toBe("second");
     expect(fn).toHaveBeenCalledTimes(3);
     once.unget("a");
-    expect(await once.get("a").once(onceFn)).toBe("second");
+    expect(once.get("a").once(onceFn)).toBe("second");
     expect(fn).toHaveBeenCalledTimes(4);
   });
 });

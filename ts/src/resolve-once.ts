@@ -120,18 +120,27 @@ export class ResolveOnce<T, CTX = void> {
         this._onceFutures.length = 0;
       };
       this._inProgress = future;
+      // let inCriticalSection = false;
       try {
         const ret = fn(this.ctx);
         if (typeof (ret as Promise<T>).then === "function") {
           this._isPromise = true;
-          (ret as Promise<T>).then(okFn).catch(catchFn);
+          // inCriticalSection = true;
+          (ret as Promise<T>)
+            .then(okFn)
+            .catch(catchFn)
+            .finally(() => {
+              this._inProgress = undefined;
+            });
         } else {
           okFn(ret as unknown as T);
         }
       } catch (e) {
         catchFn(e as Error);
       }
-      this._inProgress = undefined;
+      if (!this._isPromise) {
+        this._inProgress = undefined;
+      }
     }
     if (this._isPromise) {
       return future.asPromise() as unknown as R;
