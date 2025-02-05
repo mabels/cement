@@ -372,4 +372,28 @@ describe("resolve-once", () => {
     expect(once.get("a").once(onceFn)).toBe("second");
     expect(fn).toHaveBeenCalledTimes(4);
   });
+
+  it("flush on seq", async () => {
+    const seq = new ResolveSeq<number>();
+    let call = 42;
+    const fn = vitest.fn(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      return call++;
+    });
+    const results = Array(10)
+      .fill(0)
+      .map((_, i) => {
+        return seq.add(fn, i);
+      });
+    expect(seq._seqFutures.length).toBe(10);
+    const flushes = [seq.flush(), seq.flush(), seq.flush(), seq.flush(), seq.flush()];
+    await Promise.all(flushes);
+    expect(seq._seqFutures.length).toBe(0);
+    expect(await Promise.all(results)).toEqual(
+      Array(10)
+        .fill(0)
+        .map((_, i) => 42 + i),
+    );
+    expect(fn).toHaveBeenCalledTimes(10);
+  });
 });

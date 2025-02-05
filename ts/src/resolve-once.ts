@@ -14,9 +14,21 @@ export class ResolveSeq<T, C = void> {
   reset(): void {
     /* noop */
   }
+
+  readonly _flushWaiting: Future<void>[] = [];
+  flush(): Promise<void> {
+    if (this._seqFutures.length > 0) {
+      const waitForFlush = new Future<void>();
+      this._flushWaiting?.push(waitForFlush);
+      return waitForFlush.asPromise();
+    }
+    return Promise.resolve();
+  }
   _step(item?: ResolveSeqItem<T, C>): Promise<void> {
     if (!item) {
       // done
+      this._flushWaiting.forEach((f) => f.resolve());
+      this._flushWaiting?.splice(0, this._flushWaiting.length);
       return Promise.resolve();
     }
     item
