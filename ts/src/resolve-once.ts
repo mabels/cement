@@ -210,24 +210,26 @@ export class KeyedResolvOnce<T, K = string> extends Keyed<ResolveOnce<T, K>, K> 
    * @returns The values of the resolved keys
    */
   values(): { key: K; value: Result<T> }[] {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    return Array.from(this._map.entries())
-      .filter(([_, v]) => v._onceDone)
-      .map(([k, v]) => {
-        if (v._onceDone) {
-          if (v._onceError) {
+    return (
+      Array.from(this._map.entries())
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        .filter(([_, v]) => v._onceDone)
+        .map(([k, v]) => {
+          if (v._onceDone) {
+            if (v._onceError) {
+              return {
+                key: k,
+                value: Result.Err(v._onceError),
+              };
+            }
             return {
               key: k,
-              value: Result.Err(v._onceError),
+              value: Result.Ok(v._onceValue as T),
             };
           }
-          return {
-            key: k,
-            value: Result.Ok(v._onceValue as T),
-          };
-        }
-        throw new Error("KeyedResolvOnce.values impossible");
-      });
+          throw new Error("KeyedResolvOnce.values impossible");
+        })
+    );
   }
 }
 
