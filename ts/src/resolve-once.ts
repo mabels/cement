@@ -1,4 +1,5 @@
 import { Future } from "./future.js";
+import { Result } from "./result.js";
 
 interface ResolveSeqItem<T, C> {
   readonly future: Future<T>;
@@ -164,7 +165,7 @@ export class ResolveOnce<T, CTX = void> {
 }
 
 export class Keyed<T extends { reset: () => void }, K = string> {
-  private readonly _map = new Map<K, T>();
+  protected readonly _map = new Map<K, T>();
 
   readonly factory: (key: K) => T;
   constructor(factory: (key: K) => T) {
@@ -173,10 +174,6 @@ export class Keyed<T extends { reset: () => void }, K = string> {
 
   async asyncGet(key: () => Promise<K>): Promise<T> {
     return this.get(await key());
-  }
-
-  entries(): IterableIterator<[K, T]> {
-    return this._map.entries();
   }
 
   get(key: K | (() => K)): T {
@@ -206,6 +203,31 @@ export class Keyed<T extends { reset: () => void }, K = string> {
 export class KeyedResolvOnce<T, K = string> extends Keyed<ResolveOnce<T, K>, K> {
   constructor() {
     super((key) => new ResolveOnce<T, K>(key));
+  }
+
+  /**
+   *
+   * @returns The values of the resolved keys
+   */
+  values(): { key: K; value: Result<T> }[] {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    return Array.from(this._map.entries())
+      .filter(([_, v]) => v._onceDone)
+      .map(([k, v]) => {
+        if (v._onceDone) {
+          if (v._onceError) {
+            return {
+              key: k,
+              value: Result.Err(v._onceError),
+            };
+          }
+          return {
+            key: k,
+            value: Result.Ok(v._onceValue as T),
+          };
+        }
+        throw new Error("KeyedResolvOnce.values impossible");
+      });
   }
 }
 

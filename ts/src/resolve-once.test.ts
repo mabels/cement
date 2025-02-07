@@ -1,4 +1,4 @@
-import { KeyedResolvOnce, ResolveOnce, ResolveSeq } from "@adviser/cement";
+import { Result, KeyedResolvOnce, ResolveOnce, ResolveSeq } from "@adviser/cement";
 
 describe("resolve-once", () => {
   it("sequence", async () => {
@@ -395,5 +395,34 @@ describe("resolve-once", () => {
         .map((_, i) => 42 + i),
     );
     expect(fn).toHaveBeenCalledTimes(10);
+  });
+
+  it("KeyedResolvOnce values", () => {
+    const keyed = new KeyedResolvOnce<number>();
+    expect(keyed.values()).toEqual([]);
+    const a = keyed.get("a");
+    expect(keyed.values()).toEqual([]);
+    a.once(() => 42);
+    expect(keyed.values()).toEqual([{ key: "a", value: Result.Ok(42) }]);
+    keyed.get("b").once(() => 43);
+    expect(keyed.values()).toEqual([
+      { key: "a", value: Result.Ok(42) },
+      { key: "b", value: Result.Ok(43) },
+    ]);
+    try {
+      keyed.get("c").once(() => {
+        throw new Error("nope");
+      });
+    } catch (e) {
+      expect(e).toEqual(new Error("nope"));
+    }
+    expect(keyed.values()).toEqual([
+      { key: "a", value: Result.Ok(42) },
+      { key: "b", value: Result.Ok(43) },
+      { key: "c", value: Result.Err(new Error("nope")) },
+    ]);
+    keyed.unget("a");
+    keyed.unget("c");
+    expect(keyed.values()).toEqual([{ key: "b", value: Result.Ok(43) }]);
   });
 });
