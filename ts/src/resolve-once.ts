@@ -175,6 +175,10 @@ export class Keyed<T extends { reset: () => void }, K = string> {
     return this.get(await key());
   }
 
+  entries(): IterableIterator<[K, T]> {
+    return this._map.entries();
+  }
+
   get(key: K | (() => K)): T {
     if (typeof key === "function") {
       key = (key as () => K)();
