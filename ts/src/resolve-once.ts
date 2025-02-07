@@ -165,7 +165,7 @@ export class ResolveOnce<T, CTX = void> {
 }
 
 export class Keyed<T extends { reset: () => void }, K = string> {
-  protected readonly _map = new Map<K, T>();
+  protected readonly _map: Map<K, T> = new Map<K, T>();
 
   readonly factory: (key: K) => T;
   constructor(factory: (key: K) => T) {
