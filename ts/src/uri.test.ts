@@ -1,4 +1,4 @@
-import { BuildURI, HostURIObject, MutableURL, PathURIObject, URI, param } from "@adviser/cement";
+import { BuildURI, HostURIObject, MutableURL, PathURIObject, URI, isCoerceURI, param } from "@adviser/cement";
 
 describe("BuildURI", () => {
   let uri: BuildURI;
@@ -468,5 +468,16 @@ describe("URI", () => {
     it("toResolv relative with leading ./ -> base - path + relative", () => {
       expect(base.resolve("./meno/huhu").toString()).toBe(ref.appendRelative("/meno/huhu").toString());
     });
+  });
+
+  it("CoerceURI.is", () => {
+    expect(isCoerceURI(0)).toBe(false);
+    expect(isCoerceURI(null)).toBe(false);
+    expect(isCoerceURI(undefined)).toBe(false);
+    expect(isCoerceURI(new URL("http://example.com"))).toBe(true);
+    expect(isCoerceURI(new MutableURL("http://example.com"))).toBe(true);
+    expect(isCoerceURI(URI.from("http://example.com"))).toBe(true);
+    expect(isCoerceURI(BuildURI.from("http://example.com"))).toBe(true);
+    expect(isCoerceURI("http://example.com")).toBe(true);
   });
 });

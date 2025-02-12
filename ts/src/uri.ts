@@ -421,6 +421,26 @@ export class BuildURI implements URIInterface<BuildURI> {
 
 export type CoerceURI = string | URI | MutableURL | URL | BuildURI | NullOrUndef;
 
+export function isCoerceURI(value: unknown): value is CoerceURI {
+  if (!value) {
+    return false;
+  }
+  if (isURL(value)) {
+    // includes MutableURL
+    return true;
+  }
+  if (URI.is(value)) {
+    return true;
+  }
+  if (BuildURI.is(value)) {
+    return true;
+  }
+  if (typeof value === "string") {
+    return true;
+  }
+  return false;
+}
+
 export const hasHostPartProtocols: Set<string> = new Set<string>(["http", "https", "ws", "wss"]);
 
 // non mutable URL Implementation
