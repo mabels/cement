@@ -1,10 +1,12 @@
-export enum PartType {
-  Slash = 0x1,
-  Root = 0x3,
-  Up = 0x4 /* /../ */,
-  Noop = 0x8 /* ./ */,
+export const PartType = {
+  Slash: 0x1,
+  Root: 0x3,
+  Up: 0x4 /* /../ */,
+  Noop: 0x8 /* ./ */,
   // RootUp = 0x8 /* ../ */,
-}
+};
+
+export type PartType = (typeof PartType)[keyof typeof PartType];
 
 export type PathItem = string | PartType;
 

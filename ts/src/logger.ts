@@ -4,12 +4,14 @@ import { Result } from "./result.js";
 import { TxtEnDecoder } from "./txt-en-decoder.js";
 import { CoerceURI } from "./uri.js";
 
-export enum Level {
-  WARN = "warn",
-  DEBUG = "debug",
-  INFO = "info",
-  ERROR = "error",
-}
+export const Level = {
+  WARN: "warn",
+  DEBUG: "debug",
+  INFO: "info",
+  ERROR: "error",
+};
+
+export type Level = (typeof Level)[keyof typeof Level];
 
 export type Serialized = string | number | boolean;
 export type FnSerialized = () => Serialized | Serialized[];

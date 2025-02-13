@@ -2,23 +2,26 @@ import { FileService } from "./file-service.js";
 import { Env } from "./sys-env.js";
 import { Time } from "./time.js";
 
-export enum TimeMode {
-  REAL = "real",
-  CONST = "const",
-  STEP = "step",
-}
+export const TimeMode = {
+  REAL: "real",
+  CONST: "const",
+  STEP: "step",
+};
+export type TimeMode = (typeof TimeMode)[keyof typeof TimeMode];
 
-export enum RandomMode {
-  CONST = "const",
-  STEP = "step",
-  RANDOM = "random",
-}
+export const RandomMode = {
+  CONST: "const",
+  STEP: "step",
+  RANDOM: "random",
+};
+export type RandomMode = (typeof RandomMode)[keyof typeof RandomMode];
 
-export enum IDMode {
-  UUID = "uuid",
-  CONST = "const",
-  STEP = "step",
-}
+export const IDMode = {
+  UUID: "uuid",
+  CONST: "const",
+  STEP: "step",
+};
+export type IDMode = (typeof IDMode)[keyof typeof IDMode];
 
 export function String2TimeMode(s?: string): TimeMode {
   switch (s?.toLowerCase()) {

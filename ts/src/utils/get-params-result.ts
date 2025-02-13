@@ -1,24 +1,8 @@
 import { Result } from "../result.js";
-
-class _REQUIRED {
-  readonly val = "REQUIRED";
-}
-class _OPTIONAL {
-  readonly val = "OPTIONAL";
-}
-
-export interface Param {
-  readonly REQUIRED: _REQUIRED;
-  readonly OPTIONAL: _OPTIONAL;
-}
-
-export const param: Param = {
-  REQUIRED: new _REQUIRED(),
-  OPTIONAL: new _OPTIONAL(),
-};
+import { param } from "../types.js";
 
 export type MsgFn = (...keys: string[]) => string;
-export type KeysParam = (string | MsgFn | Record<string, _REQUIRED | _OPTIONAL | number | string | boolean | undefined | null>)[];
+export type KeysParam = (string | MsgFn | Record<string, param | number | string | boolean | undefined | null>)[];
 
 export function getParamsResult(
   keys: KeysParam,

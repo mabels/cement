@@ -1,14 +1,15 @@
 import { exception2Result, Result } from "./result.js";
-import { getParamsResult, KeysParam, param } from "./utils/get-params-result.js";
+import { getParamsResult, KeysParam } from "./utils/get-params-result.js";
 import { relativePath } from "./utils/relative-path.js";
 import { StripCommand, stripper } from "./utils/stripper.js";
+// import { param } from "./types.js";
 
 type NullOrUndef = null | undefined;
 
 type OneKey<K extends string, V = string> = Record<K, V>;
 
-/** @deprecated use param from get-params-result */
-export const key = param;
+/** @xdeprecated use param from get-params-result */
+// export const key = param;
 
 /*
   if KeyParam is a Object

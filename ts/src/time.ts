@@ -9,12 +9,10 @@ export abstract class Time {
 
 export type Duration = number;
 
-export enum TimeUnits {
-  Microsecond = 1,
-  // eslint-disable-next-line @typescript-eslint/prefer-literal-enum-member
-  Second = 1000 * Microsecond,
-  // eslint-disable-next-line @typescript-eslint/prefer-literal-enum-member
-  Minute = 60 * Second,
-  // eslint-disable-next-line @typescript-eslint/prefer-literal-enum-member
-  Hour = 60 * Minute,
-}
+export const TimeUnits = {
+  Microsecond: 1,
+  Second: 1000 * 1, //Microsecond,
+  Minute: 60 * 1000 * 1, //Second,
+  Hour: 60 * 60 * 1000 * 1, // Minute,
+};
+export type TimeUnit = keyof typeof TimeUnits;
