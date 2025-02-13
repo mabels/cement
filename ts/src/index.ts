@@ -22,6 +22,7 @@ export * from "./http_header.js";
 export * from "./path-ops.js";
 export * from "./json-en-decoder.js";
 export * from "./types.js";
+export * from "./lru-cache.js";
 
 // ugly
 export * as utils from "./utils/index.js";
