@@ -66,6 +66,7 @@
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.6.12",
+    "@eslint/js": "^9.20.0",
     "@types/node": "^22.10.2",
     "@typescript-eslint/eslint-plugin": "^8.7.0",
     "@typescript-eslint/parser": "^8.7.0",
@@ -76,13 +77,24 @@
     "prettier": "^3.3.3",
     "tsup": "^8.3.0",
     "tsx": "^4.19.1",
-    "typescript": "^5.7.2",
-    "typescript-eslint": "^8.18.2",
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.24.0",
     "vite-tsconfig-paths": "^5.0.1",
     "vitest": "^2.1.8",
-    "webdriverio": "^9.4.5"
+    "webdriverio": "^9.9.0"
   },
   "engines": {
     "node": ">=20"
+  },
+  "pnpm": {
+    "ignoredBuiltDependencies": [
+      "edgedriver",
+      "geckodriver",
+      "msw"
+    ],
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "workerd"
+    ]
   }
 }
