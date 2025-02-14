@@ -1,4 +1,5 @@
 import { Future } from "./future.js";
+import { LRUCache, LRUCacheParam } from "./lru-cache.js";
 import { Result } from "./result.js";
 
 interface ResolveSeqItem<T, C> {
@@ -164,12 +165,21 @@ export class ResolveOnce<T, CTX = void> {
   }
 }
 
+export interface KeyedParam {
+  readonly lru: Partial<LRUCacheParam>;
+}
+
 export class Keyed<T extends { reset: () => void }, K = string> {
-  protected readonly _map: Map<K, T> = new Map<K, T>();
+  protected readonly _map: LRUCache<K, T>;
 
   readonly factory: (key: K) => T;
-  constructor(factory: (key: K) => T) {
+  constructor(factory: (key: K) => T, params: Partial<KeyedParam>) {
     this.factory = factory;
+    this._map = new LRUCache<K, T>(params?.lru ?? { maxEntries: -1 });
+  }
+
+  setParam(params: KeyedParam): void {
+    this._map.setParam(params.lru);
   }
 
   async asyncGet(key: () => Promise<K>): Promise<T> {
@@ -201,8 +211,8 @@ export class Keyed<T extends { reset: () => void }, K = string> {
 }
 
 export class KeyedResolvOnce<T, K = string> extends Keyed<ResolveOnce<T, K>, K> {
-  constructor() {
-    super((key) => new ResolveOnce<T, K>(key));
+  constructor(kp: Partial<KeyedParam> = {}) {
+    super((key) => new ResolveOnce<T, K>(key), kp);
   }
 
   /**
@@ -234,7 +244,7 @@ export class KeyedResolvOnce<T, K = string> extends Keyed<ResolveOnce<T, K>, K> 
 }
 
 export class KeyedResolvSeq<T, K = string> extends Keyed<ResolveSeq<T, K>, K> {
-  constructor() {
-    super((key) => new ResolveSeq<T, K>(key));
+  constructor(kp: Partial<KeyedParam> = {}) {
+    super((key) => new ResolveSeq<T, K>(key), kp);
   }
 }

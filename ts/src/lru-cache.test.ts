@@ -5,13 +5,13 @@ it("get-put without createFN", () => {
     maxEntries: 1,
   });
   expect(cache.size).toBe(0);
-  cache.put("a", 1);
+  cache.set("a", 1);
   expect(cache.size).toBe(1);
-  cache.put("a", 1);
+  cache.set("a", 1);
   expect(cache.size).toBe(1);
-  cache.put("b", 2);
+  cache.set("b", 2);
   expect(cache.size).toBe(1);
-  cache.put("b", 2);
+  cache.set("b", 2);
   expect(cache.size).toBe(1);
 });
 
@@ -20,17 +20,17 @@ it("get-put evict in order", () => {
     maxEntries: 2,
   });
   expect(cache.size).toBe(0);
-  cache.put("a", 1);
-  cache.put("b", 2);
+  cache.set("a", 1);
+  cache.set("b", 2);
   expect(cache.size).toBe(2);
-  cache.put("c", 3);
+  cache.set("c", 3);
   expect(cache.size).toBe(2);
   expect(cache.get("a")).toBe(undefined);
   expect(cache.get("b")).toBe(2);
   expect(cache.get("c")).toBe(3);
 
   expect(cache.get("b")).toBe(2);
-  cache.put("d", 4);
+  cache.set("d", 4);
   expect(cache.get("a")).toBe(undefined);
   expect(cache.get("b")).toBe(2);
   expect(cache.get("c")).toBe(undefined);
@@ -54,4 +54,33 @@ it("get-put with createFN", async () => {
   expect(cache.size).toBe(2);
   expect(await cache.getPut("c", () => Promise.resolve(7))).toBe(7);
   expect(cache.size).toBe(2);
+});
+
+it("test entries iterator", () => {
+  const cache = new LRUCache<string, number>({
+    maxEntries: -1,
+  });
+  cache.set("a", 1);
+  cache.set("b", 2);
+  const entries = cache.entries();
+  expect(entries.next().value).toEqual(["a", 1]);
+  expect(entries.next().value).toEqual(["b", 2]);
+  expect(entries.next().done).toBe(true);
+});
+
+it("test setParam", () => {
+  const cache = new LRUCache<string, number>({
+    maxEntries: 5,
+  });
+  for (let i = 0; i < 10; i++) {
+    cache.set(i.toString(), i);
+  }
+  expect(cache.size).toBe(5);
+  cache.setParam({ maxEntries: 3 });
+  expect(cache.size).toBe(3);
+  cache.setParam({ maxEntries: 0 });
+  for (let i = 0; i < 10; i++) {
+    cache.set(i.toString(), i);
+  }
+  expect(cache.size).toBe(10);
 });

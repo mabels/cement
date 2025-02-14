@@ -425,4 +425,15 @@ describe("resolve-once", () => {
     keyed.unget("c");
     expect(keyed.values()).toEqual([{ key: "b", value: Result.Ok(43) }]);
   });
+
+  it("uses lru cache", () => {
+    const keyed = new KeyedResolvOnce<number>({ lru: { maxEntries: 2 } });
+    for (let i = 0; i < 10; i++) {
+      keyed.get(i.toString()).once(() => i);
+    }
+    expect(keyed.values()).toEqual([
+      { key: "8", value: Result.Ok(8) },
+      { key: "9", value: Result.Ok(9) },
+    ]);
+  });
 });
