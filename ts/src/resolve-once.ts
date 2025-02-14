@@ -1,5 +1,5 @@
 import { Future } from "./future.js";
-import { LRUCache, LRUCacheParam } from "./lru-cache.js";
+import { LRUMap, LRUParam } from "./lru-map-set.js";
 import { Result } from "./result.js";
 
 interface ResolveSeqItem<T, C> {
@@ -166,16 +166,16 @@ export class ResolveOnce<T, CTX = void> {
 }
 
 export interface KeyedParam {
-  readonly lru: Partial<LRUCacheParam>;
+  readonly lru: Partial<LRUParam>;
 }
 
 export class Keyed<T extends { reset: () => void }, K = string> {
-  protected readonly _map: LRUCache<K, T>;
+  protected readonly _map: LRUMap<K, T>;
 
   readonly factory: (key: K) => T;
   constructor(factory: (key: K) => T, params: Partial<KeyedParam>) {
     this.factory = factory;
-    this._map = new LRUCache<K, T>(params?.lru ?? { maxEntries: -1 });
+    this._map = new LRUMap<K, T>(params?.lru ?? { maxEntries: -1 });
   }
 
   setParam(params: KeyedParam): void {
