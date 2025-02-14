@@ -1,10 +1,14 @@
 export interface LRUParam {
   readonly maxEntries: number;
-  readonly maxAge: number;
+  readonly maxAge: number; // not implemented
 }
 
 export class LRUSet<T> {
-  private _lruMap: LRUMap<T, T> = new LRUMap<T, T>();
+  private readonly _lruMap: LRUMap<T, T>;
+
+  constructor(param: Partial<LRUParam> = {}) {
+    this._lruMap = new LRUMap<T, T>(param);
+  }
 
   setParam(param: Partial<LRUParam> = {}): void {
     this._lruMap.setParam(param);
