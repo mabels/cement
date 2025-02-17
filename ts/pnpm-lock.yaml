@@ -32,7 +32,7 @@ importers:
         version: 8.23.0(eslint@9.20.1)(typescript@5.7.3)
       '@vitest/browser':
         specifier: ^2.1.8
-        version: 2.1.8(@types/node@22.13.4)(typescript@5.7.3)(vite@5.4.7(@types/node@22.13.4))(vitest@2.1.8)(webdriverio@9.9.0)
+        version: 2.1.8(@types/node@22.13.4)(typescript@5.7.3)(vite@5.4.7(@types/node@22.13.4))(vitest@2.1.8)(webdriverio@9.9.1)
       esbuild-plugin-replace:
         specifier: ^1.4.0
         version: 1.4.0
@@ -65,7 +65,7 @@ importers:
         version: 2.1.8(@types/node@22.13.4)(@vitest/browser@2.1.8)(msw@2.7.0(@types/node@22.13.4)(typescript@5.7.3))
       webdriverio:
         specifier: ^9.9.0
-        version: 9.9.0
+        version: 9.9.1
 
 packages:
 
@@ -2767,12 +2767,12 @@ packages:
     resolution: {integrity: sha512-d2JWLCivmZYTSIoge9MsgFCZrt571BikcWGYkjC1khllbTeDlGqZ2D8vD8E/lJa8WGWbb7Plm8/XJYV7IJHZZw==}
     engines: {node: '>= 8'}
 
-  webdriver@9.9.0:
-    resolution: {integrity: sha512-vrT7KW3Gh6tW9GYT9rl6m/4KH/jCxT4mlLGbAOIaA42I3FQi61AReH7M0hur4BsJ8ZpjXukIMc3xlFR6vTgM2w==}
+  webdriver@9.9.1:
+    resolution: {integrity: sha512-VqHDph80Pd/HmeEtoNiqX/ixML/ub8Rw54oviVYm6V7cbnzACrSbSlt9zpdWfjEk+Qkm/CytyYFggan30RfAiQ==}
     engines: {node: '>=18.20.0'}
 
-  webdriverio@9.9.0:
-    resolution: {integrity: sha512-jT7avwQAAgVopJSyFkn8j/Pwpmum0q0q+1cMLWXhc2LlAZj2qpclQ6qxt0P5SYY40WzHYhoZbXu3/QI9sxjPNQ==}
+  webdriverio@9.9.1:
+    resolution: {integrity: sha512-3TO8JcA2fylti2ExsIKgyicwdDvft5slWdq1wz50BXw41/3yOwyg4z8UkT6fUuSUYDOt8QPlfddALtOdQqvuKA==}
     engines: {node: '>=18.20.0'}
     peerDependencies:
       puppeteer-core: ^22.3.0
@@ -3690,7 +3690,7 @@ snapshots:
       '@typescript-eslint/types': 8.24.0
       eslint-visitor-keys: 4.2.0
 
-  '@vitest/browser@2.1.8(@types/node@22.13.4)(typescript@5.7.3)(vite@5.4.7(@types/node@22.13.4))(vitest@2.1.8)(webdriverio@9.9.0)':
+  '@vitest/browser@2.1.8(@types/node@22.13.4)(typescript@5.7.3)(vite@5.4.7(@types/node@22.13.4))(vitest@2.1.8)(webdriverio@9.9.1)':
     dependencies:
       '@testing-library/dom': 10.4.0
       '@testing-library/user-event': 14.6.1(@testing-library/dom@10.4.0)
@@ -3703,7 +3703,7 @@ snapshots:
       vitest: 2.1.8(@types/node@22.13.4)(@vitest/browser@2.1.8)(msw@2.7.0(@types/node@22.13.4)(typescript@5.7.3))
       ws: 8.18.0
     optionalDependencies:
-      webdriverio: 9.9.0
+      webdriverio: 9.9.1
     transitivePeerDependencies:
       - '@types/node'
       - bufferutil
@@ -5455,7 +5455,7 @@ snapshots:
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/node': 22.13.4
-      '@vitest/browser': 2.1.8(@types/node@22.13.4)(typescript@5.7.3)(vite@5.4.7(@types/node@22.13.4))(vitest@2.1.8)(webdriverio@9.9.0)
+      '@vitest/browser': 2.1.8(@types/node@22.13.4)(typescript@5.7.3)(vite@5.4.7(@types/node@22.13.4))(vitest@2.1.8)(webdriverio@9.9.1)
     transitivePeerDependencies:
       - less
       - lightningcss
@@ -5477,7 +5477,7 @@ snapshots:
 
   web-streams-polyfill@3.3.3: {}
 
-  webdriver@9.9.0:
+  webdriver@9.9.1:
     dependencies:
       '@types/node': 20.17.19
       '@types/ws': 8.5.14
@@ -5495,7 +5495,7 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  webdriverio@9.9.0:
+  webdriverio@9.9.1:
     dependencies:
       '@types/node': 20.17.19
       '@types/sinonjs__fake-timers': 8.1.5
@@ -5521,7 +5521,7 @@ snapshots:
       rgb2hex: 0.2.5
       serialize-error: 11.0.3
       urlpattern-polyfill: 10.0.0
-      webdriver: 9.9.0
+      webdriver: 9.9.1
     transitivePeerDependencies:
       - bare-buffer
       - bufferutil
