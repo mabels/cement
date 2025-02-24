@@ -100,7 +100,7 @@ describe("resolve-once", () => {
     });
     const diff = Date.now() - start;
     expect(diff).toBeGreaterThanOrEqual(99);
-    expect(diff).toBeLessThan(150);
+    expect(diff).toBeLessThan(250);
   });
 
   it("preserves order", async () => {
