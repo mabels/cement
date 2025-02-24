@@ -480,4 +480,58 @@ describe("URI", () => {
     expect(isCoerceURI(BuildURI.from("http://example.com"))).toBe(true);
     expect(isCoerceURI("http://example.com")).toBe(true);
   });
+
+  it("matchScore total", () => {
+    const ref = URI.from("http://example.com/blabla?sock=4");
+    expect(ref.match("http://example.com/blabla?sock=4").score).toBe(4);
+  });
+  it("matchScore nothing", () => {
+    const ref = URI.from("xttp://xample.com/labla?ock=4");
+    expect(ref.match("http://example.com/blabla?sock=4").score).toBe(0);
+  });
+
+  it("matchScore protocol", () => {
+    const ref = URI.from("http://a.com");
+    expect(ref.match("http://b.com").score).toBe(1);
+  });
+
+  it("host", () => {
+    const ref = URI.from("https://a.com");
+    expect(ref.match("http://a.com").score).toBe(1);
+  });
+  it("host-port", () => {
+    const ref = URI.from("https://a.com:4711");
+    expect(ref.match("http://b.com:4711").score).toBe(1);
+  });
+
+  it("no host-port", () => {
+    const ref = URI.from("yttp://a.com/4711");
+    expect(ref.match("xttp://a.com/4711").score).toBe(2);
+  });
+  it("mix host-port", () => {
+    const ref = URI.from("http://a.com/bla/qq/kk");
+    expect(ref.match("xttp://bla/oo/kk").score).toBe(2);
+  });
+
+  it("mix path", () => {
+    const ref = URI.from("xttp://ab/cd/ed");
+    expect(ref.match("yttp://ab/cd/ed").score).toBe(3);
+  });
+  it("mix path", () => {
+    const ref = URI.from("xttp://ab/Xd/ed");
+    expect(ref.match("yttp://ab/cd/ed").score).toBe(2);
+  });
+
+  it("not-params", () => {
+    const ref = URI.from("yttp://ed?x=3");
+    expect(ref.match("xttp://ab/cd?x=4").score).toBe(0);
+  });
+  it("one-params", () => {
+    const ref = URI.from("yttp://ed?x=3&y=4");
+    expect(ref.match("xttp://ab/cd?x=4&y=4").score).toBe(1);
+  });
+  it("one-params", () => {
+    const ref = URI.from("yttp://ed?x=3&y=4&o=4");
+    expect(ref.match("xttp://ab/cd?x=4&y=4&o=4").score).toBe(2);
+  });
 });

@@ -1,3 +1,4 @@
+import type { DeepWritable } from "ts-essentials";
 import { exception2Result, Result } from "./result.js";
 import { getParamsResult, KeysParam } from "./utils/get-params-result.js";
 import { relativePath } from "./utils/relative-path.js";
@@ -38,11 +39,73 @@ export interface URIInterface<R extends URIInterface<R>> {
   getParam<T extends string | undefined>(key: string | OneKey<string>, def?: T): T extends string ? string : string | undefined;
   getParamResult(key: string, msgFn?: (key: string) => string): Result<string>;
   getParamsResult(...keys: KeysParam): Result<Record<string, string>>;
+  match(other: CoerceURI): MatchResult;
   clone(): R;
   asURL(): URL;
   toString(): string;
   toJSON(): string;
   asObj(...strips: StripCommand[]): Partial<HostURIObject | PathURIObject>;
+}
+
+export interface MatchResult {
+  readonly score: number;
+  readonly protocol: boolean;
+  readonly hostname: boolean;
+  readonly port: boolean;
+  readonly pathname: boolean;
+  readonly pathParts: string[];
+  readonly params: Record<string, string>;
+}
+
+function match(iref: CoerceURI, ioth: CoerceURI): MatchResult {
+  const mr: DeepWritable<MatchResult> = {
+    score: 0,
+    protocol: false,
+    hostname: false,
+    port: false,
+    pathname: false,
+    pathParts: [],
+    params: {},
+  };
+  const ref = URI.from(iref);
+  const oth = URI.from(ioth);
+  if (ref.protocol === oth.protocol) {
+    mr.score += 1;
+    mr.protocol = true;
+  }
+  try {
+    const refH = ref.hostname;
+    const refP = ref.port;
+    if (refH === oth.hostname) {
+      mr.score += 1;
+      mr.hostname = true;
+    }
+    if (refP.length && refP === oth.port) {
+      mr.score += 1;
+      mr.port = true;
+    }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  } catch (e) {
+    // ignore
+  }
+  if (ref.pathname.length && ref.pathname !== "/") {
+    const pref = ref.pathname.split("/").filter((p) => p.length);
+    const poth = oth.pathname.split("/").filter((p) => p.length);
+    for (let i = 0; i < pref.length && i < poth.length; i++) {
+      if (poth[i] === pref[i]) {
+        mr.score += 1;
+        mr.pathname = true;
+        mr.pathParts.push(pref[i]);
+      }
+    }
+  }
+  for (const [key, value] of ref.getParams) {
+    if (oth.getParam(key) === value) {
+      mr.score += 1;
+      mr.params[key] = value;
+    }
+  }
+  return mr;
 }
 
 function coerceKey(key: string | OneKey<string>, def?: string): { key: string; def?: string } {
@@ -274,6 +337,10 @@ export class BuildURI implements URIInterface<BuildURI> {
     return from((url) => new BuildURI(url), strURLUri, defaultProtocol);
   }
 
+  match(other: CoerceURI): MatchResult {
+    return match(this.URI(), URI.from(other));
+  }
+
   port(p: string): BuildURI {
     this._url.port = p;
     return this;
@@ -452,6 +519,10 @@ export class URI implements URIInterface<URI> {
     return () => {
       hasHostPartProtocols.delete(protocol);
     };
+  }
+
+  match(other: CoerceURI): MatchResult {
+    return match(this, other);
   }
 
   // if no protocol is provided, default to file:
