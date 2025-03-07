@@ -1,6 +1,6 @@
 import { VERSION, LoggerImpl, Result, Option, Level, runtimeFn, BasicSysAbstractionFactory } from "@adviser/cement";
 
-async function main() {
+async function main(): Promise<void> {
   const none = Option.None();
   const result = Result.Ok(none);
   if (!result.isOk()) {
@@ -29,4 +29,5 @@ async function main() {
     log.Info().Str("id", sys.NextId()).Msg("Web-Alright");
   }
 }
+// eslint-disable-next-line no-console
 main().catch(console.error);
