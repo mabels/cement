@@ -1,7 +1,21 @@
 import { FileService } from "./file-service.js";
-import { TimeMode, RandomMode, IDMode, SystemService, VoidFunc, SysAbstraction } from "./sys-abstraction.js";
+import { runtimeFn } from "./runtime.js";
+import {
+  TimeMode,
+  RandomMode,
+  IDMode,
+  SystemService,
+  VoidFunc,
+  BasicSysAbstraction,
+  BasicRuntimeService,
+} from "./sys-abstraction.js";
 import { Time } from "./time.js";
 import { TxtEnDecoder } from "./txt-en-decoder.js";
+import { WebBasicSysAbstraction } from "./web/web-basic-sys-abstraction.js";
+import { Env } from "./sys-env.js";
+import { CFBasicSysAbstraction } from "./cf/cf-basic-sys-abstraction.js";
+import { DenoBasicSysAbstraction } from "./deno/deno-basic-sys-abstraction.js";
+import { NodeBasicSysAbstraction } from "./node/node-basic-sys-abstraction.js";
 
 export class SysTime extends Time {
   Now(): Date {
@@ -110,8 +124,11 @@ export class IdService {
   }
 }
 
-export interface BaseSysAbstractionParams {
+export interface BaseBasicSysAbstractionParams {
   readonly TxtEnDecoder: TxtEnDecoder;
+}
+
+export interface BaseSysAbstractionParams extends BaseBasicSysAbstractionParams {
   readonly FileSystem: FileService;
   readonly SystemService: SystemService;
 }
@@ -127,141 +144,84 @@ export interface ExitService {
 }
 
 // some black magic to make it work with CF workers
-function consumeReadableStream(
-  reader: ReadableStreamDefaultReader<Uint8Array>,
-  writeFn: (chunk: Uint8Array) => Promise<void>,
-): void {
-  reader
-    .read()
-    .then(({ done, value }) => {
-      if (done) {
-        return;
-      }
-      writeFn(value)
-        .then(() => {
-          consumeReadableStream(reader, writeFn);
-        })
-        .catch((e) => {
-          // eslint-disable-next-line no-console
-          console.error("consumeReadableStream:writeFn", e);
-        });
-    })
-    .catch((e) => {
-      // eslint-disable-next-line no-console
-      console.error("consumeReadableStream:read", e);
-    });
-}
 
-function CFWriteableStream(writeFn: (chunk: Uint8Array) => Promise<void>): WritableStream<Uint8Array> {
-  const ts = new TransformStream<Uint8Array, Uint8Array>();
-  consumeReadableStream(ts.readable.getReader(), writeFn);
-  return ts.writable;
-}
-
-export class BaseSysAbstraction {
+export class BaseBasicSysAbstraction {
   readonly _time: SysTime = new SysTime();
-  readonly _stdout: WritableStream<Uint8Array>;
-  readonly _stderr: WritableStream<Uint8Array>;
 
+  // system independent services
   readonly _idService: IdService = new IdService();
   readonly _randomService: RandomService = new RandomService(RandomMode.RANDOM);
-  readonly _fileSystem: FileService;
-  readonly _systemService: SystemService;
   readonly _txtEnDe: TxtEnDecoder;
 
-  constructor(params: BaseSysAbstractionParams) {
-    this._fileSystem = params.FileSystem;
-    this._systemService = params.SystemService;
+  constructor(params: BaseBasicSysAbstractionParams) {
     this._txtEnDe = params.TxtEnDecoder;
-    const decoder = this._txtEnDe;
-    this._stdout = CFWriteableStream((chunk) => {
-      const decoded = decoder.decode(chunk);
-      // eslint-disable-next-line no-console
-      console.log(decoded.trimEnd());
-      return Promise.resolve();
-    });
-    this._stderr = CFWriteableStream((chunk) => {
-      const decoded = decoder.decode(chunk);
-      // eslint-disable-next-line no-console
-      console.error(decoded.trimEnd());
-      return Promise.resolve();
-    });
-    /* this is not CF worker compatible
-    this._stdout = new WritableStream({
-      write(chunk): Promise<void> {
-        return new Promise((resolve) => {
-          const decoded = decoder.decode(chunk);
-          // eslint-disable-next-line no-console
-          console.log(decoded.trimEnd());
-          resolve();
-        });
-      },
-    });
-    this._stderr = new WritableStream({
-      write(chunk): Promise<void> {
-        return new Promise((resolve) => {
-          const decoded = decoder.decode(chunk);
-          // eslint-disable-next-line no-console
-          console.error(decoded.trimEnd());
-          resolve();
-        });
-      },
-    });
-    */
   }
 }
 
-export interface WrapperSysAbstractionParams {
-  readonly TimeMode?: TimeMode;
-  readonly IdMode?: IDMode;
-  readonly Stdout?: WritableStream<Uint8Array>;
-  readonly Stderr?: WritableStream<Uint8Array>;
-  readonly RandomMode?: RandomMode;
-  readonly FileSystem?: FileService;
-  readonly SystemService?: SystemService;
-  readonly TxtEnDecoder?: TxtEnDecoder;
-}
-
-export class WrapperSysAbstraction implements SysAbstraction {
-  readonly _time: Time;
-  readonly _stdout: WritableStream<Uint8Array>;
-  readonly _stderr: WritableStream<Uint8Array>;
-  readonly _idService: IdService;
-  readonly _randomService: RandomService;
+export class BaseSysAbstraction extends BaseBasicSysAbstraction {
+  // system related services
   readonly _fileSystem: FileService;
   readonly _systemService: SystemService;
-  constructor(base: BaseSysAbstraction, params?: WrapperSysAbstractionParams) {
+
+  constructor(params: BaseSysAbstractionParams) {
+    super(params);
+    this._fileSystem = params.FileSystem;
+    this._systemService = params.SystemService;
+  }
+}
+
+export interface BasicSysAbstractionParams {
+  readonly TimeMode: TimeMode;
+  readonly IdMode: IDMode;
+  readonly RandomMode: RandomMode;
+  // readonly FileSystem: FileService;
+  // readonly SystemService: SystemService;
+  readonly TxtEnDecoder: TxtEnDecoder;
+  // readonly BasicRuntimeService: BasicSysAbstraction;
+}
+
+export type WrapperBasicSysAbstractionParams = Partial<BasicRuntimeService & BasicSysAbstractionParams>;
+
+export function BasicSysAbstractionFactory(params?: WrapperBasicSysAbstractionParams): BasicSysAbstraction {
+  const fn = runtimeFn();
+  switch (true) {
+    case fn.isBrowser:
+      return WebBasicSysAbstraction(params);
+    case fn.isDeno:
+      return DenoBasicSysAbstraction(params);
+    case fn.isCFWorker:
+      return CFBasicSysAbstraction(params);
+    case fn.isNodeIsh:
+      return NodeBasicSysAbstraction(params);
+    default:
+      throw new Error("Unknown runtime");
+  }
+}
+
+export class WrapperBasicSysAbstraction implements BasicSysAbstraction {
+  readonly _time: Time;
+  readonly _idService: IdService;
+  readonly _randomService: RandomService;
+  readonly _basicRuntimeService: BasicRuntimeService;
+  constructor(
+    base: BaseBasicSysAbstraction,
+    params: Partial<BasicSysAbstractionParams> & { basicRuntimeService: BasicRuntimeService },
+  ) {
     this._time = base._time;
-    this._stdout = base._stdout;
-    this._stderr = base._stderr;
+    this._basicRuntimeService = params.basicRuntimeService;
     this._idService = base._idService;
     this._randomService = base._randomService;
-    this._fileSystem = base._fileSystem;
-    this._systemService = base._systemService;
-    if (params) {
-      if (params.TimeMode) {
-        this._time = TimeFactory(params.TimeMode);
-      }
-      if (params.Stdout) {
-        this._stdout = params.Stdout;
-      }
-      if (params.Stderr) {
-        this._stderr = params.Stderr;
-      }
-      if (params.IdMode) {
-        this._idService = new IdService(params.IdMode);
-      }
-      if (params.RandomMode) {
-        this._randomService = new RandomService(params.RandomMode);
-      }
-      if (params.FileSystem) {
-        this._fileSystem = params.FileSystem;
-      }
-      if (params.SystemService) {
-        this._systemService = params.SystemService;
-      }
+    if (params.TimeMode) {
+      this._time = TimeFactory(params.TimeMode);
+    }
+    if (params.IdMode) {
+      this._idService = new IdService(params.IdMode);
+    }
+    if (params.RandomMode) {
+      this._randomService = new RandomService(params.RandomMode);
     }
   }
+
   Time(): Time {
     return this._time;
   }
@@ -272,10 +232,41 @@ export class WrapperSysAbstraction implements SysAbstraction {
     return this._randomService.Random0ToValue(value);
   }
   Stdout(): WritableStream {
-    return this._stdout;
+    return this._basicRuntimeService.Stdout();
   }
   Stderr(): WritableStream {
-    return this._stderr;
+    return this._basicRuntimeService.Stderr();
+  }
+  Env(): Env {
+    return this._basicRuntimeService.Env();
+  }
+  Args(): string[] {
+    return this._basicRuntimeService.Args();
+  }
+
+  // System(): SystemService {
+  //   return this._systemService;
+  // }
+  // FileSystem(): FileService {
+  //   return this._fileSystem;
+  // }
+}
+// export const BaseSysAbstraction = new BaseSysAbstractionImpl()
+
+export class WrapperRuntimeSysAbstraction extends WrapperBasicSysAbstraction {
+  readonly _systemService: SystemService;
+  readonly _fileSystem: FileService;
+  constructor(
+    base: BaseSysAbstraction,
+    params: Partial<BaseBasicSysAbstraction> & {
+      systemService?: SystemService;
+      fileSystem?: FileService;
+      basicRuntimeService: BasicRuntimeService;
+    },
+  ) {
+    super(base, params);
+    this._systemService = params.systemService ?? base._systemService;
+    this._fileSystem = params.fileSystem ?? base._fileSystem;
   }
 
   System(): SystemService {
@@ -285,4 +276,3 @@ export class WrapperSysAbstraction implements SysAbstraction {
     return this._fileSystem;
   }
 }
-// export const BaseSysAbstraction = new BaseSysAbstractionImpl()

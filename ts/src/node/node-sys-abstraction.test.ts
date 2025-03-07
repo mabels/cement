@@ -40,7 +40,7 @@ function exitHandler(errCode: number, larg: string, done: () => void) {
   };
 }
 
-describe("node_sys", () => {
+describe(`${runtimeFn().isDeno ? "deno" : "node"}_sys`, () => {
   if (runtimeFn().isNodeIsh || runtimeFn().isDeno) {
     let fnExec: typeof exec;
     let execHandler = "tsx src/test/test-exit-handler.ts";

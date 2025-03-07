@@ -1,3 +1,4 @@
+import { ResolveOnce } from "./resolve-once.js";
 import { Result } from "./result.js";
 import { coerceIntoUint8, ToUInt8 } from "./utils/coerce-uint8.js";
 
@@ -43,8 +44,7 @@ class TxtOps implements TxtEnDecoder {
   }
 }
 
-let txtEnDecoder: TxtEnDecoder;
+const txtEnDecoder = new ResolveOnce<TxtEnDecoder>();
 export function TxtEnDecoderSingleton(): TxtEnDecoder {
-  txtEnDecoder = txtEnDecoder ?? new TxtOps();
-  return txtEnDecoder;
+  return txtEnDecoder.once(() => new TxtOps());
 }

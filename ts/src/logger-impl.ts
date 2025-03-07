@@ -19,15 +19,13 @@ import {
   HttpType,
   LogValueState,
 } from "./logger.js";
-import { WebSysAbstraction } from "./web/web-sys-abstraction.js";
-import { SysAbstraction } from "./sys-abstraction.js";
+import { BasicSysAbstraction } from "./sys-abstraction.js";
 import { Result } from "./result.js";
 import { CoerceURI, URI } from "./uri.js";
-import { runtimeFn } from "./runtime.js";
-import { ConsoleWriterStream } from "./utils/console-write-stream.js";
 import { LogWriterStream } from "./log-writer-impl.js";
 import { TxtEnDecoder, TxtEnDecoderSingleton } from "./txt-en-decoder.js";
 import { LevelHandlerSingleton } from "./log-level-impl.js";
+import { BasicSysAbstractionFactory } from "./base-sys-abstraction.js";
 
 function getLen(value: unknown, lvs: LogValueState): LogValue {
   if (Array.isArray(value)) {
@@ -93,7 +91,7 @@ export class YAMLFormatter implements LogFormatter {
 export interface LoggerImplParams {
   readonly out?: WritableStream<Uint8Array>;
   readonly logWriter?: LogWriterStream;
-  readonly sys?: SysAbstraction;
+  readonly sys?: BasicSysAbstraction;
   readonly withAttributes?: LogSerializable;
   readonly levelHandler?: LevelHandler;
   readonly txtEnDe?: TxtEnDecoder;
@@ -107,7 +105,7 @@ function toLogValueCtx(lvh: LevelHandler): LogValueState {
 }
 
 export class LoggerImpl implements Logger {
-  readonly _sys: SysAbstraction;
+  readonly _sys: BasicSysAbstraction;
   readonly _attributes: LogSerializable = {};
   readonly _withAttributes: LogSerializable;
   readonly _logWriter: LogWriterStream;
@@ -121,7 +119,7 @@ export class LoggerImpl implements Logger {
       params = {};
     }
     if (!params.sys) {
-      this._sys = WebSysAbstraction();
+      this._sys = BasicSysAbstractionFactory();
     } else {
       this._sys = params.sys;
     }
@@ -140,18 +138,18 @@ export class LoggerImpl implements Logger {
       this._logWriter = params.logWriter;
     } else {
       if (!params.out) {
-        const rt = runtimeFn();
-        let stream: WritableStream<Uint8Array>;
-        if (rt.isBrowser) {
-          stream = new ConsoleWriterStream();
-        } else {
-          if (rt.isNodeIsh || rt.isReactNative || rt.isDeno || rt.isCFWorker) {
-            stream = this._sys.Stdout();
-          } else {
-            throw new Error("No output defined for runtime");
-          }
-        }
-        this._logWriter = new LogWriterStream(stream);
+        // const rt = runtimeFn();
+        // let stream: WritableStream<Uint8Array>;
+        // if (rt.isBrowser) {
+        //   stream = new ConsoleWriterStream();
+        // } else {
+        //   if (rt.isNodeIsh || rt.isReactNative || rt.isDeno || rt.isCFWorker) {
+        //     stream = this._sys.Stdout();
+        //   } else {
+        //     throw new Error("No output defined for runtime");
+        //   }
+        // }
+        this._logWriter = new LogWriterStream(this._sys.Stdout());
       } else {
         this._logWriter = new LogWriterStream(params.out);
       }

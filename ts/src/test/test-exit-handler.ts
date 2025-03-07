@@ -1,5 +1,5 @@
 import { runtimeFn } from "../runtime.js";
-import { SysAbstraction } from "../sys-abstraction.js";
+import { RuntimeSysAbstraction } from "../sys-abstraction.js";
 
 const gts = globalThis as unknown /*Deno*/ as {
   Deno: {
@@ -20,8 +20,8 @@ async function main(): Promise<void> {
     : new URL("../node/node-sys-abstraction.ts", import.meta.url).pathname;
   // console.log("modPath", modPath);
   const sa = (await import(modPath)) as {
-    DenoSysAbstraction: () => SysAbstraction;
-    NodeSysAbstraction: () => SysAbstraction;
+    DenoSysAbstraction: () => RuntimeSysAbstraction;
+    NodeSysAbstraction: () => RuntimeSysAbstraction;
   };
 
   const my = runtimeFn().isDeno ? sa.DenoSysAbstraction() : sa.NodeSysAbstraction();

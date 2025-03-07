@@ -2,12 +2,13 @@ import {
   ExitService,
   ExitHandler,
   BaseSysAbstraction,
-  WrapperSysAbstractionParams,
-  WrapperSysAbstraction,
+  WrapperBasicSysAbstractionParams,
+  WrapperRuntimeSysAbstraction,
 } from "../base-sys-abstraction.js";
-import { SysAbstraction, SystemService, VoidFunc } from "../sys-abstraction.js";
-import { Env, envFactory } from "../sys-env.js";
+import { ResolveOnce } from "../resolve-once.js";
+import { RuntimeSysAbstraction, SystemService, VoidFunc } from "../sys-abstraction.js";
 import { TxtEnDecoderSingleton } from "../txt-en-decoder.js";
+import { DenoBasicSysAbstraction } from "./deno-basic-sys-abstraction.js";
 // import * as process from "node:process";
 import { DenoFileService } from "./deno-file-service.js";
 
@@ -97,14 +98,6 @@ export class DenoSystemService implements SystemService {
     this._exitService.injectExitHandlers(DenoSystemService._exitHandlers);
   }
 
-  Env(): Env {
-    return envFactory();
-  }
-
-  Args(): string[] {
-    return Deno.args;
-  }
-
   OnExit(hdl: VoidFunc): VoidFunc {
     const id = crypto.randomUUID();
     DenoSystemService._exitHandlers.push({ hdl, id });
@@ -121,14 +114,18 @@ export class DenoSystemService implements SystemService {
   }
 }
 
-let my: BaseSysAbstraction | undefined = undefined;
-export function DenoSysAbstraction(param?: WrapperSysAbstractionParams): SysAbstraction {
-  if (!my) {
-    my = new BaseSysAbstraction({
-      TxtEnDecoder: param?.TxtEnDecoder || TxtEnDecoderSingleton(),
-      FileSystem: new DenoFileService(),
-      SystemService: new DenoSystemService(),
-    });
-  }
-  return new WrapperSysAbstraction(my, param);
+const baseSysAbstraction = new ResolveOnce<BaseSysAbstraction>();
+export function DenoSysAbstraction(param?: WrapperBasicSysAbstractionParams): RuntimeSysAbstraction {
+  const my = baseSysAbstraction.once(
+    () =>
+      new BaseSysAbstraction({
+        TxtEnDecoder: param?.TxtEnDecoder || TxtEnDecoderSingleton(),
+        FileSystem: new DenoFileService(),
+        SystemService: new DenoSystemService(),
+      }),
+  );
+  return new WrapperRuntimeSysAbstraction(my, {
+    basicRuntimeService: DenoBasicSysAbstraction(param),
+    ...param,
+  });
 }

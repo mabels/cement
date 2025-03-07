@@ -1,8 +1,4 @@
-import { Time } from "./time.js";
-import { WebSysAbstraction } from "./web/index.js";
-import { TimeMode } from "./sys-abstraction.js";
-import { TraceNode } from "./tracer.js";
-import { MockLogger } from "./test/mock-logger.js";
+import { Time, TraceNode, MockLogger, BasicSysAbstractionFactory, TimeMode } from "@adviser/cement";
 
 describe("trace", () => {
   let time: Time;
@@ -10,9 +6,9 @@ describe("trace", () => {
   let trace: TraceNode;
   const logger = MockLogger().logger.With().Module("trace").Str("value", "important").Logger();
   beforeEach(() => {
-    time = WebSysAbstraction({ TimeMode: TimeMode.STEP }).Time();
+    time = BasicSysAbstractionFactory({ TimeMode: TimeMode.STEP }).Time();
     trace = TraceNode.root(time, logger);
-    refTime = WebSysAbstraction({ TimeMode: TimeMode.STEP }).Time();
+    refTime = BasicSysAbstractionFactory({ TimeMode: TimeMode.STEP }).Time();
   });
   it("a simple trace", () => {
     expect(
@@ -44,7 +40,7 @@ describe("trace", () => {
       },
     ]);
     const layered = Array.from(trace.childs.get("test")?.childs.values() || []);
-    refTime = WebSysAbstraction({ TimeMode: TimeMode.STEP }).Time();
+    refTime = BasicSysAbstractionFactory({ TimeMode: TimeMode.STEP }).Time();
     expect(layered.map((v) => v.invokes())).toEqual([
       {
         ctx: {
@@ -283,7 +279,7 @@ describe("metrics", () => {
   let trace: TraceNode;
   // const logger = MockLogger().logger.With().Module("trace").Str("value", "important").Logger()
   beforeEach(() => {
-    time = WebSysAbstraction({ TimeMode: TimeMode.STEP }).Time();
+    time = BasicSysAbstractionFactory({ TimeMode: TimeMode.STEP }).Time();
     trace = TraceNode.root(time);
   });
 

@@ -1,15 +1,16 @@
-import { SysAbstraction, SystemService, VoidFunc } from "../sys-abstraction.js";
+import { RuntimeSysAbstraction, SystemService, VoidFunc } from "../sys-abstraction.js";
 import {
   BaseSysAbstraction,
   ExitHandler,
   ExitService,
-  WrapperSysAbstraction,
-  WrapperSysAbstractionParams,
+  WrapperBasicSysAbstractionParams,
+  WrapperRuntimeSysAbstraction,
 } from "../base-sys-abstraction.js";
 import { NodeFileService } from "./node-file-service.js";
-import { Env, envFactory } from "../sys-env.js";
 import { TxtEnDecoderSingleton } from "../txt-en-decoder.js";
 import process from "node:process";
+import { ResolveOnce } from "../resolve-once.js";
+import { NodeBasicSysAbstraction } from "./node-basic-sys-abstraction.js";
 
 export class NodeExitServiceImpl implements ExitService {
   constructor() {
@@ -84,14 +85,6 @@ export class NodeSystemService implements SystemService {
     this._exitService.injectExitHandlers(NodeSystemService._exitHandlers);
   }
 
-  Env(): Env {
-    return envFactory();
-  }
-
-  Args(): string[] {
-    return process.argv;
-  }
-
   OnExit(hdl: VoidFunc): VoidFunc {
     const id = crypto.randomUUID();
     NodeSystemService._exitHandlers.push({ hdl, id });
@@ -108,14 +101,18 @@ export class NodeSystemService implements SystemService {
   }
 }
 
-let my: BaseSysAbstraction | undefined = undefined;
-export function NodeSysAbstraction(param?: WrapperSysAbstractionParams): SysAbstraction {
-  if (!my) {
-    my = new BaseSysAbstraction({
-      TxtEnDecoder: param?.TxtEnDecoder || TxtEnDecoderSingleton(),
-      FileSystem: new NodeFileService(),
-      SystemService: new NodeSystemService(),
-    });
-  }
-  return new WrapperSysAbstraction(my, param);
+const baseSysAbstraction = new ResolveOnce<BaseSysAbstraction>();
+export function NodeSysAbstraction(param?: WrapperBasicSysAbstractionParams): RuntimeSysAbstraction {
+  const my = baseSysAbstraction.once(
+    () =>
+      new BaseSysAbstraction({
+        TxtEnDecoder: param?.TxtEnDecoder || TxtEnDecoderSingleton(),
+        FileSystem: new NodeFileService(),
+        SystemService: new NodeSystemService(),
+      }),
+  );
+  return new WrapperRuntimeSysAbstraction(my, {
+    basicRuntimeService: NodeBasicSysAbstraction(param),
+    ...param,
+  });
 }

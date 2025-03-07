@@ -1,9 +1,6 @@
-import { WebSysAbstraction } from "@adviser/cement/web";
-import { NodeSysAbstraction } from "@adviser/cement/node";
-import { DenoSysAbstraction } from "@adviser/cement/deno";
-import { VERSION, LoggerImpl, Result, Option, Level, runtimeFn } from "@adviser/cement";
+import { VERSION, LoggerImpl, Result, Option, Level, runtimeFn, BasicSysAbstractionFactory } from "@adviser/cement";
 
-function main(): void {
+async function main() {
   const none = Option.None();
   const result = Result.Ok(none);
   if (!result.isOk()) {
@@ -18,16 +15,18 @@ function main(): void {
     .Logger();
   const rt = runtimeFn();
   if (rt.isNodeIsh) {
+    const { NodeSysAbstraction } = await import("@adviser/cement/node");
     const sys = NodeSysAbstraction();
     log.Info().Str("id", sys.NextId()).Msg("Node-Alright");
   }
   if (rt.isDeno) {
+    const { DenoSysAbstraction } = await import("@adviser/cement/deno");
     const sys = DenoSysAbstraction();
-    log.Info().Str("id", sys.NextId()).Msg("Node-Alright");
+    log.Info().Str("id", sys.NextId()).Msg("Deno-Alright");
   }
   {
-    const sys = WebSysAbstraction();
+    const sys = BasicSysAbstractionFactory();
     log.Info().Str("id", sys.NextId()).Msg("Web-Alright");
   }
 }
-main();
+main().catch(console.error);

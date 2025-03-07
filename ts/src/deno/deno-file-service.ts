@@ -1,5 +1,5 @@
 import * as path from "node:path";
-import { FileService, NamedWritableStream } from "../file-service.js";
+import type { FileService, NamedWritableStream } from "../file-service.js";
 import { TxtEnDecoder, TxtEnDecoderSingleton } from "../txt-en-decoder.js";
 
 const Deno = (globalThis as unknown as { Deno: unknown }).Deno as {

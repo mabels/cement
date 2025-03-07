@@ -39,18 +39,24 @@ export function String2TimeMode(s?: string): TimeMode {
 export type VoidFunc = () => void | Promise<void>;
 
 export interface SystemService {
-  Env(): Env;
-  Args(): string[];
   OnExit(hdl: VoidFunc): VoidFunc;
   Exit(code: number): void;
 }
 
-export interface SysAbstraction {
-  Time(): Time;
-  Stdout(): WritableStream<Uint8Array>;
-  Stderr(): WritableStream<Uint8Array>;
-  NextId(): string;
-  Random0ToValue(value: number): number;
+export interface RuntimeSysAbstraction extends BasicSysAbstraction {
   System(): SystemService;
   FileSystem(): FileService;
+}
+
+export interface BasicRuntimeService {
+  Stdout(): WritableStream<Uint8Array>;
+  Stderr(): WritableStream<Uint8Array>;
+  Env(): Env;
+  Args(): string[];
+}
+
+export interface BasicSysAbstraction extends BasicRuntimeService {
+  Time(): Time;
+  NextId(): string;
+  Random0ToValue(value: number): number;
 }

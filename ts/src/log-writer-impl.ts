@@ -2,8 +2,12 @@ export class LogWriterStream {
   readonly _out: WritableStream<Uint8Array>;
   readonly _toFlush: (() => Promise<void>)[] = [];
 
+  readonly _id: number;
+
   constructor(out: WritableStream<Uint8Array>) {
     this._out = out;
+    this._id = Math.random();
+    // console.log(">>>My:constructor:", this._id);
   }
 
   write(encoded: Uint8Array): void {
@@ -11,10 +15,12 @@ export class LogWriterStream {
       // const val = Math.random();
       // console.log(">>>My:", encoded)
       try {
+        // console.log(">>>My:getWriter:get:", this._id);
         const writer = this._out.getWriter();
         await writer.ready;
         await writer.write(encoded);
         writer.releaseLock();
+        // console.log(">>>My:getWriter:release", this._id);
       } catch (err) {
         // eslint-disable-next-line no-console
         console.error("Chunk error:", err);

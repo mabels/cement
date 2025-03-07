@@ -15,8 +15,8 @@ import {
   MutableURL,
   JSONFormatter,
   YAMLFormatter,
+  BasicSysAbstractionFactory,
 } from "@adviser/cement";
-import { WebSysAbstraction } from "@adviser/cement/web";
 import { stripper } from "./utils/stripper.js";
 
 describe("TestLogger", () => {
@@ -27,7 +27,7 @@ describe("TestLogger", () => {
     logCollector = new LogCollector();
     logger = new LoggerImpl({
       out: logCollector,
-      sys: WebSysAbstraction({ TimeMode: TimeMode.STEP }),
+      sys: BasicSysAbstractionFactory({ TimeMode: TimeMode.STEP }),
       levelHandler: new LevelHandlerImpl(),
     });
   });
@@ -902,7 +902,7 @@ describe("TestLogger", () => {
     expect(log.Attributes()).toEqual({ str: "a str", what: { a: 1 }, bla: "blub" });
 
     const tlog = log.With().Timestamp().Logger();
-    const refTime = WebSysAbstraction({ TimeMode: TimeMode.STEP }).Time();
+    const refTime = BasicSysAbstractionFactory({ TimeMode: TimeMode.STEP }).Time();
     expect(tlog.Attributes()).toEqual({
       str: "a str",
       what: { a: 1 },
@@ -1745,4 +1745,12 @@ describe("TestLogger", () => {
       },
     ]);
   });
+
+  // it("for cloudflare we need unbuffered log output", () => {
+  //   const logger = new LoggerImpl({
+  //     logWriter: new utils.ConsoleWriterStream(),
+  //     levelHandler: new LevelHandlerImpl(),
+  //   });
+  //   logger.Error().Msg("1");
+  // });
 });

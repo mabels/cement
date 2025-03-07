@@ -1,8 +1,8 @@
 import { LevelHandlerImpl } from "../log-level-impl.js";
 import { Logger } from "../logger.js";
 import { LoggerImpl } from "../logger-impl.js";
-import { SysAbstraction } from "../sys-abstraction.js";
 import { LogCollector } from "./log-write-stream.js";
+import { BasicSysAbstraction } from "../sys-abstraction.js";
 
 export interface MockLoggerReturn {
   readonly logger: Logger;
@@ -10,7 +10,7 @@ export interface MockLoggerReturn {
 }
 
 export function MockLogger(params?: {
-  readonly sys?: SysAbstraction;
+  readonly sys?: BasicSysAbstraction;
   readonly pass?: WritableStreamDefaultWriter<Uint8Array>;
   moduleName?: string | string[];
   readonly disableDebug?: boolean;
