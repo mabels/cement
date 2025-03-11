@@ -22,10 +22,10 @@ import {
 import { BasicSysAbstraction } from "./sys-abstraction.js";
 import { Result } from "./result.js";
 import { CoerceURI, URI } from "./uri.js";
-import { LogWriterStream } from "./log-writer-impl.js";
 import { TxtEnDecoder, TxtEnDecoderSingleton } from "./txt-en-decoder.js";
 import { LevelHandlerSingleton } from "./log-level-impl.js";
 import { BasicSysAbstractionFactory } from "./base-sys-abstraction.js";
+import { LogWriterStream } from "./log-writer-impl.js";
 
 function getLen(value: unknown, lvs: LogValueState): LogValue {
   if (Array.isArray(value)) {

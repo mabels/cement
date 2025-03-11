@@ -23,6 +23,7 @@ export * from "./path-ops.js";
 export * from "./json-en-decoder.js";
 export * from "./types.js";
 export * from "./lru-map-set.js";
+export * from "./coerce-binary.js";
 
 // ugly
 export * as utils from "./utils/index.js";
