@@ -1,3 +1,5 @@
+import { isPromise } from "./is-promise.js";
+
 export abstract class Result<T, E = Error> {
   static Ok<T = void>(t: T): Result<T, Error> {
     return new ResultOK(t);
@@ -96,7 +98,7 @@ type WithResult<T> = T extends Promise<infer U> ? Promise<Result<U>> : Result<T>
 export function exception2Result<FN extends () => Promise<T> | T, T>(fn: FN): WithResult<ReturnType<FN>> {
   try {
     const res = fn();
-    if (res instanceof Promise) {
+    if (isPromise(res)) {
       return res.then((value) => Result.Ok(value)).catch((e) => Result.Err(e)) as WithResult<ReturnType<FN>>;
     }
     return Result.Ok(res) as WithResult<ReturnType<FN>>;

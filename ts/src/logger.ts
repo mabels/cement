@@ -1,3 +1,4 @@
+import { isPromise } from "./is-promise.js";
 import { bin2string } from "./bin2text.js";
 import { Option } from "./option.js";
 import { Result } from "./result.js";
@@ -134,7 +135,7 @@ function logValueInternal(val: LogValueArg, ctx: LogValueStateInternal): LogValu
       if (val instanceof ReadableStream) {
         return new LogValue(() => ">Stream<");
       }
-      if (val instanceof Promise) {
+      if (isPromise(val)) {
         return new LogValue(() => ">Promise<");
       }
 

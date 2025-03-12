@@ -1,6 +1,7 @@
 import type { MarkWritable } from "ts-essentials";
 import { Time } from "./time.js";
 import { Logger } from "./logger.js";
+import { isPromise } from "./is-promise.js";
 
 export type TraceCtx = {
   readonly spanId: string;
@@ -196,7 +197,7 @@ export class TraceNode {
     spanTrace.invokations.push(invokation);
     try {
       const possiblePromise = fn(spanTrace);
-      if (possiblePromise instanceof Promise) {
+      if (isPromise(possiblePromise)) {
         return possiblePromise
           .then((v) => {
             return v;

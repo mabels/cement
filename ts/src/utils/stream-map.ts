@@ -1,3 +1,5 @@
+import { isPromise } from "../is-promise.js";
+
 export interface StreamMap<T, U> {
   Map(s: T, idx: number): U | Promise<U>;
   readonly Close?: () => void;
@@ -16,7 +18,7 @@ export function streamMap<T, U>(s: ReadableStream<T>, sm: StreamMap<T, U>): Read
       }
       const promiseOrU = state.streamMap.Map(value, state.idx++);
       let mapped: U;
-      if (promiseOrU instanceof Promise || typeof (promiseOrU as { then: () => void }).then === "function") {
+      if (isPromise(promiseOrU)) {
         mapped = await promiseOrU;
       } else {
         mapped = promiseOrU;
