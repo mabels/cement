@@ -273,13 +273,18 @@ export class MutableURL extends URL {
     return this._sysURL.searchParams;
   }
 
-  override toString(): string {
+  get search(): string {
     let search = "";
     if (this._sysURL.searchParams.size) {
       for (const [key, value] of Array.from(this._sysURL.searchParams.entries()).sort((a, b) => a[0].localeCompare(b[0]))) {
         search += `${!search.length ? "?" : "&"}${key}=${encodeURIComponent(value)}`;
       }
     }
+    return search;
+  }
+
+  override toString(): string {
+    const search = this.search;
     let hostpart = "";
     if (this._hasHostpart) {
       hostpart = this._sysURL.hostname;
@@ -419,9 +424,12 @@ export class BuildURI implements URIInterface<BuildURI> {
     return this;
   }
 
-  cleanParams(): BuildURI {
+  cleanParams(...remove: (string | string[])[]): BuildURI {
+    const keys = new Set(remove.flat());
     for (const key of Array.from(this._url.searchParams.keys())) {
-      this._url.searchParams.delete(key);
+      if (keys.size === 0 || keys.has(key)) {
+        this._url.searchParams.delete(key);
+      }
     }
     return this;
   }
@@ -577,6 +585,10 @@ export class URI implements URIInterface<URI> {
 
   get hostname(): string {
     return this._url.hostname;
+  }
+
+  get local(): string {
+    return this._url.pathname + this._url.search;
   }
 
   // get password(): string {

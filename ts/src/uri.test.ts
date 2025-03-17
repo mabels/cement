@@ -534,4 +534,39 @@ describe("URI", () => {
     const ref = URI.from("yttp://ed?x=3&y=4&o=4");
     expect(ref.match("xttp://ab/cd?x=4&y=4&o=4").score).toBe(2);
   });
+
+  it("pathname + search + hash", () => {
+    const refUnk = URI.from("yttp://ed/bla?y=4&x=3");
+    expect(refUnk.local).toBe("ed/bla?x=3&y=4");
+
+    const refHttp = URI.from("http://host/ed/bla?x=3&y=4");
+    expect(refHttp.local).toBe("/ed/bla?x=3&y=4");
+
+    const refFile = URI.from("file:///ed/bla?x=3&y=4");
+    expect(refFile.local).toBe("/ed/bla?x=3&y=4");
+  });
+
+  it("cleanParams all", () => {
+    const uri = BuildURI.from("http://key.bag?a=1&b=2&c=3").cleanParams();
+    expect(Array.from(uri.getParams)).toEqual([]);
+  });
+
+  it("cleanParams not matching", () => {
+    const uri = BuildURI.from("http://key.bag?a=1&b=2&c=3").cleanParams(["A"], "B");
+    expect(Array.from(uri.getParams)).toEqual([
+      ["a", "1"],
+      ["b", "2"],
+      ["c", "3"],
+    ]);
+  });
+
+  it("cleanParams not matching", () => {
+    const uri = BuildURI.from("http://key.bag?a=1&b=2&c=3").cleanParams(["A"], "B", "a", "a", "b");
+    expect(Array.from(uri.getParams)).toEqual([["c", "3"]]);
+  });
+
+  it("cleanParams not matching", () => {
+    const uri = BuildURI.from("http://key.bag?a=1&b=2&c=3").cleanParams(["c", "b", "a"]);
+    expect(Array.from(uri.getParams)).toEqual([]);
+  });
 });
