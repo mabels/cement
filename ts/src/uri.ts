@@ -273,7 +273,7 @@ export class MutableURL extends URL {
     return this._sysURL.searchParams;
   }
 
-  get search(): string {
+  override get search(): string {
     let search = "";
     if (this._sysURL.searchParams.size) {
       for (const [key, value] of Array.from(this._sysURL.searchParams.entries()).sort((a, b) => a[0].localeCompare(b[0]))) {
