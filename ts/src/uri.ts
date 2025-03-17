@@ -168,6 +168,7 @@ export function isURL(value: unknown): value is URL {
 
 // due to that the System URL class is has a strange behavior
 // on different platforms, we need to implement our own URL class
+const customInspectSymbol = Symbol.for("nodejs.util.inspect.custom");
 export class MutableURL extends URL {
   private readonly _sysURL: URL;
   // private readonly _urlStr: string;
@@ -201,6 +202,11 @@ export class MutableURL extends URL {
       this._pathname = urlStr.replace(new RegExp(`^${this._protocol}//`), "").replace(/[#?].*$/, "");
     }
     this.hash = this._sysURL.hash;
+  }
+
+  [customInspectSymbol](): string {
+    // make node inspect to show the URL and not crash if URI is not http/https/file
+    return this.toString();
   }
 
   clone(): MutableURL {

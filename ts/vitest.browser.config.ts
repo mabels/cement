@@ -11,8 +11,14 @@ export default defineConfig({
     browser: {
       enabled: true,
       headless: process.env.BROWSER === "safari" ? false : true,
-      provider: "webdriverio",
-      name: process.env.BROWSER || "chrome", // browser name is required
+      provider: "playwright",
+      instances: [
+        {
+          browser: "chromium",
+          //setupFile: './chromium-setup.js',
+        },
+      ],
+      // name: process.env.BROWSER || "chrome", // browser name is required
     },
   },
 });
