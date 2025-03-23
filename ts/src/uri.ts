@@ -119,6 +119,16 @@ function coerceKey(key: string | OneKey<string>, def?: string): { key: string; d
   return { key, def: def };
 }
 
+function resolveHash(hash: string): { getParam: (k: string) => string | undefined } {
+  const searchParams = new URLSearchParams(hash.replace(/^#/, ""));
+  return {
+    getParam: (k): string | undefined => {
+      const ret = searchParams.get(k);
+      return ret === null ? undefined : ret;
+    },
+  };
+}
+
 export interface URIObject {
   readonly style: "host" | "path";
   readonly protocol: string;
@@ -177,7 +187,7 @@ export class MutableURL extends URL {
   private _pathname: string;
   private _hasHostpart: boolean;
 
-  override readonly hash: string;
+  // override readonly hash: string;
 
   constructor(urlStr: string) {
     super("defect://does.not.exist");
@@ -201,7 +211,7 @@ export class MutableURL extends URL {
     } else {
       this._pathname = urlStr.replace(new RegExp(`^${this._protocol}//`), "").replace(/[#?].*$/, "");
     }
-    this.hash = this._sysURL.hash;
+    // this.hash = this._sysURL.hash;
   }
 
   [customInspectSymbol](): string {
@@ -269,6 +279,14 @@ export class MutableURL extends URL {
     this._protocol = p;
   }
 
+  override get hash(): string {
+    return this._sysURL.hash;
+  }
+
+  override set hash(h: string) {
+    this._sysURL.hash = h;
+  }
+
   override get searchParams(): URLSearchParams {
     return this._sysURL.searchParams;
   }
@@ -295,7 +313,7 @@ export class MutableURL extends URL {
         hostpart += "/";
       }
     }
-    return `${this._protocol}//${hostpart}${this._pathname}${search}`;
+    return `${this._protocol}//${hostpart}${this._pathname}${search}${this.hash}`;
   }
 }
 
@@ -375,6 +393,11 @@ export class BuildURI implements URIInterface<BuildURI> {
     return this;
   }
 
+  hash(h: string): BuildURI {
+    this._url.hash = h;
+    return this;
+  }
+
   // could pass a relative path or a full URL
   // if relative path, it will be appended to the current path
   resolve(p: CoerceURI): BuildURI {
@@ -434,6 +457,47 @@ export class BuildURI implements URIInterface<BuildURI> {
     return this;
   }
 
+  hashParams(
+    val: Record<string, string | number | boolean | Date | null | undefined>,
+    mode: "reset" | "merge" = "reset",
+  ): BuildURI {
+    let preset: Record<string, string>;
+    switch (mode) {
+      case "reset":
+        this._url.hash = "";
+        preset = {};
+        break;
+      case "merge":
+      default:
+        preset = Object.fromEntries(new URLSearchParams(this._url.hash.replace(/^#/, "")).entries());
+        break;
+    }
+    const out = new URLSearchParams("");
+    for (const [key, value] of Object.entries({ ...preset, ...val }).sort((a, b) => a[0].localeCompare(b[0]))) {
+      switch (typeof value) {
+        case "string":
+          out.set(key, value);
+          break;
+        case "number":
+          out.set(key, value.toString());
+          break;
+        case "boolean":
+          out.set(key, value ? "true" : "false");
+          break;
+        default:
+          if (value instanceof Date) {
+            out.set(key, value.toISOString());
+          } else {
+            // eslint-disable-next-line no-console
+            console.error(`unsupported type: ${typeof value} ignore key: ${key}`);
+          }
+          break;
+      }
+    }
+    this._url.hash = out.toString();
+    return this;
+  }
+
   delParam(key: string): BuildURI {
     this._url.searchParams.delete(key);
     return this;
@@ -474,6 +538,10 @@ export class BuildURI implements URIInterface<BuildURI> {
 
   getParamsResult(...keys: KeysParam): Result<Record<string, string>> {
     return getParamsResult(keys, this);
+  }
+
+  getHashParams(...keys: KeysParam): Result<Record<string, string>> {
+    return getParamsResult(keys, resolveHash(this._url.hash));
   }
 
   toString(): string {
@@ -623,9 +691,9 @@ export class URI implements URIInterface<URI> {
     //   .replace(/\?.*$/, "");
   }
 
-  // get hash(): string {
-  //   return this._url.hash;
-  // }
+  get hash(): string {
+    return this._url.hash;
+  }
 
   // get host(): string {
   //   return this._url.host;
@@ -654,6 +722,10 @@ export class URI implements URIInterface<URI> {
 
   getParamsResult(...keys: KeysParam): Result<Record<string, string>> {
     return getParamsResult(keys, this);
+  }
+
+  getHashParams(...keys: KeysParam): Result<Record<string, string>> {
+    return getParamsResult(keys, resolveHash(this._url.hash));
   }
 
   clone(): URI {

@@ -569,4 +569,85 @@ describe("URI", () => {
     const uri = BuildURI.from("http://key.bag?a=1&b=2&c=3").cleanParams(["c", "b", "a"]);
     expect(Array.from(uri.getParams)).toEqual([]);
   });
+
+  it("common hash", () => {
+    const uri = URI.from("http://key.bag?a=1&b=2&c=3#hash");
+    expect(uri.hash).toBe("#hash");
+
+    const buri = BuildURI.from("http://key.bag?a=1&b=2&c=3").hash("hash").URI();
+    expect(buri.hash).toBe("#hash");
+
+    const hashuri = BuildURI.from("http://key.bag?a=1&b=2&c=3").hash("#hash").URI();
+    expect(hashuri.hash).toBe("#hash");
+  });
+
+  it("get hashParams", () => {
+    const uri = BuildURI.from("http://key.bag?a=1&b=2&c=3")
+      .hashParams({
+        c: true,
+        a: 1,
+        b: "5",
+        d: new Date("2021-01-01T00:00:00.000Z"),
+      })
+      .URI();
+    expect(uri.hash).toBe("#a=1&b=5&c=true&d=2021-01-01T00%3A00%3A00.000Z");
+
+    const mergeUri = BuildURI.from("http://key.bag?a=1&b=2&c=3#c=true&a=4&d=9")
+      .hashParams(
+        {
+          a: 1,
+          b: "5",
+          d: new Date("2021-01-01T00:00:00.000Z"),
+        },
+        "merge",
+      )
+      .URI();
+    expect(mergeUri.hash).toBe("#a=1&b=5&c=true&d=2021-01-01T00%3A00%3A00.000Z");
+  });
+
+  it("get hashParams", () => {
+    const buri = BuildURI.from("http://key.bag?a=1&b=2&c=3").hashParams({
+      c: true,
+      a: 1,
+      b: "5",
+      d: new Date("2021-01-01T00:00:00.000Z"),
+    });
+    expect(buri.toString()).toBe("http://key.bag/?a=1&b=2&c=3#a=1&b=5&c=true&d=2021-01-01T00%3A00%3A00.000Z");
+
+    const rbParam = buri.getHashParams({
+      d: param.REQUIRED,
+      e: "default",
+      f: param.OPTIONAL,
+    });
+    expect(rbParam.Ok()).toEqual({
+      d: "2021-01-01T00:00:00.000Z",
+      e: "default",
+    });
+
+    const rParam = buri.URI().getHashParams({
+      d: param.REQUIRED,
+      e: "default",
+      f: param.OPTIONAL,
+    });
+    expect(rParam.Ok()).toEqual({
+      d: "2021-01-01T00:00:00.000Z",
+      e: "default",
+    });
+  });
+
+  it("error hashParams", () => {
+    const buri = BuildURI.from("http://key.bag?a=1&b=2&c=3").hashParams({
+      c: true,
+      a: 1,
+      b: "5",
+      d: new Date("2021-01-01T00:00:00.000Z"),
+    });
+    const rerrParam = buri.getHashParams({
+      a: param.REQUIRED,
+      e: "default",
+      f: param.OPTIONAL,
+      g: param.REQUIRED,
+    });
+    expect(rerrParam.Err().message).toBe("missing parameters: g");
+  });
 });
