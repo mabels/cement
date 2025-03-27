@@ -696,4 +696,28 @@ describe("URI", () => {
     const fplainUri = URI.from("file:///bla.com");
     expect(fplainUri.onlyHostAndSchema).toBe("file://");
   });
+
+  it("getParams", () => {
+    const uri = URI.from("http://key.bag?a=1&b=2&c=3");
+    expect(Array.from(uri.getParams)).toEqual([
+      ["a", "1"],
+      ["b", "2"],
+      ["c", "3"],
+    ]);
+  });
+
+  it("getHashes", () => {
+    const euri = URI.from("http://key.bag#");
+    expect(Array.from(euri.getHashes)).toEqual([]);
+
+    const nouri = URI.from("http://key.bag#kddkdkd");
+    expect(Array.from(nouri.getHashes)).toEqual([["kddkdkd", ""]]);
+
+    const uri = URI.from("http://key.bag#a=1&b=2&c=3");
+    expect(Array.from(uri.getHashes)).toEqual([
+      ["a", "1"],
+      ["b", "2"],
+      ["c", "3"],
+    ]);
+  });
 });
