@@ -6,17 +6,32 @@ export interface PathOps {
 
 class pathOpsImpl implements PathOps {
   join(...paths: string[]): string {
-    return paths.map((i) => i.replace(/\/+$/, "")).join("/");
+    const parts = this.#parts(paths.filter((i) => i).join("/"));
+    if (parts.dirname === "" || parts.dirname === ".") {
+      return parts.basename ? parts.basename : ".";
+    }
+    return parts.dirname + "/" + parts.basename;
   }
   #parts(path: string): { dirname: string; basename: string } {
+    // clean up path
+    // remove double slashes
+    // remove double dots ././
+    // remove trailing slashes
+    path = path
+      .replace(/\/+/g, "/")
+      .replace(/(\/\.\/)+/g, "/")
+      .replace(/\/+$/, "");
     const splitted = path.split("/");
-    const last = splitted.pop();
-    if (splitted.length && last === "") {
-      return this.#parts(this.join(...splitted));
+    if (splitted.length === 1) {
+      return {
+        dirname: ".",
+        basename: splitted[0] === "." ? "" : splitted[0],
+      };
     }
+    const basename = splitted.pop() as string;
     return {
-      dirname: this.join(...splitted),
-      basename: last ?? "",
+      dirname: splitted.join("/").replace(/^\.\//, ""),
+      basename,
     };
   }
   dirname(path: string): string {
