@@ -707,6 +707,10 @@ export class URI implements URIInterface<URI> {
     return this._url.searchParams.entries();
   }
 
+  get getHashes(): Iterable<[string, string]> {
+    return new URLSearchParams(this._url.hash.slice("#".length)).entries();
+  }
+
   hasParam(key: string): boolean {
     return this._url.searchParams.has(key);
   }
