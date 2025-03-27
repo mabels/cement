@@ -655,8 +655,12 @@ export class URI implements URIInterface<URI> {
     return this._url.hostname;
   }
 
-  get local(): string {
-    return this._url.pathname + this._url.search;
+  get onlyHostAndSchema(): string {
+    return this.build().pathname("").cleanParams().hash("").toString();
+  }
+
+  get withoutHostAndSchema(): string {
+    return this._url.pathname + this._url.search + this._url.hash;
   }
 
   // get password(): string {

@@ -535,17 +535,6 @@ describe("URI", () => {
     expect(ref.match("xttp://ab/cd?x=4&y=4&o=4").score).toBe(2);
   });
 
-  it("pathname + search + hash", () => {
-    const refUnk = URI.from("yttp://ed/bla?y=4&x=3");
-    expect(refUnk.local).toBe("ed/bla?x=3&y=4");
-
-    const refHttp = URI.from("http://host/ed/bla?x=3&y=4");
-    expect(refHttp.local).toBe("/ed/bla?x=3&y=4");
-
-    const refFile = URI.from("file:///ed/bla?x=3&y=4");
-    expect(refFile.local).toBe("/ed/bla?x=3&y=4");
-  });
-
   it("cleanParams all", () => {
     const uri = BuildURI.from("http://key.bag?a=1&b=2&c=3").cleanParams();
     expect(Array.from(uri.getParams)).toEqual([]);
@@ -649,5 +638,62 @@ describe("URI", () => {
       g: param.REQUIRED,
     });
     expect(rerrParam.Err().message).toBe("missing parameters: g");
+  });
+
+  it("local", () => {
+    const fUri = URI.from("file:///ed/bla?x=3&y=4#doof");
+    expect(fUri.withoutHostAndSchema).toBe("/ed/bla?x=3&y=4#doof");
+
+    const hUri = URI.from("http://bla.com:44/ed/bla?x=3&y=4#doof");
+    expect(hUri.withoutHostAndSchema).toBe("/ed/bla?x=3&y=4#doof");
+  });
+
+  it("without hash local", () => {
+    const fUri = URI.from("file:///ed/bla?x=3&y=4");
+    expect(fUri.withoutHostAndSchema).toBe("/ed/bla?x=3&y=4");
+
+    const hUri = URI.from("http://bla.com:44/ed/bla?x=3&y=4");
+    expect(hUri.withoutHostAndSchema).toBe("/ed/bla?x=3&y=4");
+  });
+
+  it("without search local", () => {
+    const fUri = URI.from("file:///ed/bla");
+    expect(fUri.withoutHostAndSchema).toBe("/ed/bla");
+
+    const hUri = URI.from("http://bla.com:44/ed/bla");
+    expect(hUri.withoutHostAndSchema).toBe("/ed/bla");
+  });
+
+  it("without search but hash local", () => {
+    const fUri = URI.from("file:///ed/bla#doof");
+    expect(fUri.withoutHostAndSchema).toBe("/ed/bla#doof");
+
+    const hUri = URI.from("http://bla.com:44/ed/bla#doof");
+    expect(hUri.withoutHostAndSchema).toBe("/ed/bla#doof");
+  });
+
+  it("pathname + search + hash", () => {
+    const refUnk = URI.from("yttp://ed/bla?y=4&x=3");
+    expect(refUnk.withoutHostAndSchema).toBe("ed/bla?x=3&y=4");
+
+    const refHttp = URI.from("http://host/ed/bla?x=3&y=4");
+    expect(refHttp.withoutHostAndSchema).toBe("/ed/bla?x=3&y=4");
+
+    const refFile = URI.from("file:///ed/bla?x=3&y=4");
+    expect(refFile.withoutHostAndSchema).toBe("/ed/bla?x=3&y=4");
+  });
+
+  it("onlyHostAndSchema", () => {
+    const fUri = URI.from("file:///ed/bla#doof");
+    expect(fUri.onlyHostAndSchema).toBe("file://");
+
+    const hUri = URI.from("http://bla.com:44/ed/bla#doof");
+    expect(hUri.onlyHostAndSchema).toBe("http://bla.com:44/");
+
+    const hplainUri = URI.from("http://bla.com:44");
+    expect(hplainUri.onlyHostAndSchema).toBe("http://bla.com:44/");
+
+    const fplainUri = URI.from("file:///bla.com");
+    expect(fplainUri.onlyHostAndSchema).toBe("file://");
   });
 });
