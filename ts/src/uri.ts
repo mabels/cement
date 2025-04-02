@@ -350,6 +350,47 @@ function getParamResult(
   return Result.Ok(val);
 }
 
+function setParams(
+  src: string,
+  val: Record<string, string | number | boolean | Date | null | undefined>,
+  mode: "reset" | "merge" = "reset",
+  out: URLSearchParams = new URLSearchParams(""),
+): string {
+  let preset: Record<string, string>;
+  switch (mode) {
+    case "reset":
+      preset = {};
+      break;
+    case "merge":
+    default:
+      preset = Object.fromEntries(new URLSearchParams(src).entries());
+      break;
+  }
+  // const out = new URLSearchParams("");
+  for (const [key, value] of Object.entries({ ...preset, ...val }).sort((a, b) => a[0].localeCompare(b[0]))) {
+    switch (typeof value) {
+      case "string":
+        out.set(key, value);
+        break;
+      case "number":
+        out.set(key, value.toString());
+        break;
+      case "boolean":
+        out.set(key, value ? "true" : "false");
+        break;
+      default:
+        if (value instanceof Date) {
+          out.set(key, value.toISOString());
+        } else {
+          // eslint-disable-next-line no-console
+          console.error(`unsupported type: ${typeof value} ignore key: ${key}`);
+        }
+        break;
+    }
+  }
+  return out.toString();
+}
+
 export class BuildURI implements URIInterface<BuildURI> {
   _url: MutableURL; // pathname needs this
   private constructor(url: MutableURL) {
@@ -457,44 +498,20 @@ export class BuildURI implements URIInterface<BuildURI> {
     return this;
   }
 
+  searchParams(
+    val: Record<string, string | number | boolean | Date | null | undefined>,
+    mode: "reset" | "merge" = "reset",
+  ): BuildURI {
+    // this._url.searchParams = setParams(this._url.hash.replace(/^#/, ''), val, mode);
+    setParams(this._url.search, val, mode, this._url.searchParams);
+    return this;
+  }
+
   hashParams(
     val: Record<string, string | number | boolean | Date | null | undefined>,
     mode: "reset" | "merge" = "reset",
   ): BuildURI {
-    let preset: Record<string, string>;
-    switch (mode) {
-      case "reset":
-        this._url.hash = "";
-        preset = {};
-        break;
-      case "merge":
-      default:
-        preset = Object.fromEntries(new URLSearchParams(this._url.hash.replace(/^#/, "")).entries());
-        break;
-    }
-    const out = new URLSearchParams("");
-    for (const [key, value] of Object.entries({ ...preset, ...val }).sort((a, b) => a[0].localeCompare(b[0]))) {
-      switch (typeof value) {
-        case "string":
-          out.set(key, value);
-          break;
-        case "number":
-          out.set(key, value.toString());
-          break;
-        case "boolean":
-          out.set(key, value ? "true" : "false");
-          break;
-        default:
-          if (value instanceof Date) {
-            out.set(key, value.toISOString());
-          } else {
-            // eslint-disable-next-line no-console
-            console.error(`unsupported type: ${typeof value} ignore key: ${key}`);
-          }
-          break;
-      }
-    }
-    this._url.hash = out.toString();
+    this._url.hash = setParams(this._url.hash.replace(/^#/, ""), val, mode);
     return this;
   }
 
@@ -562,6 +579,14 @@ export class BuildURI implements URIInterface<BuildURI> {
 
   clone(): BuildURI {
     return BuildURI.from(this.toString());
+  }
+
+  get onlyHostAndSchema(): string {
+    return this.clone().pathname("").cleanParams().hash("").toString();
+  }
+
+  get withoutHostAndSchema(): string {
+    return this._url.pathname + this._url.search + this._url.hash;
   }
 
   URI(): URI {
@@ -679,9 +704,9 @@ export class URI implements URIInterface<URI> {
   //   return this._url.username;
   // }
 
-  // get search(): string {
-  //   return this._url.search;
-  // }
+  get search(): string {
+    return this._url.search;
+  }
 
   get protocol(): string {
     return this._url.protocol;

@@ -720,4 +720,41 @@ describe("URI", () => {
       ["c", "3"],
     ]);
   });
+
+  // it("repair url encoding", () => {
+  //   const uri = URI.from("http://key.bag?b=http://meno?x=y#a=http://meno?x=3&y=4#doof");
+  //   expect(uri.toString()).toBe("http://key.bag/?b=http%3A%2F%2Fmeno%3Fx%3Dy#a=http%://meno?x=3&y=4%#doof");
+  // })
+
+  it("never geencoding", () => {
+    const uri = URI.from("http://localhost:3002/fp/cloud/api/token#back_url=http%3A%2F%2Flocalhost%3A3001%2F");
+    expect(Array.from(uri.getHashes)).toEqual([["back_url", "http://localhost:3001/"]]);
+
+    const xuri = URI.from("http://localhost:3002/fp/cloud/api/token");
+    expect(Array.from(xuri.getHashes)).toEqual([]);
+  });
+
+  it("search ", () => {
+    const uri = URI.from("http://key.bag?a=1&b=2&c=3");
+    expect(uri.search).toEqual("?a=1&b=2&c=3");
+
+    const buri = BuildURI.from("http://key.bag").setParam("a", "1").setParam("c", "3").setParam("b", "2").URI();
+    expect(buri.search).toEqual("?a=1&b=2&c=3");
+  });
+
+  it("searchParams", () => {
+    const uri = BuildURI.from("http://key.bag")
+      .searchParams({
+        a: 1,
+        b: "2",
+        c: "3",
+      })
+      .hashParams({
+        a: 1,
+        b: "2",
+        c: "3",
+      });
+    expect(uri.URI().search).toEqual("?a=1&b=2&c=3");
+    expect(uri.URI().hash).toEqual("#a=1&b=2&c=3");
+  });
 });

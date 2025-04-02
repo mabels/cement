@@ -7,41 +7,35 @@
   "exports": {
     ".": {
       "types": "./index.d.ts",
-      "require": "./index.cjs",
       "import": "./index.js"
     },
     "./web": {
       "types": "./web/index.d.ts",
-      "require": "./web/index.cjs",
       "import": "./web/index.js"
     },
     "./utils": {
       "types": "./utils/index.d.ts",
-      "require": "./utils/index.cjs",
       "import": "./utils/index.js"
     },
     "./cf": {
       "types": "./cf/index.d.ts",
-      "require": "./cf/index.cjs",
       "import": "./cf/index.js"
     },
     "./node": {
       "types": "./node/index.d.ts",
-      "require": "./node/index.cjs",
       "import": "./node/index.js"
     },
     "./deno": {
       "types": "./deno/index.d.ts",
-      "require": "./deno/index.cjs",
       "import": "./deno/index.js"
     }
   },
   "scripts": {
     "clean": "rm -rf dist node_modules",
     "build": "pnpm run build:tsc; pnpm run build:js; pnpm run build:deno",
-    "build:tsc": "tsc",
-    "xbuild:js": "tsup",
-    "build:js": "tsup --metafile --out-dir dist/pkg src/index.ts src/*/index.ts --sourcemap --format cjs,esm --dts --clean --external node:fs --external node:path",
+    "build:tsc": "rm -rf ./dist/ts ; tsc",
+    "build:js": "rm -rf dist/pkg ; mkdir -p dist/pkg; cp -pr ./dist/ts/src/* dist/pkg",
+    "xbuild:js": "tsup --metafile --out-dir dist/pkg src/index.ts src/*/index.ts --sourcemap --format cjs,esm --dts --clean --external node:fs --external node:path",
     "build:deno": "deno publish --dry-run --unstable-sloppy-imports --allow-dirty",
     "test": "pnpm run test:js; pnpm run test:deno",
     "test:deno": "deno run --quiet --allow-net --allow-write --allow-run  --allow-sys --allow-ffi  --allow-read --allow-env  ./node_modules/vitest/vitest.mjs --run --project node",
