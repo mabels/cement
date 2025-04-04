@@ -55,6 +55,7 @@ jobs:
         run: |
           cd ts
           pnpm install
+          pnpm exec playwright install-deps
           pnpm run prettier --check
           pnpm run lint
           pnpm run build
