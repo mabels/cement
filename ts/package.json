@@ -2,40 +2,48 @@
   "name": "@adviser/cement",
   "version": "0.0.0",
   "description": "better try/catch/finally handling",
-  "main": "index.js",
+  "main": "./cjs/index.js",
   "type": "module",
   "exports": {
     ".": {
-      "types": "./index.d.ts",
-      "import": "./index.js"
+      "types": "./esm/index.d.ts",
+      "require": "./cjs/index.cjs",
+      "import": "./esm/index.js"
     },
     "./web": {
-      "types": "./web/index.d.ts",
-      "import": "./web/index.js"
+      "types": "./esm/web/index.d.ts",
+      "require": "./cjs/web/index.cjs",
+      "import": "./esm/web/index.js"
     },
     "./utils": {
-      "types": "./utils/index.d.ts",
-      "import": "./utils/index.js"
+      "types": "./esm/utils/index.d.ts",
+      "require": "./cjs/utils/index.cjs",
+      "import": "./esm/utils/index.js"
     },
     "./cf": {
-      "types": "./cf/index.d.ts",
-      "import": "./cf/index.js"
+      "types": "./esm/cf/index.d.ts",
+      "require": "./cjs/cf/index.cjs",
+      "import": "./esm/cf/index.js"
     },
     "./node": {
-      "types": "./node/index.d.ts",
-      "import": "./node/index.js"
+      "types": "./esm/node/index.d.ts",
+      "require": "./cjs/node/index.cjs",
+      "import": "./esm/node/index.js"
     },
     "./deno": {
-      "types": "./deno/index.d.ts",
-      "import": "./deno/index.js"
+      "types": "./esm/deno/index.d.ts",
+      "require": "./cjs/deno/index.cjs",
+      "import": "./esm/deno/index.js"
     }
   },
   "scripts": {
     "clean": "rm -rf dist node_modules",
     "build": "pnpm run build:tsc; pnpm run build:js; pnpm run build:deno",
-    "build:tsc": "rm -rf ./dist/ts ; tsc",
-    "build:js": "rm -rf dist/pkg ; mkdir -p dist/pkg; cp -pr ./dist/ts/src/* dist/pkg",
-    "xbuild:js": "tsup --metafile --out-dir dist/pkg src/index.ts src/*/index.ts --sourcemap --format cjs,esm --dts --clean --external node:fs --external node:path",
+    "build:tsc": "rm -rf ./dist/ts ; pnpm run /^build:tsc:/",
+    "build:tsc:global": "tsc --noEmit",
+    "build:tsc:esm": "tsc -p ./tsconfig.esm.json",
+    "build:tsc:cjs": "tsc -p ./tsconfig.cjs.json",
+    "build:js": "rm -rf dist/pkg ; mkdir -p dist/pkg; cp -pr ./dist/ts/* dist/pkg",
     "build:deno": "deno publish --dry-run --unstable-sloppy-imports --allow-dirty",
     "test": "pnpm run test:js; pnpm run test:deno",
     "test:deno": "deno run --quiet --allow-net --allow-write --allow-run  --allow-sys --allow-ffi  --allow-read --allow-env  ./node_modules/vitest/vitest.mjs --run --project node",
@@ -59,15 +67,16 @@
     "yaml": "^2.5.1"
   },
   "devDependencies": {
-    "@cloudflare/vitest-pool-workers": "^0.8.8",
+    "@cloudflare/vitest-pool-workers": "^0.8.11",
     "@eslint/js": "^9.20.0",
-    "@types/node": "^22.10.2",
+    "@types/node": "^22.13.12",
     "@typescript-eslint/eslint-plugin": "^8.7.0",
     "@typescript-eslint/parser": "^8.7.0",
     "@vitest/browser": "^3.1.1",
     "esbuild-plugin-replace": "^1.4.0",
     "esbuild-plugin-resolve": "^2.0.0",
     "eslint": "9.22.0",
+    "jscodeshift": "^17.3.0",
     "playwright": "^1.51.1",
     "playwright-chromium": "^1.51.1",
     "prettier": "^3.3.3",
@@ -79,7 +88,7 @@
     "vitest": "^3.1.1"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "pnpm": {
     "ignoredBuiltDependencies": [

@@ -1,0 +1,23 @@
+{
+  "extends": "./tsconfig.json", // Inherit settings from base config
+  "compilerOptions": {
+    "target": "es2020",
+    "module": "CommonJS", // <-- Key setting for CJS output
+    "outDir": "./dist/ts/cjs", // <-- Output directory for CJS files
+
+    //    "module": "NodeNext" /* Specify what module code is generated. */,
+
+    "declaration": false, // <--- Set this to false
+    "declarationMap": false,
+
+    // --- Other common settings ---
+    // "strict": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    // "skipLibCheck": true,
+    // "forceConsistentCasingInFileNames": true,
+    "sourceMap": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["src/test/test-exit-handler.ts"]
+}
