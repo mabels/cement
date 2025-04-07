@@ -64,7 +64,7 @@
   "homepage": "https://github.com/mabels/cement#readme",
   "dependencies": {
     "ts-essentials": "^10.0.2",
-    "yaml": "^2.5.1"
+    "yaml": "^2.7.1"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.8.11",
