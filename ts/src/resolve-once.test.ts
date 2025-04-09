@@ -436,4 +436,16 @@ describe("resolve-once", () => {
       { key: "9", value: Result.Ok(9) },
     ]);
   });
+
+  it("resolve once serves ready and value", () => {
+    const once = new ResolveOnce<number>();
+    expect(once.ready).toBe(false);
+    expect(once.value).toBe(undefined);
+    once.once(() => 42);
+    expect(once.ready).toBe(true);
+    expect(once.value).toBe(42);
+    once.reset();
+    expect(once.ready).toBe(false);
+    expect(once.value).toBe(undefined);
+  });
 });

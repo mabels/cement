@@ -73,6 +73,10 @@ export class ResolveOnce<T, CTX = void> {
     return this._onceDone;
   }
 
+  get value(): T | undefined {
+    return this._onceDone ? this._onceValue : undefined;
+  }
+
   reset(): void {
     this._onceDone = false;
     this._onceOk = false;
