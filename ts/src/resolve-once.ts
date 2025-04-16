@@ -1,5 +1,5 @@
 import { Future } from "./future.js";
-import { LRUMap, LRUParam } from "./lru-map-set.js";
+import { LRUMap, LRUParam, UnregFn } from "./lru-map-set.js";
 import { Result } from "./result.js";
 
 interface ResolveSeqItem<T, C> {
@@ -180,6 +180,14 @@ export class Keyed<T extends { reset: () => void }, K = string> {
   constructor(factory: (key: K) => T, params: Partial<KeyedParam>) {
     this.factory = factory;
     this._map = new LRUMap<K, T>(params?.lru ?? { maxEntries: -1 });
+  }
+
+  onSet(fn: (key: K, value: T) => void): UnregFn {
+    return this._map.onSet(fn);
+  }
+
+  onDelete(fn: (key: K, value: T) => void): UnregFn {
+    return this._map.onDelete(fn);
   }
 
   setParam(params: KeyedParam): void {

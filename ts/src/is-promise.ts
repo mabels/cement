@@ -1,4 +1,5 @@
 export type UnPromisify<T> = T extends Promise<infer U> ? U : T;
+export type WithoutPromise<T> = UnPromisify<T>;
 
 export type Promisable<T> = T | Promise<T>;
 

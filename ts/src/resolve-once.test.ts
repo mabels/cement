@@ -448,4 +448,11 @@ describe("resolve-once", () => {
     expect(once.ready).toBe(false);
     expect(once.value).toBe(undefined);
   });
+
+  it("keyed expose onAdd on onDelete", () => {
+    const k = new KeyedResolvOnce<number>();
+    const fn = vi.fn();
+    k.onSet(fn)();
+    k.onDelete(fn)();
+  });
 });
