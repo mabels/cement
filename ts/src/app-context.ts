@@ -5,10 +5,15 @@
  */
 
 export function isAppContext(ctx: unknown): ctx is AppContext {
-  return ctx instanceof AppContext && "ctx" in ctx && ctx.ctx instanceof Map;
+  return AppContext.is(ctx);
 }
+
 export class AppContext {
-  ctx = new Map<string, unknown>();
+  private readonly ctx: Map<string, unknown> = new Map<string, unknown>();
+
+  static is(ctx: unknown): ctx is AppContext {
+    return ctx instanceof AppContext && "ctx" in ctx && ctx.ctx instanceof Map;
+  }
 
   static merge(...ctxs: (AppContext | undefined | Record<string, unknown>)[]): AppContext {
     const merged = new AppContext();
