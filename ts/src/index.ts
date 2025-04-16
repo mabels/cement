@@ -25,6 +25,7 @@ export * from "./types.js";
 export * from "./lru-map-set.js";
 export * from "./coerce-binary.js";
 export * from "./is-promise.js";
+export * from "./app-context.js";
 
 // ugly
 export * as utils from "./utils/index.js";

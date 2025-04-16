@@ -1,5 +1,4 @@
-import { LRUCtx, LRUMap } from "@adviser/cement";
-import { AppContext } from "./app-context.js";
+import { LRUCtx, LRUMap, AppContext } from "@adviser/cement";
 
 it("get-put without createFN", () => {
   const cache = new LRUMap<string, number>({
