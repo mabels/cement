@@ -426,6 +426,35 @@ describe("resolve-once", () => {
     expect(keyed.values()).toEqual([{ key: "b", value: Result.Ok(43) }]);
   });
 
+  it("KeyedResolvOnce entries", () => {
+    const keyed = new KeyedResolvOnce<number>();
+    expect(Array.from(keyed.entries())).toEqual([]);
+    const a = keyed.get("a");
+    expect(Array.from(keyed.entries())).toEqual([]);
+    a.once(() => 42);
+    expect(Array.from(keyed.entries())).toEqual([{ key: "a", value: Result.Ok(42) }]);
+    keyed.get("b").once(() => 43);
+    expect(Array.from(keyed.entries())).toEqual([
+      { key: "a", value: Result.Ok(42) },
+      { key: "b", value: Result.Ok(43) },
+    ]);
+    try {
+      keyed.get("c").once(() => {
+        throw new Error("nope");
+      });
+    } catch (e) {
+      expect(e).toEqual(new Error("nope"));
+    }
+    expect(Array.from(keyed.entries())).toEqual([
+      { key: "a", value: Result.Ok(42) },
+      { key: "b", value: Result.Ok(43) },
+      { key: "c", value: Result.Err(new Error("nope")) },
+    ]);
+    keyed.unget("a");
+    keyed.unget("c");
+    expect(Array.from(keyed.entries())).toEqual([{ key: "b", value: Result.Ok(43) }]);
+  });
+
   it("uses lru cache", () => {
     const keyed = new KeyedResolvOnce<number>({ lru: { maxEntries: 2 } });
     for (let i = 0; i < 10; i++) {

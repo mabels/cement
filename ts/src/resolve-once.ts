@@ -222,36 +222,35 @@ export class Keyed<T extends { reset: () => void }, K = string> {
   }
 }
 
+interface KeyItem<K, V> {
+  readonly key: K;
+  readonly value: Result<V>;
+}
+
 export class KeyedResolvOnce<T, K = string> extends Keyed<ResolveOnce<T, K>, K> {
   constructor(kp: Partial<KeyedParam> = {}) {
     super((key) => new ResolveOnce<T, K>(key), kp);
+  }
+
+  *entries(): IterableIterator<KeyItem<K, T>> {
+    for (const [k, v] of this._map.entries()) {
+      if (!v._onceDone) {
+        continue;
+      }
+      if (v._onceError) {
+        yield { key: k, value: Result.Err<T>(v._onceError) };
+      } else {
+        yield { key: k, value: Result.Ok<T>(v._onceValue as T) };
+      }
+    }
   }
 
   /**
    *
    * @returns The values of the resolved keys
    */
-  values(): { key: K; value: Result<T> }[] {
-    return (
-      Array.from(this._map.entries())
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        .filter(([_, v]) => v._onceDone)
-        .map(([k, v]) => {
-          if (v._onceDone) {
-            if (v._onceError) {
-              return {
-                key: k,
-                value: Result.Err(v._onceError),
-              };
-            }
-            return {
-              key: k,
-              value: Result.Ok(v._onceValue as T),
-            };
-          }
-          throw new Error("KeyedResolvOnce.values impossible");
-        })
-    );
+  values(): KeyItem<K, T>[] {
+    return Array.from(this.entries());
   }
 }
 
