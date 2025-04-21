@@ -67,9 +67,9 @@
     "yaml": "^2.7.1"
   },
   "devDependencies": {
-    "@cloudflare/vitest-pool-workers": "^0.8.14",
+    "@cloudflare/vitest-pool-workers": "^0.8.18",
     "@eslint/js": "^9.20.0",
-    "@types/node": "^22.13.12",
+    "@types/node": "^22.14.1",
     "@typescript-eslint/eslint-plugin": "^8.7.0",
     "@typescript-eslint/parser": "^8.7.0",
     "@vitest/browser": "^3.1.1",
