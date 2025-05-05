@@ -48,7 +48,8 @@ describe(`${runtimeFn().isDeno ? "deno" : "node"}_sys`, () => {
       const { exec } = await import("node:child_process");
       fnExec = exec;
       if (runtimeFn().isDeno) {
-        execHandler = "deno run --allow-net --allow-read --allow-run --unstable-sloppy-imports src/test/test-exit-handler.ts";
+        execHandler =
+          "deno run --quiet --allow-net --allow-read --allow-run --unstable-sloppy-imports src/test/test-exit-handler.ts";
         // // eslint-disable-next-line @typescript-eslint/no-explicit-any
         // const gs = globalThis as any;
         // fnExec = (async (cmd: string, cb: (err: ExecException | null, stdout: string | Buffer, stderr: string | Buffer) => void) => {
