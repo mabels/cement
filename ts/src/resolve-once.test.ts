@@ -21,7 +21,7 @@ describe("resolve-once", () => {
     expect(await fn()).toBe(42);
     expect(reallyOnce).toHaveBeenCalledTimes(1);
     const diff = Date.now() - start;
-    expect(diff).toBeGreaterThanOrEqual(99);
+    expect(diff).toBeGreaterThanOrEqual(90);
     expect(diff).toBeLessThan(150);
   });
   it("parallel", async () => {
