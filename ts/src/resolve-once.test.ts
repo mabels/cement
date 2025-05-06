@@ -484,4 +484,11 @@ describe("resolve-once", () => {
     k.onSet(fn)();
     k.onDelete(fn)();
   });
+
+  it("once return undefined", () => {
+    const once = new ResolveOnce<void>();
+    once.once(() => {
+      return undefined;
+    });
+  });
 });

@@ -1,4 +1,5 @@
 import { Future } from "./future.js";
+import { isPromise } from "./is-promise.js";
 import { LRUMap, LRUParam, UnregFn } from "./lru-map-set.js";
 import { Result } from "./result.js";
 
@@ -141,7 +142,7 @@ export class ResolveOnce<T, CTX = void> {
       // let inCriticalSection = false;
       try {
         const ret = fn(this.ctx);
-        if (typeof (ret as Promise<T>).then === "function") {
+        if (isPromise(ret)) {
           this._isPromise = true;
           // inCriticalSection = true;
           (ret as Promise<T>)
