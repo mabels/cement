@@ -742,7 +742,7 @@ describe("URI", () => {
     expect(buri.search).toEqual("?a=1&b=2&c=3");
   });
 
-  it("searchParams", () => {
+  it("setParams", () => {
     const uri = BuildURI.from("http://key.bag")
       .searchParams({
         a: 1,
