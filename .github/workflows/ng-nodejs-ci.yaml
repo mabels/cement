@@ -54,6 +54,8 @@ jobs:
       - name: Build JS @adviser/cement
         run: |
           cd ts
+          ip || true
+          ifconfig || true
           pnpm install
           pnpm run prettier --check
           pnpm run lint
