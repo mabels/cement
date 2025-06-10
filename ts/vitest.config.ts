@@ -1,9 +1,12 @@
 import { defineConfig } from "vitest/config";
 
+import tsconfigPaths from "vite-tsconfig-paths";
+
 export default defineConfig({
-  // plugins: [tsconfigPaths()],
+  plugins: [tsconfigPaths()],
   test: {
-    include: ["src/**/*test.?(c|m)[jt]s?(x)"],
-    globals: true,
+    projects: ["./vitest.node.config.ts", "./vitest.browser.config.ts", "./vitest.cf-runtime.config.ts"],
+    //  include: ["src/**/*test.?(c|m)[jt]s?(x)"],
+    //  globals: true,
   },
 });
