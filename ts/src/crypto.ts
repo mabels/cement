@@ -99,26 +99,55 @@ export interface CryptoRuntime {
   randomBytes(size: number): Uint8Array;
 }
 
-function randomBytes(size: number): Uint8Array {
-  const bytes = new Uint8Array(size);
-  if (size > 0) {
-    crypto.getRandomValues(bytes);
-  }
-  return bytes;
+function randomBytes(crypto: typeof globalThis.crypto): CryptoRuntime["randomBytes"] {
+  return (size: number): Uint8Array => {
+    const bytes = new Uint8Array(size);
+    if (size > 0) {
+      crypto.getRandomValues(bytes);
+    }
+    return bytes;
+  };
 }
 
-function digestSHA256(data: Uint8Array): Promise<ArrayBuffer> {
-  return Promise.resolve(crypto.subtle.digest("SHA-256", data));
+function digestSHA256(crypto: typeof globalThis.crypto): (data: Uint8Array) => Promise<ArrayBuffer> {
+  return (data: Uint8Array): Promise<ArrayBuffer> => {
+    return crypto.subtle.digest("SHA-256", data);
+  };
 }
 
 export function toCryptoRuntime(cryptoOpts: Partial<CryptoRuntime> = {}): CryptoRuntime {
+  let crypto: typeof globalThis.crypto;
+  if (!globalThis.crypto || !globalThis.crypto.subtle) {
+    crypto = {
+      getRandomValues: globalThis.crypto.getRandomValues.bind(globalThis.crypto),
+      subtle: {
+        importKey: (): Promise<CTCryptoKey> => {
+          throw new Error("crypto.subtle.importKey not available");
+        },
+        exportKey: () => {
+          throw new Error("crypto.subtle.exportKey not available");
+        },
+        encrypt: (): Promise<ArrayBuffer> => {
+          throw new Error("crypto.subtle.encrypt not available");
+        },
+        decrypt: (): Promise<ArrayBuffer> => {
+          throw new Error("crypto.subtle.decrypt not available");
+        },
+        digest: (): Promise<ArrayBuffer> => {
+          throw new Error("crypto.subtle.digest not available");
+        },
+      },
+    } as unknown as typeof globalThis.crypto;
+  } else {
+    crypto = globalThis.crypto;
+  }
   const runtime = {
     importKey: cryptoOpts.importKey || crypto.subtle.importKey.bind(crypto.subtle),
     exportKey: cryptoOpts.exportKey || crypto.subtle.exportKey.bind(crypto.subtle),
     encrypt: cryptoOpts.encrypt || crypto.subtle.encrypt.bind(crypto.subtle),
     decrypt: cryptoOpts.decrypt || crypto.subtle.decrypt.bind(crypto.subtle),
-    randomBytes: cryptoOpts.randomBytes || randomBytes,
-    digestSHA256: cryptoOpts.digestSHA256 || digestSHA256,
+    randomBytes: cryptoOpts.randomBytes || randomBytes(crypto),
+    digestSHA256: cryptoOpts.digestSHA256 || digestSHA256(crypto),
   };
   // console.log("cryptoOpts", cryptoOpts, opts)
   return runtime;

@@ -22,6 +22,7 @@ export interface EnvActions extends EnvMap {
 export interface EnvFactoryOpts {
   readonly symbol: string; // default "CP_ENV" used by BrowserEnvActions
   readonly presetEnv: Map<string, string>;
+  readonly id: string; // to reinit in tests
 }
 
 type OnSetFn = (key: string, value?: string) => void;
@@ -65,7 +66,7 @@ export function envFactory(opts: Partial<EnvFactoryOpts> = {}): Env {
   if (!found) {
     throw new Error("SysContainer:envFactory: no env available");
   }
-  return _envFactories.get(found.id).once(() => {
+  return _envFactories.get(opts.id ?? found.id).once(() => {
     const action = found.fn(opts);
     const ret = new EnvImpl(action, opts);
     action.register(ret);

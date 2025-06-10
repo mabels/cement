@@ -1,6 +1,7 @@
 import { Env, EnvActions, EnvFactoryOpts, EnvImpl, envFactory, registerEnvAction, runtimeFn, param } from "@adviser/cement";
 import { CFEnvActions } from "./cf/cf-env-actions.js";
 import { BrowserEnvActions } from "./web/web-env-actions.js";
+import { ImportMetaEnv, NodeEnvActions } from "./node/node-env-actions.js";
 
 describe("sys_env", () => {
   let key: string;
@@ -195,3 +196,56 @@ describe("sys_env", () => {
     expect(envImpl.get("key8")).toBe("value8");
   });
 });
+
+if (runtimeFn().isNodeIsh) {
+  describe("node-env-interaction with import.meta.env", () => {
+    it("import meta", () => {
+      NodeEnvActions.addCleanPrefix("VITE");
+      NodeEnvActions.addCleanPrefix("GURKE_");
+      (globalThis as ImportMetaEnv).import = {
+        meta: {
+          env: {
+            HELLO: "world",
+            VITE_HELLO: "vite-world",
+            GURKE_HELLO: "gurke-world",
+            VITE_SOME: "vite-some",
+            GURKE_SOME: "gurke-some",
+            VITE_VITE: "vite-vite",
+            GURKE_GURKE: "gurke-gurke",
+          },
+        },
+      };
+      NodeEnvActions.once.reset();
+      const env = envFactory({
+        symbol: "this-is-a-test",
+        id: "this-is-a-test-id",
+      });
+      const ret = env.gets(
+        "HELLO",
+        "VITE_HELLO",
+        "GURKE_HELLO",
+        "VITE_SOME",
+        "GURKE_SOME",
+        "SOME",
+        "VITE",
+        "GURKE",
+        "VITE_VITE",
+        "GURKE_GURKE",
+      );
+      // console.log("ret", ret);
+      expect(ret.isOk()).toBeTruthy();
+      expect(ret.unwrap()).toEqual({
+        HELLO: "world",
+        VITE_HELLO: "vite-world",
+        GURKE_HELLO: "gurke-world",
+        VITE_SOME: "vite-some",
+        GURKE_SOME: "gurke-some",
+        SOME: "vite-some",
+        VITE: "vite-vite",
+        VITE_VITE: "vite-vite",
+        GURKE: "gurke-gurke",
+        GURKE_GURKE: "gurke-gurke",
+      });
+    });
+  });
+}
