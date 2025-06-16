@@ -20,7 +20,7 @@ importers:
         version: 0.8.38(@vitest/runner@3.2.3)(@vitest/snapshot@3.2.3)(vitest@3.2.3)
       '@eslint/js':
         specifier: ^9.20.0
-        version: 9.28.0
+        version: 9.29.0
       '@types/node':
         specifier: ^24.0.0
         version: 24.0.0
@@ -1421,6 +1421,9 @@ packages:
 
   brace-expansion@1.1.12:
     resolution: {integrity: sha512-9T9UjW3r0UW5c1Q7GTwllptXwhvYmEzFhzMfZ9H7FQWt+uZePjZPjBP/W1ZEyZ1twGWom5/56TF4lPcqjnDHcg==}
+
+  brace-expansion@2.0.2:
+    resolution: {integrity: sha512-Jt0vHyM+jmUBqojB7E1NIYadt0vI0Qxjxd2TErW94wDz+E2LAm5vKMXXwg6ZZBTHPuUlDgQHKXvjGBdfcF1ZDQ==}
 
   brace-expansion@2.0.2:
     resolution: {integrity: sha512-Jt0vHyM+jmUBqojB7E1NIYadt0vI0Qxjxd2TErW94wDz+E2LAm5vKMXXwg6ZZBTHPuUlDgQHKXvjGBdfcF1ZDQ==}
