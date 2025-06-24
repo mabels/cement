@@ -2,46 +2,46 @@ import { ResolveOnce } from "../resolve-once.js";
 import { runtimeFn } from "../runtime.js";
 import { Env, EnvActions, EnvFactoryOpts } from "../sys-env.js";
 
-export interface ImportMetaEnv {
-  import?: {
-    meta?: {
-      env?: Record<string, string>;
-    };
-  };
-}
+// export interface ImportMetaEnv {
+//   import?: {
+//     meta?: {
+//       env?: Record<string, string>;
+//     };
+//   };
+// }
 export class NodeEnvActions implements EnvActions {
   static once = new ResolveOnce<NodeEnvActions>();
-  static cleanPrefixes = ["VITE_"];
-  static addCleanPrefix(prefix: string): void {
-    if (!prefix.endsWith("_")) {
-      prefix += "_";
-    }
-    if (!NodeEnvActions.cleanPrefixes.includes(prefix)) {
-      NodeEnvActions.cleanPrefixes.push(prefix);
-    }
-  }
+  // static cleanPrefixes = ["VITE_"];
+  // static addCleanPrefix(prefix: string): void {
+  //   if (!prefix.endsWith("_")) {
+  //     prefix += "_";
+  //   }
+  //   if (!NodeEnvActions.cleanPrefixes.includes(prefix)) {
+  //     NodeEnvActions.cleanPrefixes.push(prefix);
+  //   }
+  // }
   readonly #node = globalThis as unknown as { process: { env: Record<string, string> } };
-  readonly #importMetaEnv = globalThis as unknown as ImportMetaEnv;
+  // readonly #importMetaEnv = globalThis as unknown as ImportMetaEnv;
 
-  cleanImportMetaEnv(): Record<string, string> {
-    const metaEnv = this.#importMetaEnv.import?.meta?.env || {};
-    const cleaned: Record<string, string> = {};
-    for (const key of Object.keys(metaEnv)) {
-      const hasCleanPrefix = NodeEnvActions.cleanPrefixes.find((prefix) => key.startsWith(prefix));
-      if (hasCleanPrefix) {
-        const cleanedPrefix = key.replace(hasCleanPrefix, "");
-        const foundCleanPrefix = cleaned[cleanedPrefix];
-        if (!foundCleanPrefix) {
-          cleaned[cleanedPrefix] = metaEnv[key];
-        }
-      }
-      cleaned[key] = metaEnv[key];
-    }
-    return cleaned;
-  }
+  // cleanImportMetaEnv(): Record<string, string> {
+  //   const metaEnv = this.#importMetaEnv.import?.meta?.env || {};
+  //   const cleaned: Record<string, string> = {};
+  //   for (const key of Object.keys(metaEnv)) {
+  //     const hasCleanPrefix = NodeEnvActions.cleanPrefixes.find((prefix) => key.startsWith(prefix));
+  //     if (hasCleanPrefix) {
+  //       const cleanedPrefix = key.replace(hasCleanPrefix, "");
+  //       const foundCleanPrefix = cleaned[cleanedPrefix];
+  //       if (!foundCleanPrefix) {
+  //         cleaned[cleanedPrefix] = metaEnv[key];
+  //       }
+  //     }
+  //     cleaned[key] = metaEnv[key];
+  //   }
+  //   return cleaned;
+  // }
 
   mergeEnv(): Record<string, string> {
-    const importMetaEnv = this.cleanImportMetaEnv();
+    // const importMetaEnv = this.cleanImportMetaEnv();
     // console.debug("NodeEnvActions.mergeEnv", importMetaEnv);
     const nodeEnv = Object.keys(this.#node.process.env).reduce(
       (acc, key) => {
@@ -50,7 +50,7 @@ export class NodeEnvActions implements EnvActions {
       },
       {} as Record<string, string>,
     );
-    return { ...importMetaEnv, ...nodeEnv };
+    return { ...nodeEnv };
   }
 
   static new(opts: Partial<EnvFactoryOpts>): EnvActions {
