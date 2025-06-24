@@ -40,18 +40,18 @@ export class NodeEnvActions implements EnvActions {
   //   return cleaned;
   // }
 
-  mergeEnv(): Record<string, string> {
-    // const importMetaEnv = this.cleanImportMetaEnv();
-    // console.debug("NodeEnvActions.mergeEnv", importMetaEnv);
-    const nodeEnv = Object.keys(this.#node.process.env).reduce(
-      (acc, key) => {
-        acc[key] = this.#node.process.env[key] || "";
-        return acc;
-      },
-      {} as Record<string, string>,
-    );
-    return { ...nodeEnv };
-  }
+  // mergeEnv(): Record<string, string> {
+  //   // const importMetaEnv = this.cleanImportMetaEnv();
+  //   // console.debug("NodeEnvActions.mergeEnv", importMetaEnv);
+  //   const nodeEnv = Object.keys(this.#node.process.env).reduce(
+  //     (acc, key) => {
+  //       acc[key] = this.#node.process.env[key] || "";
+  //       return acc;
+  //     },
+  //     {} as Record<string, string>,
+  //   );
+  //   return { ...nodeEnv };
+  // }
 
   static new(opts: Partial<EnvFactoryOpts>): EnvActions {
     return NodeEnvActions.once.once(() => new NodeEnvActions(opts));
@@ -73,7 +73,7 @@ export class NodeEnvActions implements EnvActions {
     return runtimeFn().isNodeIsh;
     // typeof this.#node === "object" && typeof this.#node.process === "object" && typeof this.#node.process.env === "object";
   }
-  readonly _env: Record<string, string> = this.active() ? this.mergeEnv() : {};
+  readonly _env: Record<string, string> = this.active() ? this.#node.process.env : {};
   keys(): string[] {
     return Object.keys(this._env);
   }
@@ -83,10 +83,13 @@ export class NodeEnvActions implements EnvActions {
   set(key: string, value?: string): void {
     if (value) {
       this._env[key] = value;
+      // this.#node.process.env[key] = value; // also set in process.env
     }
   }
   delete(key: string): void {
     // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
     delete this._env[key];
+    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+    // delete this.#node.process.env[key]; // also delete in process.env
   }
 }

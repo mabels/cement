@@ -1,7 +1,6 @@
 import { Env, EnvActions, EnvFactoryOpts, EnvImpl, envFactory, registerEnvAction, runtimeFn, param } from "@adviser/cement";
 import { CFEnvActions } from "./cf/cf-env-actions.js";
 import { BrowserEnvActions } from "./web/web-env-actions.js";
-// import { ImportMetaEnv, NodeEnvActions } from "./node/node-env-actions.js";
 
 describe("sys_env", () => {
   let key: string;
@@ -194,6 +193,24 @@ describe("sys_env", () => {
     expect(envImpl.get("key6")).toBe("value6");
     expect(envImpl.get("key7")).toBe("value7");
     expect(envImpl.get("key8")).toBe("value8");
+  });
+
+  it("set into provider", () => {
+    const key = `ENV-${Math.random()}`;
+    envImpl.set(key, "value");
+    expect(envImpl.get(key)).toBe("value");
+    if (runtimeFn().isNodeIsh) {
+      expect(process.env[key]).toBe("value");
+    }
+    envImpl.delete(key);
+    expect(envImpl.get(key)).toBeUndefined();
+    if (runtimeFn().isNodeIsh) {
+      expect(process.env[key]).toBeUndefined();
+    }
+    if (runtimeFn().isDeno) {
+      // deno does not have process.env
+      expect(Deno.env.get(key)).toBeUndefined();
+    }
   });
 });
 
