@@ -3,7 +3,8 @@ import { bin2string } from "./bin2text.js";
 import { Option } from "./option.js";
 import { Result } from "./result.js";
 import { TxtEnDecoder } from "./txt-en-decoder.js";
-import { CoerceURI } from "./uri.js";
+import { CoerceURI, MutableURL } from "./uri.js";
+import { isJSON } from "./is-json.js";
 
 export const Level = {
   WARN: "warn",
@@ -77,20 +78,16 @@ function logValueInternal(val: LogValueArg, ctx: LogValueStateInternal): LogValu
     case "function":
       return new LogValue(val);
     case "string": {
-      try {
-        const ret = JSON.parse(val) as LogValueArg;
+      const resIsJson = isJSON<LogValueArg>(val);
+      if (resIsJson.isJSON) {
+        const ret = resIsJson.parsed;
         if (typeof ret === "object" && ret !== null) {
           return logValueInternal(ret, ctx);
         }
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      } catch (e) {
-        try {
-          const url = new URL(val);
-          return new LogValue(() => url.toString());
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        } catch (e) {
-          // ignore
-        }
+      }
+      const resIsURI = MutableURL.from(val);
+      if (resIsURI.isOk()) {
+        return new LogValue(() => resIsURI.Ok().toString());
       }
       if (val.match(/[\n\r]/)) {
         const lines = val.split(/[\n\r]+/).map((v) => v.trim());
@@ -111,12 +108,16 @@ function logValueInternal(val: LogValueArg, ctx: LogValueStateInternal): LogValu
           // should be injected
           const decoder = new TextDecoder();
           const asStr = decoder.decode(val);
-          const obj = JSON.parse(asStr) as LogValueArg;
-          return logValueInternal(obj, ctx);
+          const resIsJson = isJSON<LogValueArg>(asStr);
+          if (resIsJson.isJSON) {
+            const obj = JSON.parse(asStr) as LogValueArg;
+            return logValueInternal(obj, ctx);
+          }
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (e) {
-          return logValueInternal(bin2string(val, 512), ctx);
+          // noop, we will return the stringified value
         }
+        return logValueInternal(bin2string(val, 512), ctx);
       }
       if (Array.isArray(val)) {
         return new LogValue(() =>

@@ -595,7 +595,7 @@ describe("TestLogger", () => {
   });
   it("url", async () => {
     const log = logger;
-    const url = new MutableURL("http://localhost:8080");
+    const url = MutableURL.fromThrow("http://localhost:8080");
     log.Info().Url(url).Msg("1");
     url.searchParams.set("test", "1");
     log.Info().Url(url).Msg("2");

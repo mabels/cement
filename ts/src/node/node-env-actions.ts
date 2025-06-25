@@ -89,7 +89,5 @@ export class NodeEnvActions implements EnvActions {
   delete(key: string): void {
     // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
     delete this._env[key];
-    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-    // delete this.#node.process.env[key]; // also delete in process.env
   }
 }

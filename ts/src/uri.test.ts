@@ -3,7 +3,7 @@ import { BuildURI, HostURIObject, MutableURL, PathURIObject, URI, isCoerceURI, p
 describe("BuildURI", () => {
   let uri: BuildURI;
   beforeEach(() => {
-    uri = BuildURI.from(new MutableURL("http://example.com"));
+    uri = BuildURI.from(MutableURL.fromThrow("http://example.com"));
     uri.hostname("example");
     uri.setParam("key", "value");
   });
@@ -43,7 +43,7 @@ describe("URI", () => {
     expect(URI.from("bla://example/com?key=value").toString()).toBe("bla://example/com?key=value");
   });
   it("from URL", () => {
-    expect(URI.from(new MutableURL("blix://example.com?key=value")).toString()).toBe("blix://example.com?key=value");
+    expect(URI.from(MutableURL.fromThrow("blix://example.com?key=value")).toString()).toBe("blix://example.com?key=value");
   });
   it("from URI", () => {
     expect(URI.from(URI.from("blix://example.com?key=value")).toString()).toBe("blix://example.com?key=value");
@@ -129,7 +129,7 @@ describe("URI", () => {
   });
 
   it("MutableURL is instance of URL", () => {
-    expect(new MutableURL("http://example.com") instanceof URL).toBe(true);
+    expect(MutableURL.fromThrow("http://example.com") instanceof URL).toBe(true);
   });
 
   it("file url", () => {
@@ -475,7 +475,7 @@ describe("URI", () => {
     expect(isCoerceURI(null)).toBe(false);
     expect(isCoerceURI(undefined)).toBe(false);
     expect(isCoerceURI(new URL("http://example.com"))).toBe(true);
-    expect(isCoerceURI(new MutableURL("http://example.com"))).toBe(true);
+    expect(isCoerceURI(MutableURL.fromThrow("http://example.com"))).toBe(true);
     expect(isCoerceURI(URI.from("http://example.com"))).toBe(true);
     expect(isCoerceURI(BuildURI.from("http://example.com"))).toBe(true);
     expect(isCoerceURI("http://example.com")).toBe(true);
@@ -756,5 +756,45 @@ describe("URI", () => {
       });
     expect(uri.URI().search).toEqual("?a=1&b=2&c=3");
     expect(uri.URI().hash).toEqual("#a=1&b=2&c=3");
+  });
+});
+
+describe("MutableURL.fromThrow", () => {
+  it("should return Ok for valid url with protocol", () => {
+    const result = MutableURL.from("http://example.com/foo");
+    expect(result.isOk()).toBe(true);
+    expect(result.Ok().toString()).toBe("http://example.com/foo");
+  });
+
+  it("should return Err for invalid url", () => {
+    const result = MutableURL.from("not-a-url");
+    expect(result.isErr()).toBe(true);
+  });
+
+  it("should return Err for invalid url 1", () => {
+    const result = MutableURL.from("not-a-url:");
+    expect(result.isErr()).toBe(true);
+  });
+
+  it("should return Err for invalid url 2", () => {
+    const result = MutableURL.from("not-a-url:/");
+    expect(result.isErr()).toBe(true);
+  });
+
+  it("should return Err for invalid urll 3", () => {
+    const result = MutableURL.from("not-a-url://kdkkef/df:dkdkfkdk");
+    expect(result.isErr()).toBe(true);
+  });
+
+  it("should return Ok for custom protocol", () => {
+    const result = MutableURL.from("b0lix://foo/bar");
+    expect(result.isOk()).toBe(true);
+    expect(result.Ok().toString()).toContain("b0lix://");
+  });
+
+  it("should return Ok for short custom protocol", () => {
+    const result = MutableURL.from("b0_-Ix://");
+    expect(result.isOk()).toBe(true);
+    expect(result.Ok().toString()).toContain("b0_-Ix://");
   });
 });

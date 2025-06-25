@@ -9,6 +9,11 @@ type NullOrUndef = null | undefined;
 
 type OneKey<K extends string, V = string> = Record<K, V>;
 
+export interface IsURIResult {
+  readonly isURI: boolean;
+  readonly uri?: URI;
+}
+
 /** @xdeprecated use param from get-params-result */
 // export const key = param;
 
@@ -152,17 +157,17 @@ function falsy2undef<T>(value: T | NullOrUndef): T | undefined {
 
 function ensureURLWithDefaultProto(url: string | URL, defaultProtocol: string): MutableURL {
   if (!url) {
-    return new MutableURL(`${defaultProtocol}//`);
+    return MutableURL.fromThrow(`${defaultProtocol}//`);
   }
   if (typeof url === "string") {
     try {
-      return new MutableURL(url);
+      return MutableURL.fromThrow(url);
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
-      return new MutableURL(`${defaultProtocol}//${url}`);
+      return MutableURL.fromThrow(`${defaultProtocol}//${url}`);
     }
   } else {
-    return new MutableURL(url.toString());
+    return MutableURL.fromThrow(url.toString());
   }
 }
 
@@ -179,6 +184,9 @@ export function isURL(value: unknown): value is URL {
 // due to that the System URL class is has a strange behavior
 // on different platforms, we need to implement our own URL class
 const customInspectSymbol = Symbol.for("nodejs.util.inspect.custom");
+
+const urlRegex = /^([a-z][a-z0-9_-]*):\/\/[^:]*$/i;
+
 export class MutableURL extends URL {
   private readonly _sysURL: URL;
   // private readonly _urlStr: string;
@@ -189,7 +197,18 @@ export class MutableURL extends URL {
 
   // override readonly hash: string;
 
-  constructor(urlStr: string) {
+  static fromThrow(urlStr: string): MutableURL {
+    return new MutableURL(urlStr);
+  }
+
+  static from(urlStr: string): Result<MutableURL> {
+    if (urlRegex.test(urlStr)) {
+      return exception2Result(() => new MutableURL(urlStr));
+    }
+    return Result.Err(`Invalid URL: ${urlStr}`);
+  }
+
+  private constructor(urlStr: string) {
     super("defect://does.not.exist");
     const partedURL = urlStr.split(":");
     this._hasHostpart = hasHostPartProtocols.has(partedURL[0]);
@@ -320,16 +339,16 @@ export class MutableURL extends URL {
 function from<T>(fac: (url: MutableURL) => T, strURLUri: CoerceURI | undefined, defaultProtocol: string): T {
   switch (typeof falsy2undef(strURLUri)) {
     case "undefined":
-      return fac(new MutableURL(`${defaultProtocol}///`));
+      return fac(MutableURL.fromThrow(`${defaultProtocol}///`));
     case "string":
       return fac(ensureURLWithDefaultProto(strURLUri as string, defaultProtocol));
     case "object":
       if (BuildURI.is(strURLUri)) {
-        return fac(new MutableURL(strURLUri._url.toString()));
+        return fac(MutableURL.fromThrow(strURLUri._url.toString()));
       } else if (URI.is(strURLUri)) {
-        return fac(new MutableURL(strURLUri._url.toString()));
+        return fac(MutableURL.fromThrow(strURLUri._url.toString()));
       } else if (isURL(strURLUri)) {
-        return fac(new MutableURL(strURLUri.toString()));
+        return fac(MutableURL.fromThrow(strURLUri.toString()));
       }
       throw new Error(`unknown object type: ${strURLUri}`);
     default:
@@ -455,7 +474,7 @@ export class BuildURI implements URIInterface<BuildURI> {
         return this.appendRelative(p);
       }
     }
-    this._url = new MutableURL(p.toString());
+    this._url = MutableURL.fromThrow(p.toString());
     return this;
   }
 
