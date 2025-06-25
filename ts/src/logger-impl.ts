@@ -167,6 +167,16 @@ export class LoggerImpl implements Logger {
     }
     // console.log("LoggerImpl", this._id, this._attributes, this._withAttributes)
   }
+  TimerStart(key: string): Logger {
+    const now = this.levelHandler.timerStart(key);
+    this.coerceKey(key, now.toISOString());
+    return this;
+  }
+  TimerEnd(key: string): Logger {
+    const dur = this.levelHandler.timerEnd(key);
+    this.coerceKey(key, `${dur.now.toISOString()} - ${dur.duration}ms`);
+    return this;
+  }
 
   TxtEnDe(): TxtEnDecoder {
     return this._txtEnDe;
@@ -464,6 +474,14 @@ class WithLoggerBuilder implements WithLogger {
   constructor(li: LoggerImpl) {
     this._li = li;
     this.levelHandler = li.levelHandler;
+  }
+  TimerStart(key: string): WithLogger {
+    this._li.TimerStart(key);
+    return this;
+  }
+  TimerEnd(key: string): WithLogger {
+    this._li.TimerEnd(key);
+    return this;
   }
 
   TxtEnDe(): TxtEnDecoder {

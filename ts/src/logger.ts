@@ -194,6 +194,10 @@ export interface LevelHandler {
   setIgnoreAttr(re?: RegExp): void;
   ignoreAttr: Option<RegExp>;
   isStackExposed: boolean;
+
+  timerStart(key: string): Date; // now
+  timerEnd(key: string): { now: Date; duration: number }; // returns duration in nanoseconds
+
   setDebug(...modules: (string | string[])[]): void;
   isEnabled(ilevel: unknown, module: unknown): boolean;
 }
@@ -246,6 +250,8 @@ export interface LoggerInterface<R> {
   Err<T>(err: T | Result<T> | Error): R; // could be Error, or something which coerces to string
   Info(): R;
   Timestamp(): R;
+  TimerStart(key: string): R;
+  TimerEnd(key: string): R;
   Dur(key: string, nsec: number): R;
 }
 

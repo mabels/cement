@@ -1746,6 +1746,54 @@ describe("TestLogger", () => {
     ]);
   });
 
+  function splitDateGetTime(date?: string): number {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const parts = date!.split(" - ");
+    return new Date(parts[0]).getTime();
+  }
+
+  function splitMs(date?: string): number {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const parts = date!.split(" - ")[1].replace("ms", "").trim();
+    return parseFloat(parts);
+  }
+
+  it("handles time and timeEnd", async () => {
+    const log = logger.With().Logger();
+    log.TimerStart("start").Msg("start");
+    await new Promise((resolve) => setTimeout(resolve, 3));
+    log.TimerStart("middle").Msg("middle");
+    await new Promise((resolve) => setTimeout(resolve, 3));
+    log.TimerEnd("start").Msg("end start");
+    await new Promise((resolve) => setTimeout(resolve, 3));
+    log.TimerEnd("middle").Msg("end middle");
+    await log.Flush();
+    const logs = logCollector.Logs() as { start?: string; middle?: string; msg: string }[];
+    expect(splitDateGetTime(logs[0].start)).toBeLessThan(splitDateGetTime(logs[1].middle));
+    expect(splitDateGetTime(logs[1].middle)).toBeLessThan(splitDateGetTime(logs[2].start));
+    expect(splitDateGetTime(logs[2].start)).toBeLessThan(splitDateGetTime(logs[3].middle));
+    expect(splitMs(logs[2].start)).toBeGreaterThan(0);
+    expect(splitMs(logs[3].middle)).toBeGreaterThan(0);
+    expect(logs).toEqual([
+      {
+        msg: "start",
+        start: logs[0].start,
+      },
+      {
+        middle: logs[1].middle,
+        msg: "middle",
+      },
+      {
+        msg: "end start",
+        start: logs[2].start,
+      },
+      {
+        middle: logs[3].middle,
+        msg: "end middle",
+      },
+    ]);
+  });
+
   // it("for cloudflare we need unbuffered log output", () => {
   //   const logger = new LoggerImpl({
   //     logWriter: new utils.ConsoleWriterStream(),

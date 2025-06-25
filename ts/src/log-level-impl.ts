@@ -5,6 +5,8 @@ export class LevelHandlerImpl implements LevelHandler {
   readonly _globalLevels: Set<Level> = new Set<Level>([Level.INFO, Level.ERROR, Level.WARN]);
   readonly _modules: Map<string, Set<Level>> = new Map<string, Set<Level>>();
 
+  readonly _timer: Map<string, Date> = new Map<string, Date>();
+
   ignoreAttr: Option<RegExp> = Option.Some(/^_/);
   isStackExposed = false;
   enableLevel(level: Level, ...modules: string[]): void {
@@ -84,6 +86,23 @@ export class LevelHandlerImpl implements LevelHandler {
       return true;
     }
     return this._globalLevels.has(level);
+  }
+
+  timerStart(key: string): Date {
+    const now = new Date();
+    this._timer.set(key, now);
+    return now;
+  }
+
+  timerEnd(key: string): { now: Date; duration: number } {
+    const now = new Date();
+    const start = this._timer.get(key);
+    if (!start) {
+      return { now, duration: 0 };
+    }
+    const duration = now.getTime() - start.getTime(); // duration in milliseconds
+    this._timer.delete(key);
+    return { now, duration };
   }
 }
 
