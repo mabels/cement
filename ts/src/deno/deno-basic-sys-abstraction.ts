@@ -1,3 +1,5 @@
+/// <reference types="deno" />
+
 import { BaseBasicSysAbstraction, WrapperBasicSysAbstraction, WrapperBasicSysAbstractionParams } from "../base-sys-abstraction.js";
 import { ResolveOnce } from "../resolve-once.js";
 import { BasicRuntimeService, BasicSysAbstraction } from "../sys-abstraction.js";
@@ -14,14 +16,14 @@ export class DenoRuntimeService implements BasicRuntimeService {
   }
 
   Args(): string[] {
-    return globalThis.Deno.args;
+    return Deno.args;
   }
 
   Stdout(): WritableStream<Uint8Array> {
-    return globalThis.Deno.stdout.writable;
+    return Deno.stdout.writable;
   }
   Stderr(): WritableStream<Uint8Array> {
-    return globalThis.Deno.stderr.writable;
+    return Deno.stderr.writable;
   }
 }
 

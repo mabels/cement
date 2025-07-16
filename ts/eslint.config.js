@@ -26,7 +26,6 @@ export default tseslint.config(
       "**/node_modules/",
       "patch-version.cjs",
       "setup-jsr-json.cjs",
-      "lib.deno.d.ts",
     ],
   },
   {

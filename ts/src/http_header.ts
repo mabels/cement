@@ -1,35 +1,89 @@
-export class HeadersImpl extends Headers {
-  readonly _headers: Map<string, string>;
+export class HeadersImpl implements Headers {
+  // readonly _headers: Map<string, string>;
+  readonly impl: Headers = new Headers();
 
-  constructor(init: Map<string, string>) {
-    super();
-    this._headers = init;
+  constructor(init: Map<string, string | string[]>) {
+    // super();
+    for (const [k, v] of init) {
+      this.append(k, v);
+    }
   }
+  // toKey(key: string): string {
+  //   return key.toLowerCase();
+  // }
 
-  override [Symbol.iterator](): IterableIterator<[string, string]> {
-    return this.entries();
-  }
-
-  override entries(): IterableIterator<[string, string]> {
-    return this._headers.entries();
-  }
-  override keys(): IterableIterator<string> {
-    return this._headers.keys();
-  }
-  override values(): IterableIterator<string> {
-    return this._headers.values();
+  forEach(callbackfn: (value: string, key: string, parent: this) => void): void {
+    this.impl.forEach((v, k) => {
+      callbackfn(v, k, this);
+    });
   }
 
-  override append(key: string, value: string | string[] | undefined): HeadersImpl {
-    const values = this._headers.get(key);
-    if (typeof value === "undefined") {
-      value = "";
+  delete(name: string): void {
+    this.impl.delete(name);
+  }
+  get(name: string): string | null {
+    return this.impl.get(name);
+  }
+  getSetCookie(): string[] {
+    return this.impl.getSetCookie();
+  }
+  has(name: string): boolean {
+    return this.impl.has(name);
+  }
+  set(name: string, value: string): void {
+    this.impl.set(name, value);
+  }
+
+  *[Symbol.iterator](): IterableIterator<[string, string]> {
+    const keys: [string, string][] = [];
+    this.impl.forEach((v, k) => {
+      keys.push([k, v]);
+    });
+    for (const k of keys) {
+      yield k;
+    }
+  }
+
+  entries(): IterableIterator<[string, string]> {
+    return this[Symbol.iterator]();
+  }
+  *keys(): IterableIterator<string> {
+    const keys: string[] = [];
+    this.impl.forEach((_, k) => {
+      keys.push(k);
+    });
+    for (const k of keys) {
+      yield* k;
+    }
+  }
+  *values(): IterableIterator<string> {
+    for (const k of this.keys()) {
+      const v = this.impl.get(k);
+      if (!v) {
+        continue;
+      }
+      yield v;
+    }
+  }
+
+  append(key: string, value?: string | string[]): HeadersImpl {
+    let values = "";
+    if (this.impl.has(key)) {
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+      values = this.impl.get(key) as string;
     }
     if (Array.isArray(value)) {
-      this._headers.set(key, [values, ...value].filter((i) => i).join(", "));
+      values = [values, value.join(", ")].join(", ");
     } else {
-      this._headers.set(key, [values, value].filter((i) => i).join(", "));
+      values = [values, value].join(", ");
     }
+    const vs = new Set(
+      values
+        .split(", ")
+        .map((i) => i.trim())
+        .filter((i) => i !== ""),
+    );
+    this.impl.set(key, Array.from(vs).join(", "));
     return this;
   }
 }
@@ -44,20 +98,20 @@ export class HttpHeader {
     const h = new HttpHeader();
     if (headers) {
       if (Array.isArray(headers)) {
-        for (const [k, v] of headers as [string, string][]) {
+        for (const [k, v] of headers) {
           if (v) {
             h.Add(k, v);
           }
         }
       } else if (headers instanceof Headers) {
-        for (const [k, v] of headers.entries()) {
+        headers.forEach((v, k) => {
           if (v) {
             h.Add(
               k,
               v.split(",").map((v) => v.trim()),
             );
           }
-        }
+        });
       } else {
         for (const k in headers) {
           const v = (headers as Record<string, string | string[]>)[k];
@@ -149,7 +203,7 @@ export class HttpHeader {
     }
     return obj;
   }
-  AsHeaders(): Headers {
+  AsHeaders(): HeadersImpl {
     return new HeadersImpl(this._asStringString());
   }
   Merge(other?: HttpHeader): HttpHeader {

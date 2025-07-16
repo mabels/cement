@@ -1,3 +1,4 @@
+// / <reference lib="dom" />
 import { isPromise } from "./is-promise.js";
 import { bin2string } from "./bin2text.js";
 import { Option } from "./option.js";
@@ -131,7 +132,11 @@ function logValueInternal(val: LogValueArg, ctx: LogValueStateInternal): LogValu
       //   // delete rval.blob
       // }
       if (val instanceof Headers) {
-        return new LogValue(() => Object.fromEntries(val.entries()) as unknown as Serialized);
+        const headers: Record<string, string> = {};
+        val.forEach((v, k) => {
+          headers[k] = v;
+        });
+        return new LogValue(() => headers as unknown as Serialized);
       }
       if (val instanceof ReadableStream) {
         return new LogValue(() => ">Stream<");

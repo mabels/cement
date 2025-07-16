@@ -1,11 +1,13 @@
 import { WebBasicSysAbstraction } from "@adviser/cement/web";
 import { CFBasicSysAbstraction } from "@adviser/cement/cf";
 import { runtimeFn } from "./runtime.js";
-import { IDMode, TimeMode, RandomMode } from "./sys-abstraction.js";
+import { IDMode, TimeMode, RandomMode, BasicSysAbstraction } from "./sys-abstraction.js";
 import { NodeBasicSysAbstraction } from "./node/node-basic-sys-abstraction.js";
 import { DenoBasicSysAbstraction } from "./deno/deno-basic-sys-abstraction.js";
+import { describe, it, expect } from "vitest";
+import { WrapperBasicSysAbstractionParams } from "./base-sys-abstraction.js";
 
-const abstractions = [];
+const abstractions: { name: string; fn: (id?: WrapperBasicSysAbstractionParams) => BasicSysAbstraction }[] = [];
 
 if (runtimeFn().isCFWorker) {
   abstractions.push({ name: "CFSysAbstraction", fn: CFBasicSysAbstraction });

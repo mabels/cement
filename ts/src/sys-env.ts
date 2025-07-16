@@ -160,7 +160,7 @@ export class EnvImpl implements Env {
           return false;
         })
         .forEach((k) => {
-          let v;
+          let v: string | undefined;
           if (!key && !value) {
             // init
             v = this._map.get(k);

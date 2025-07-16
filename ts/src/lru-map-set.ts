@@ -98,8 +98,8 @@ export class LRUMap<T, K> {
     if (!this._map.has(key)) {
       throw new Error(`key not found in cache: ${key as unknown as string}`);
     }
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const value = this._map.get(key)!;
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+    const value = this._map.get(key) as LRUItem<K>;
     this._map.delete(key);
     this._map.set(key, value);
     return value;
@@ -179,8 +179,10 @@ export class LRUMap<T, K> {
       // delete the least recently accessed
       // const key = Array.from(this.cache.keys())[0];
       // this.cache.delete(key) or
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      this._map.delete(this._map.keys().next().value!);
+      const v = this._map.keys().next();
+      if (!v.done) {
+        this._map.delete(v.value as T);
+      }
     }
     this._map.set(key, item);
     this.stats.puts++;
@@ -198,8 +200,8 @@ export class LRUMap<T, K> {
 
   delete(key: T): void {
     if (this._map.has(key)) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const item = this._map.get(key)!;
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+      const item = this._map.get(key) as LRUItem<K>;
       this._onDeleteFns.forEach((fn) => fn(key, item?.value, this.buildItemCtx(item, true)));
       this._map.delete(key);
       this.stats.deletes++;

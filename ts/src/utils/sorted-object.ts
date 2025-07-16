@@ -8,8 +8,8 @@ export function toSortedArray<T>(set?: T): [string, unknown][] {
   return Object.entries(set).sort(([a], [b]) => a.localeCompare(b));
 }
 
-export function toSortedObject<S, T extends NonNullable<S>>(set?: T): T {
-  if (!set) return set as T;
+export function toSortedObject<S, T extends NonNullable<S>>(set?: T): T | undefined {
+  if (!set) return set; // as T;
   return Object.fromEntries(toSortedArray(set)) as T;
   // return toSortedArray(set).reduce((acc, cur) => {
   //     acc[cur[0]] = cur[1];

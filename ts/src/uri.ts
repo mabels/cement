@@ -33,11 +33,6 @@ export interface IsURIResult {
 // };
 
 export interface URIInterface<R extends URIInterface<R>> {
-  // readonly hostname: string;
-  // readonly port: string;
-  // readonly host: string;
-  // readonly protocol: string;
-  // readonly pathname: string;
   readonly getParams: Iterable<[string, string]>;
 
   hasParam(key: string): boolean;
@@ -233,6 +228,10 @@ export class MutableURL extends URL {
     // this.hash = this._sysURL.hash;
   }
 
+  override toJSON(): string {
+    throw new Error("toJson: Method not implemented.");
+  }
+
   [customInspectSymbol](): string {
     // make node inspect to show the URL and not crash if URI is not http/https/file
     return this.toString();
@@ -313,7 +312,9 @@ export class MutableURL extends URL {
   override get search(): string {
     let search = "";
     if (this._sysURL.searchParams.size) {
-      for (const [key, value] of Array.from(this._sysURL.searchParams.entries()).sort((a, b) => a[0].localeCompare(b[0]))) {
+      for (const [key, value] of Array.from(URLSearchParamsEntries(this._sysURL.searchParams)).sort((a, b) =>
+        a[0].localeCompare(b[0]),
+      )) {
         search += `${!search.length ? "?" : "&"}${key}=${encodeURIComponent(value)}`;
       }
     }
@@ -369,6 +370,17 @@ function getParamResult(
   return Result.Ok(val);
 }
 
+// there are deno which does not have URLSearchParams.entries() in types
+function* URLSearchParamsEntries(src: URLSearchParams): IterableIterator<[string, string]> {
+  const entries: [string, string][] = [];
+  src.forEach((v, k) => {
+    entries.push([k, v]);
+  });
+  for (const [key, value] of entries) {
+    yield [key, value];
+  }
+}
+
 function setParams(
   src: string,
   val: Record<string, string | number | boolean | Date | null | undefined>,
@@ -382,7 +394,7 @@ function setParams(
       break;
     case "merge":
     default:
-      preset = Object.fromEntries(new URLSearchParams(src).entries());
+      preset = Object.fromEntries(URLSearchParamsEntries(new URLSearchParams(src)));
       break;
   }
   // const out = new URLSearchParams("");
@@ -509,7 +521,7 @@ export class BuildURI implements URIInterface<BuildURI> {
 
   cleanParams(...remove: (string | string[])[]): BuildURI {
     const keys = new Set(remove.flat());
-    for (const key of Array.from(this._url.searchParams.keys())) {
+    for (const [key] of Array.from(URLSearchParamsEntries(this._url.searchParams))) {
       if (keys.size === 0 || keys.has(key)) {
         this._url.searchParams.delete(key);
       }
@@ -556,7 +568,7 @@ export class BuildURI implements URIInterface<BuildURI> {
   }
 
   get getParams(): Iterable<[string, string]> {
-    return this._url.searchParams.entries();
+    return URLSearchParamsEntries(this._url.searchParams);
   }
 
   getParam<T extends string | undefined>(key: string | OneKey<string>, def?: T): T extends string ? string : string | undefined {
@@ -748,11 +760,11 @@ export class URI implements URIInterface<URI> {
   // }
 
   get getParams(): Iterable<[string, string]> {
-    return this._url.searchParams.entries();
+    return URLSearchParamsEntries(this._url.searchParams);
   }
 
   get getHashes(): Iterable<[string, string]> {
-    return new URLSearchParams(this._url.hash.slice("#".length)).entries();
+    return URLSearchParamsEntries(new URLSearchParams(this._url.hash.slice("#".length)));
   }
 
   hasParam(key: string): boolean {

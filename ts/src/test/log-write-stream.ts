@@ -12,7 +12,7 @@ export class LogWriteStream implements WritableStreamDefaultWriter<Uint8Array> {
   readonly _resolveClosed: Future<undefined> = new Future<undefined>();
   readonly closed: Promise<undefined> = this._resolveClosed.asPromise();
   readonly desiredSize: number | null = null;
-  readonly ready: Promise<undefined> = Promise.resolve(undefined);
+  readonly ready: Promise<void> = Promise.resolve();
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
   abort(reason?: any): Promise<void> {
@@ -20,7 +20,7 @@ export class LogWriteStream implements WritableStreamDefaultWriter<Uint8Array> {
   }
   async close(): Promise<void> {
     await this.closed;
-    return Promise.resolve(undefined);
+    return Promise.resolve();
   }
   releaseLock(): void {
     // do nothing
@@ -29,7 +29,7 @@ export class LogWriteStream implements WritableStreamDefaultWriter<Uint8Array> {
     if (chunk) {
       this._bufferArr.push(chunk);
     }
-    return Promise.resolve(undefined);
+    return Promise.resolve();
   }
 }
 
@@ -56,7 +56,7 @@ export class LogCollector implements WritableStream<Uint8Array> {
       this._writer = undefined;
       return ret;
     }
-    return Promise.resolve(undefined);
+    return Promise.resolve();
   }
 
   getWriter(): WritableStreamDefaultWriter<Uint8Array> {

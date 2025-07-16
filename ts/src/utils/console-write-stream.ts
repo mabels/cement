@@ -2,14 +2,14 @@ export class ConsoleWriterStreamDefaultWriter implements WritableStreamDefaultWr
   readonly desiredSize: number | null = null;
   readonly decoder: TextDecoder = new TextDecoder();
 
-  closed: Promise<undefined>;
-  ready: Promise<undefined>;
+  closed: Promise<void>;
+  ready: Promise<void>;
   readonly _stream: ConsoleWriterStream;
 
   constructor(private stream: ConsoleWriterStream) {
     this._stream = stream;
-    this.ready = Promise.resolve(undefined);
-    this.closed = Promise.resolve(undefined);
+    this.ready = Promise.resolve();
+    this.closed = Promise.resolve();
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
   abort(reason?: any): Promise<void> {
@@ -20,8 +20,8 @@ export class ConsoleWriterStreamDefaultWriter implements WritableStreamDefaultWr
   }
   releaseLock(): void {
     this._stream.locked = false;
-    this.ready = Promise.resolve(undefined);
-    this.closed = Promise.resolve(undefined);
+    this.ready = Promise.resolve();
+    this.closed = Promise.resolve();
   }
   write(chunk?: Uint8Array): Promise<void> {
     let strObj: string | { level: string } = this.decoder.decode(chunk).trimEnd();
