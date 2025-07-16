@@ -22,7 +22,7 @@ class pathOpsImpl implements PathOps {
       .replace(/(\/\.\/)+/g, "/")
       .replace(/\/+$/, "");
     const splitted = path.split("/");
-    if (splitted.length <= 1) {
+    if (splitted.length === 1) {
       return {
         dirname: ".",
         basename: splitted[0] === "." ? "" : splitted[0],
