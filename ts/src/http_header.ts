@@ -53,7 +53,7 @@ export class HeadersImpl implements Headers {
       keys.push(k);
     });
     for (const k of keys) {
-      yield* k;
+      yield k;
     }
   }
   *values(): IterableIterator<string> {
