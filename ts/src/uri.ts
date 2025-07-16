@@ -229,7 +229,7 @@ export class MutableURL extends URL {
   }
 
   override toJSON(): string {
-    throw new Error("toJson: Method not implemented.");
+    throw new Error("toJSON: Method not implemented.");
   }
 
   [customInspectSymbol](): string {
