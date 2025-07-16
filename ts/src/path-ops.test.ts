@@ -42,4 +42,6 @@ it("join", () => {
 
 it("pathops is empty", () => {
   expect(() => pathOps.dirname(undefined)).toThrow();
+  expect(() => pathOps.dirname(null)).toThrow();
+  expect(() => pathOps.dirname(123 as unknown as string)).toThrow();
 });

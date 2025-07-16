@@ -67,23 +67,15 @@ export class HeadersImpl implements Headers {
   }
 
   append(key: string, value?: string | string[]): HeadersImpl {
-    let values = "";
-    if (this.impl.has(key)) {
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-      values = this.impl.get(key) as string;
+    if (!(typeof value === "string" || Array.isArray(value))) {
+      return this;
     }
-    if (Array.isArray(value)) {
-      values = [values, value.join(", ")].join(", ");
-    } else {
-      values = [values, value].join(", ");
-    }
-    const vs = new Set(
-      values
-        .split(", ")
-        .map((i) => i.trim())
-        .filter((i) => i !== ""),
-    );
-    this.impl.set(key, Array.from(vs).join(", "));
+    const existingValues = this.impl.get(key) || "";
+    const newValues = Array.isArray(value) ? value : [value];
+    const allValues = existingValues ? [...existingValues.split(", ").map((v) => v.trim()), ...newValues] : newValues;
+    // Remove empty strings and duplicates while preserving order
+    const uniqueValues = [...new Set(allValues.filter((v) => v !== ""))];
+    this.impl.set(key, uniqueValues.join(", "));
     return this;
   }
 }
