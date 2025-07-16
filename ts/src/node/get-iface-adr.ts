@@ -1,4 +1,4 @@
-import { NetworkInterfaceInfo, networkInterfaces } from "os";
+import { NetworkInterfaceInfo, networkInterfaces } from "node:os";
 
 export function getInterfaceAddresses(): Record<string, NetworkInterfaceInfo[]> {
   const nets = networkInterfaces();
@@ -6,8 +6,10 @@ export function getInterfaceAddresses(): Record<string, NetworkInterfaceInfo[]> 
     .filter((i) => i[1])
     .reduce(
       (acc, [name, nets]) => {
-        // console.log(name, nets);
-        acc[name] = nets as NetworkInterfaceInfo[];
+        if (nets) {
+          // console.log(name, nets);
+          acc[name] = nets; // as NetworkInterfaceInfo[];
+        }
         return acc;
       },
       {} as Record<string, NetworkInterfaceInfo[]>,

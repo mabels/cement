@@ -23,17 +23,18 @@ done
 pnpm exec jscodeshift --parser=babel -t=./to-cjs.js $(find pubdir/cjs -name "*.cjs")
 
 cp package.json pubdir/
-cp ./jsr.json ./pubdir/src/
 
 (cd pubdir/src && rm -f test/test-exit-handler.* ./utils/stream-test-helper.ts)
 find pubdir/src -name __screenshots__ -print | xargs rm -rf thisIsnotFound 
 find pubdir/src -name "*.test.ts" -print | xargs rm -f thisIsnotFound
 
-node ./patch-version.cjs ./pubdir/package.json 
-node ./patch-version.cjs ./pubdir/src/jsr.json 
+cp ./deno.json ./pubdir/
 
-node ./setup-jsr-json.cjs ./pubdir/src/jsr.json
+node ./patch-version.cjs ./pubdir/package.json 
+node ./patch-version.cjs ./pubdir/deno.json
+
+node ./setup-jsr-json.cjs ./pubdir/deno.json
 
 (cd pubdir && pnpm pack)
 
-(cd pubdir/src && deno publish --dry-run --unstable-sloppy-imports --allow-dirty)
+(cd pubdir && deno publish --dry-run --unstable-sloppy-imports --allow-dirty)

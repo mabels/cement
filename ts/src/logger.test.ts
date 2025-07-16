@@ -1746,15 +1746,13 @@ describe("TestLogger", () => {
     ]);
   });
 
-  function splitDateGetTime(date?: string): number {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const parts = date!.split(" - ");
+  function splitDateGetTime(date: string): number {
+    const parts = date.split(" - ");
     return new Date(parts[0]).getTime();
   }
 
-  function splitMs(date?: string): number {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const parts = date!.split(" - ")[1].replace("ms", "").trim();
+  function splitMs(date: string): number {
+    const parts = date.split(" - ")[1].replace("ms", "").trim();
     return parseFloat(parts);
   }
 

@@ -1,17 +1,26 @@
 {
   "name": "@adviser/cement",
-  "version": "0.0.0-dev-c",
+  "version": "0.0.0",
+  "license": "AFL-2.0",
   "exports": {
     ".": "./src/index.ts",
     "./web": "./src/web/index.ts",
+    "./utils": "./src/utils/index.ts",
+    "./cf": "./src/cf/index.ts",
     "./node": "./src/node/index.ts",
-    "./deno": "./src/node/index.ts"
+    "./deno": "./src/deno/index.ts"
+  },
+  "unstable": ["sloppy-imports"],
+  "lint": {
+    "rules": {
+      "tags": ["recommended"],
+      "exclude": ["no-sloppy-imports"]
+    }
   },
   "imports": {
     "yaml": "npm:yaml@^2.5.1",
     "ts-essentials": "npm:ts-essentials@^10.0.2"
   },
-  "license": "AFL-2.0",
   "publish": {
     "include": ["src/**/*.ts", "README.md", "LICENSE"]
   }

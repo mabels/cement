@@ -5,14 +5,14 @@ import { Result } from "./result.js";
 
 interface ResolveSeqItem<T, C> {
   readonly future: Future<T>;
-  readonly fn: (c: C) => Promise<T>;
+  readonly fn: (c?: C) => Promise<T>;
   readonly id?: number;
 }
 
 export class ResolveSeq<T, C = void> {
-  readonly ctx: C;
+  readonly ctx?: C;
   constructor(ctx?: C) {
-    this.ctx = ctx as C;
+    this.ctx = ctx;
   }
   reset(): void {
     /* noop */
@@ -45,7 +45,7 @@ export class ResolveSeq<T, C = void> {
     return Promise.resolve();
   }
   readonly _seqFutures: ResolveSeqItem<T, C>[] = [];
-  async add(fn: (c: C) => Promise<T>, id?: number): Promise<T> {
+  async add(fn: (c?: C) => Promise<T>, id?: number): Promise<T> {
     const future = new Future<T>();
     this._seqFutures.push({ future, fn, id });
     if (this._seqFutures.length === 1) {
@@ -64,10 +64,10 @@ export class ResolveOnce<T, CTX = void> {
   _isPromise = false;
   _inProgress?: Future<T>;
 
-  readonly ctx: CTX;
+  readonly ctx?: CTX;
 
   constructor(ctx?: CTX) {
-    this.ctx = ctx as CTX;
+    this.ctx = ctx;
   }
 
   get ready(): boolean {
@@ -95,7 +95,7 @@ export class ResolveOnce<T, CTX = void> {
   }
 
   // T extends Option<infer U> ? U : T
-  once<R>(fn: (c: CTX) => R): R {
+  once<R>(fn: (c?: CTX) => R): R {
     if (this._onceDone) {
       if (this._onceError) {
         if (this._isPromise) {
@@ -106,8 +106,7 @@ export class ResolveOnce<T, CTX = void> {
       }
       if (this._onceOk) {
         if (this._isPromise) {
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          return Promise.resolve(this._onceValue!) as unknown as R;
+          return Promise.resolve(this._onceValue) as unknown as R;
         } else {
           return this._onceValue as unknown as R;
         }
@@ -122,7 +121,7 @@ export class ResolveOnce<T, CTX = void> {
         this._onceOk = true;
         this._onceDone = true;
         if (this._isPromise) {
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-non-null-assertion
           this._onceFutures.forEach((f) => f.resolve(this._onceValue!));
         }
         this._onceFutures.length = 0;
@@ -133,7 +132,7 @@ export class ResolveOnce<T, CTX = void> {
         this._onceValue = undefined;
         this._onceDone = true;
         if (this._isPromise) {
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-non-null-assertion
           this._onceFutures.forEach((f) => f.reject(this._onceError!));
         }
         this._onceFutures.length = 0;
@@ -241,7 +240,8 @@ export class KeyedResolvOnce<T, K = string> extends Keyed<ResolveOnce<T, K>, K> 
       if (v._onceError) {
         yield { key: k, value: Result.Err<T>(v._onceError) };
       } else {
-        yield { key: k, value: Result.Ok<T>(v._onceValue as T) };
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-non-null-assertion
+        yield { key: k, value: Result.Ok<T>(v._onceValue!) };
       }
     }
   }

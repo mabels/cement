@@ -1,3 +1,9 @@
+export interface CTRsaOtherPrimesInfo {
+  d?: string;
+  r?: string;
+  t?: string;
+}
+
 export interface CTJsonWebKey {
   alg?: string;
   crv?: string;
@@ -10,7 +16,7 @@ export interface CTJsonWebKey {
   key_ops?: string[];
   kty?: string;
   n?: string;
-  oth?: RsaOtherPrimesInfo[];
+  oth?: CTRsaOtherPrimesInfo[];
   p?: string;
   q?: string;
   qi?: string;
@@ -119,6 +125,7 @@ export function toCryptoRuntime(cryptoOpts: Partial<CryptoRuntime> = {}): Crypto
   let crypto: typeof globalThis.crypto;
   if (!globalThis.crypto || !globalThis.crypto.subtle) {
     crypto = {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       getRandomValues: globalThis.crypto.getRandomValues.bind(globalThis.crypto),
       subtle: {
         importKey: (): Promise<CTCryptoKey> => {
@@ -142,9 +149,13 @@ export function toCryptoRuntime(cryptoOpts: Partial<CryptoRuntime> = {}): Crypto
     crypto = globalThis.crypto;
   }
   const runtime = {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     importKey: cryptoOpts.importKey || crypto.subtle.importKey.bind(crypto.subtle),
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     exportKey: cryptoOpts.exportKey || crypto.subtle.exportKey.bind(crypto.subtle),
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     encrypt: cryptoOpts.encrypt || crypto.subtle.encrypt.bind(crypto.subtle),
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     decrypt: cryptoOpts.decrypt || crypto.subtle.decrypt.bind(crypto.subtle),
     randomBytes: cryptoOpts.randomBytes || randomBytes(crypto),
     digestSHA256: cryptoOpts.digestSHA256 || digestSHA256(crypto),

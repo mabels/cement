@@ -1,4 +1,5 @@
 import { HttpHeader } from "./http_header.js";
+import { describe, it, expect } from "vitest";
 
 describe("HttpHeader", () => {
   it("Add should join different case headings to case insensitive ", () => {

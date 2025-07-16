@@ -141,7 +141,7 @@ export class TraceNode {
     delete cleanCtx.time;
     delete cleanCtx.logger;
     delete cleanCtx.metrics;
-    const spanRefs = this.metrics.toJSON.call({ map: this.metrics.spanRefs });
+    const spanRefs = this.metrics.toJSON.call({ map: this.metrics.spanRefs }) as Record<string, unknown>;
     const metricsRefs = Object.keys(spanRefs).length > 0 ? { metricRefs: spanRefs } : {};
     return {
       ctx: cleanCtx,
@@ -200,7 +200,7 @@ export class TraceNode {
       if (isPromise(possiblePromise)) {
         return possiblePromise
           .then((v) => {
-            return v;
+            return v as ReturnType<V>;
           })
           .catch((e) => {
             invokation.result = "error";

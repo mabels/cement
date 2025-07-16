@@ -1,6 +1,7 @@
 {
   "extends": "./tsconfig.json", // Inherit settings from base config
   "compilerOptions": {
+    // "lib": ["ESNext", "DOM"],
     // Use ESNext, ES2020, or ES2022 for modern ESM features
     //    "module": "ES2022",     // <-- Key setting for ESM output
     "outDir": "./dist/ts/esm" // <-- Output directory for ESM files
