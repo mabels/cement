@@ -39,3 +39,7 @@ it("join", () => {
   expect(pathOps.join(".", ".")).toBe(".");
   expect(pathOps.join(".", ".", ".", "c")).toBe("c");
 });
+
+it("pathops is empty", () => {
+  expect(() => pathOps.dirname(undefined)).toThrow();
+});
