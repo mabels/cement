@@ -454,8 +454,16 @@ export class LoggerImpl implements Logger {
       }
       let fnRet = (): Uint8Array => this._formatter.format({ ...this._attributes });
       if (doWrite) {
-        const encoded = fnRet();
-        this._logWriter.write(encoded);
+        let encoded: Uint8Array;
+        try {
+          encoded = fnRet();
+          this._logWriter.write(encoded);
+        } catch (e) {
+          const where = "Logger-Impl:Msg:Write error:"
+          // eslint-disable-next-line no-console
+          console.error(where, e, this._attributes);
+          encoded = this._txtEnDe.encode(where + (e as Error).message + "\n" + (e as Error).stack + "\n");
+        }
         fnRet = (): Uint8Array => encoded;
       }
       return fnRet;
