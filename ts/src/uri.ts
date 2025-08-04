@@ -84,7 +84,6 @@ function match(iref: CoerceURI, ioth: CoerceURI): MatchResult {
       mr.score += 1;
       mr.port = true;
     }
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (e) {
     // ignore
   }
@@ -157,7 +156,6 @@ function ensureURLWithDefaultProto(url: string | URL, defaultProtocol: string): 
   if (typeof url === "string") {
     try {
       return MutableURL.fromThrow(url);
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
       return MutableURL.fromThrow(`${defaultProtocol}//${url}`);
     }

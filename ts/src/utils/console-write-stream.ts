@@ -11,8 +11,7 @@ export class ConsoleWriterStreamDefaultWriter implements WritableStreamDefaultWr
     this.ready = Promise.resolve() as Promise<never>;
     this.closed = Promise.resolve() as Promise<never>;
   }
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
-  abort(reason?: unknown): Promise<void> {
+  abort(_reason?: unknown): Promise<void> {
     throw new Error("Method not implemented.");
   }
   async close(): Promise<void> {
@@ -29,7 +28,6 @@ export class ConsoleWriterStreamDefaultWriter implements WritableStreamDefaultWr
     try {
       strObj = JSON.parse(strObj) as { level: string };
       output = strObj.level;
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
       /* noop */
     }
@@ -53,8 +51,7 @@ export class ConsoleWriterStreamDefaultWriter implements WritableStreamDefaultWr
 export class ConsoleWriterStream implements WritableStream<Uint8Array> {
   locked = false;
   _writer?: WritableStreamDefaultWriter<Uint8Array>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
-  abort(reason?: any): Promise<void> {
+  abort(_reason?: unknown): Promise<void> {
     throw new Error("Method not implemented.");
   }
   close(): Promise<void> {

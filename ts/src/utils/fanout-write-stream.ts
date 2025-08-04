@@ -9,7 +9,6 @@ export class FanoutWriteStream implements WritableStreamDefaultWriter<Uint8Array
     this.closed = Promise.all(this._writers.map((w) => w.closed)) as Promise<never>;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   abort(reason?: unknown): Promise<void> {
     return Promise.all(this._writers.map((w) => w.abort(reason))).then(() => {
       /* do nothing */

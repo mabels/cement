@@ -48,8 +48,7 @@ export type LogSerializable = Record<string, LogValue | Promise<LogValue>>;
 //   };
 // }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function asyncLogValue(val: () => Promise<Serialized>): Promise<LogValue> {
+export function asyncLogValue(_val: () => Promise<Serialized>): Promise<LogValue> {
   // return Promise.resolve(logValue(val));
   throw new Error("Not implemented");
 }
@@ -114,7 +113,6 @@ function logValueInternal(val: LogValueArg, ctx: LogValueStateInternal): LogValu
             const obj = JSON.parse(asStr) as LogValueArg;
             return logValueInternal(obj, ctx);
           }
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (e) {
           // noop, we will return the stringified value
         }

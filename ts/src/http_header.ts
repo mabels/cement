@@ -161,7 +161,6 @@ export class HttpHeader {
     return this;
   }
   Items(): [string, string[]][] {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     return Array.from(this._headers).filter(([_, vs]) => vs.length > 0);
   }
   SortItems(): [string, string[]][] {
