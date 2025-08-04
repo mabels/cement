@@ -85,6 +85,6 @@ jobs:
       - name: Publish runified JSR
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
-          cd ts/pubdir
-          pnpm exec deno publish --allow-dirty --unstable-sloppy-imports
+          cd pubdir
+          pnpm run deno:publish
 
