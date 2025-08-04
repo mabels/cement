@@ -210,6 +210,13 @@ export class Keyed<T extends { reset: () => void }, K = string> {
     return keyed;
   }
 
+  has(key: K | (() => K)): boolean {
+    if (typeof key === "function") {
+      key = (key as () => K)();
+    }
+    return this._map.has(key);
+  }
+
   unget(key: K): void {
     const keyed = this._map.get(key);
     keyed?.reset();

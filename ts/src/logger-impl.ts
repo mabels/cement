@@ -459,7 +459,7 @@ export class LoggerImpl implements Logger {
           encoded = fnRet();
           this._logWriter.write(encoded);
         } catch (e) {
-          const where = "Logger-Impl:Msg:Write error:"
+          const where = "Logger-Impl:Msg:Write error:";
           // eslint-disable-next-line no-console
           console.error(where, e, this._attributes);
           encoded = this._txtEnDe.encode(where + (e as Error).message + "\n" + (e as Error).stack + "\n");

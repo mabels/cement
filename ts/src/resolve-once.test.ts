@@ -491,4 +491,11 @@ describe("resolve-once", () => {
       return undefined;
     });
   });
+
+  it("keyed has a has method", () => {
+    const keyed = new KeyedResolvOnce<number>();
+    expect(keyed.has("a")).toBe(false);
+    keyed.get("a").once(() => 42);
+    expect(keyed.has("a")).toBe(true);
+  });
 });

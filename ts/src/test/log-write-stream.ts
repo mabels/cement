@@ -12,7 +12,7 @@ export class LogWriteStream implements WritableStreamDefaultWriter<Uint8Array> {
   readonly _resolveClosed: Future<undefined> = new Future<undefined>();
   readonly closed: Promise<undefined> = this._resolveClosed.asPromise();
   readonly desiredSize: number | null = null;
-  readonly ready: Promise<void> = Promise.resolve();
+  readonly ready: Promise<never> = Promise.resolve() as Promise<never>;
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
   abort(reason?: any): Promise<void> {
