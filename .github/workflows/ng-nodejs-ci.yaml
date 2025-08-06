@@ -50,8 +50,6 @@ jobs:
       - name: Build JS @adviser/cement
         run: |
           cd ts
-          ip || true
-          ifconfig || true
           pnpm install
           pnpm run prettier --check
           pnpm run lint
@@ -85,6 +83,6 @@ jobs:
       - name: Publish runified JSR
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
-          cd pubdir
+          cd ts
           pnpm run deno:publish
 
