@@ -93,11 +93,18 @@ export function generateVersionTsCmd(): ReturnType<typeof command> {
 function getVersion(iversion?: string): string {
   const ghref = iversion || process.env.GITHUB_REF || versionFromPackageJson() || "a/v0.0.0-smoke";
   let lastPart = ghref.split("/").slice(-1)[0];
-  // let version = "0.0.0-smoke-ci";
-  if (lastPart.match(/^v/)) {
-    lastPart = lastPart.replace(/^v/, "");
+  if (iversion) {
+    return iversion.replace(/^[vdsp]/, "");
   }
-  return lastPart;
+  const short = $.sync`git rev-parse --short HEAD`.stdout.trim();
+  if (process.env.GITHUB_REF) {
+    lastPart = lastPart.replace(/^[vdsp]/, "");
+    if (lastPart.match(/^\d+\.\d+\.\d+/)) {
+      return lastPart;
+    }
+    return `0.0.0-dev-ci-${short}`;
+  }
+  return `0.0.0-dev-local-${Date.now()}`;
 }
 
 export function patchVersionCmd(): ReturnType<typeof command> {
