@@ -267,3 +267,16 @@ export class KeyedResolvSeq<T, K = string> extends Keyed<ResolveSeq<T, K>, K> {
     super((key) => new ResolveSeq<T, K>(key), kp);
   }
 }
+
+class LazyContainer<T> {
+  readonly resolveOnce = new ResolveOnce<T>();
+
+  call<R>(fn: () => R): () => ReturnType<typeof fn> {
+    return () => this.resolveOnce.once(fn);
+  }
+}
+
+export function Lazy<R>(fn: () => R): () => ReturnType<typeof fn> {
+  const lazy = new LazyContainer();
+  return lazy.call(fn);
+}

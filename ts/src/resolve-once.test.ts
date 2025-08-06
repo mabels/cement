@@ -1,4 +1,4 @@
-import { Result, KeyedResolvOnce, ResolveOnce, ResolveSeq } from "@adviser/cement";
+import { Result, KeyedResolvOnce, ResolveOnce, ResolveSeq, Lazy } from "@adviser/cement";
 
 describe("resolve-once", () => {
   it("sequence", async () => {
@@ -497,5 +497,27 @@ describe("resolve-once", () => {
     expect(keyed.has("a")).toBe(false);
     keyed.get("a").once(() => 42);
     expect(keyed.has("a")).toBe(true);
+  });
+});
+
+class MyLazy {
+  initVal = 42;
+  readonly lazyMember = Lazy(() => ++this.initVal);
+  readonly lazyAsyncMember = Lazy(() => Promise.resolve(++this.initVal));
+
+  async action(): Promise<{ sync: number; async: number }> {
+    return {
+      sync: this.lazyMember(),
+      async: await this.lazyAsyncMember(),
+    };
+  }
+}
+
+describe("Lazy Initialization", () => {
+  it("ResolveOnce could be used for LazyInitialization", async () => {
+    const my = new MyLazy();
+    expect(await my.action()).toEqual({ sync: 43, async: 44 });
+    expect(await my.action()).toEqual({ sync: 43, async: 44 });
+    expect(await my.action()).toEqual({ sync: 43, async: 44 });
   });
 });

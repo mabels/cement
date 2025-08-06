@@ -1,4 +1,6 @@
 **/dist/
+**/.DS_Store
+**/.idea
 .vscode/
 **/pubdir/
 **/*.tgz
