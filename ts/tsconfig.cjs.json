@@ -7,8 +7,8 @@
 
     //    "module": "NodeNext" /* Specify what module code is generated. */,
 
-    "declaration": false, // <--- Set this to false
-    "declarationMap": false,
+    "declaration": true, // <--- Set this to false
+    "declarationMap": true,
 
     // --- Other common settings ---
     // "strict": true,

@@ -1,0 +1,87 @@
+import { defineConfig } from 'tsup'
+import resolve from "esbuild-plugin-resolve";
+import { replace } from "esbuild-plugin-replace";
+
+const external = [
+  "path",
+  "fs",
+  "fs/promises",
+  "util",
+  "os",
+  "url",
+  "node:fs",
+  "node:path",
+  "node:os",
+  "node:url",
+  "assert",
+  "stream"
+];
+
+const LIBRARY_BUNDLE_OPTIONS: Options = {
+  format: ["esm", "cjs", "iife"],
+  target: ["esnext", "node18"],
+  globalName: "adviser_cement",
+  external,
+  clean: true,
+  sourcemap: true,
+  metafile: true,
+  minify: false,
+};
+
+function packageVersion() {
+  // return JSON.stringify(JSON.parse(fs.readFileSync(file, "utf-8")).version);
+  let version = "refs/tags/v0.0.0-smoke";
+  if (process.env.GITHUB_REF && process.env.GITHUB_REF.startsWith("refs/tags/v")) {
+    version = process.env.GITHUB_REF;
+  }
+  version = version.split("/").slice(-1)[0].replace(/^v/, "");
+  // console.log(`Patch version ${version} in package.json`);
+  // packageJson.version = version;
+  return JSON.stringify(version);
+}
+
+const LIBRARY_BUNDLES: readonly Options[] = [
+  {
+    ...LIBRARY_BUNDLE_OPTIONS,
+    format: ["iife"],
+    name: "@adviser/cement",
+    entry: ["src/index.ts"],
+    platform: "browser",
+    outDir: "dist/pkg",
+    esbuildPlugins: [
+      replace({
+        __packageVersion__: packageVersion(),
+        include: /version/,
+      }),
+      resolve({
+//        ...stopFile,
+//        ...ourMultiformat,
+      }),
+    ],
+    dts: {
+      footer: "declare module '@adviser/cement'",
+    },
+  },
+  {
+    ...LIBRARY_BUNDLE_OPTIONS,
+    format: ["esm", "cjs"],
+    name: "@adviser/cement",
+    entry: ["src/index.ts"],
+    platform: "browser",
+    outDir: "dist/pkg",
+    esbuildPlugins: [
+      replace({
+        __packageVersion__: packageVersion(),
+        include: /version/,
+      }),
+      resolve({
+//        ...ourMultiformat,
+      }),
+    ],
+    dts: {
+      footer: "declare module '@adviser/cement'",
+    },
+  }
+];
+
+export default defineConfig((options) => [...LIBRARY_BUNDLES, ...(options.watch || [])]);

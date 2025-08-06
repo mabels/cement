@@ -4,11 +4,17 @@
   "description": "better try/catch/finally handling",
   "main": "./cjs/index.js",
   "type": "module",
+  "bin": "./src/cli/run.sh",
   "exports": {
     ".": {
       "types": "./esm/index.d.ts",
       "require": "./cjs/index.cjs",
       "import": "./esm/index.js"
+    },
+    "./cli": {
+      "types": "./esm/cli/index.d.ts",
+      "require": "./cjs/cli/index.cjs",
+      "import": "./esm/cli/index.js"
     },
     "./web": {
       "types": "./esm/web/index.d.ts",
@@ -42,17 +48,14 @@
     "build:tsc": "rm -rf ./dist/ts ; pnpm run /^build:tsc:/",
     "build:tsgo": "rm -rf ./dist/ts ; pnpm run /^build:tsgo:/",
     "build:tsgo:global": "tsgo --noEmit",
-    "build:tsgo:esm": "tsgo -p ./tsconfig.esm.json",
-    "build:tsgo:cjs": "tsgo -p ./tsconfig.cjs.json",
-    "build:tsc:global": "tsc --noEmit",
-    "build:tsc:esm": "tsc -p ./tsconfig.esm.json",
-    "build:tsc:cjs": "tsc -p ./tsconfig.cjs.json",
+    "build:tsgo:esm": "tsgo -p ./tsconfig.esm.json; src/cli/run.sh generateVersionTs -t ./tsconfig.esm.json",
+    "build:tsgo:cjs": "tsgo -p ./tsconfig.cjs.json; src/cli/run.sh generateVersionTs -t ./tsconfig.cjs.json",
     "build:js": "rm -rf dist/pkg ; mkdir -p dist/pkg; cp -pr ./dist/ts/* dist/pkg",
     "build:deno": "deno publish --dry-run --unstable-sloppy-imports --allow-dirty --set-version 0.0.0-dev",
     "test": "pnpm run test:js; pnpm run test:deno",
     "test:deno": "deno run --quiet --allow-net --allow-write --allow-run  --allow-sys --allow-ffi  --allow-read --allow-env  ./node_modules/vitest/vitest.mjs --run --project node",
     "test:js": "vitest --run",
-    "pubdir": "bash -xe ./prepare-pubdir.sh",
+    "pubdir": "src/cli/run.sh preparePubdir",
     "presmoke": "pnpm run pubdir ; cd pubdir ; pnpm pack",
     "deno:publish": "pnpm run pubdir; cd pubdir ; pnpm exec deno publish --allow-dirty --unstable-sloppy-imports",
     "smoke": "bash ./smoke/it.sh",
@@ -80,6 +83,7 @@
     "@typescript-eslint/parser": "^8.7.0",
     "@typescript/native-preview": "7.0.0-dev.20250804.1",
     "@vitest/browser": "^3.2.4",
+    "cmd-ts": "^0.13.0",
     "deno": "2.4.2",
     "esbuild-plugin-replace": "^1.4.0",
     "esbuild-plugin-resolve": "^2.0.0",
@@ -94,7 +98,8 @@
     "typescript-eslint": "^8.24.0",
     "vite": "^7.0.4",
     "vite-tsconfig-paths": "^5.0.1",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "zx": "^8.8.0"
   },
   "engines": {
     "node": ">=20.19.0"
