@@ -1,3 +1,1 @@
-export const VERSION: string = Object.keys({
-  __packageVersion__: "xxxx",
-})[0];
+export const VERSION: string = "__packageVersion__";
