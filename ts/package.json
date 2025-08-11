@@ -87,7 +87,7 @@
     "deno": "2.4.3",
     "esbuild-plugin-replace": "^1.4.0",
     "esbuild-plugin-resolve": "^2.0.0",
-    "eslint": "9.32.0",
+    "eslint": "9.33.0",
     "jscodeshift": "^17.3.0",
     "playwright": "^1.54.1",
     "playwright-chromium": "^1.54.1",
