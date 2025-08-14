@@ -18,6 +18,10 @@ export abstract class Option<T> {
     return new Some(t);
   }
 
+  toValue(): T | undefined {
+    return this.is_some() ? this.unwrap() : undefined;
+  }
+
   IsNone(): boolean {
     return this.is_none();
   }

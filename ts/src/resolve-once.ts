@@ -1,11 +1,13 @@
 import { Future } from "./future.js";
-import { isPromise } from "./is-promise.js";
+import { UnPromisify } from "./is-promise.js";
+import { isPromise, Promisable } from "./is-promise.js";
 import { LRUMap, LRUParam, UnregFn } from "./lru-map-set.js";
 import { Result } from "./result.js";
+import { Option } from "./option.js";
 
-interface ResolveSeqItem<T, C> {
+interface ResolveSeqItem<T, C, R extends Promisable<T>> {
   readonly future: Future<T>;
-  readonly fn: (c?: C) => Promise<T>;
+  readonly fn: (c?: C) => R;
   readonly id?: number;
 }
 
@@ -27,145 +29,363 @@ export class ResolveSeq<T, C = void> {
     }
     return Promise.resolve();
   }
-  _step(item?: ResolveSeqItem<T, C>): Promise<void> {
+  async _step<R extends Promisable<T>>(item?: ResolveSeqItem<T, C, R>): Promise<void> {
     if (!item) {
       // done
       this._flushWaiting.forEach((f) => f.resolve());
       this._flushWaiting?.splice(0, this._flushWaiting.length);
       return Promise.resolve();
     }
-    item
-      .fn(this.ctx)
-      .then((value) => item.future.resolve(value))
-      .catch((e) => item.future.reject(e as Error))
-      .finally(() => {
-        this._seqFutures.shift();
-        void this._step(this._seqFutures[0]);
-      });
-    return Promise.resolve();
+    let value;
+    try {
+      const promiseOrValue = item.fn(this.ctx);
+      if (isPromise(promiseOrValue)) {
+        value = await promiseOrValue;
+      } else {
+        value = promiseOrValue;
+      }
+      item.future.resolve(value as T);
+    } catch (e) {
+      item.future.reject(e as Error);
+    } finally {
+      this._seqFutures.shift();
+    }
+    return this._step(this._seqFutures[0]);
   }
-  readonly _seqFutures: ResolveSeqItem<T, C>[] = [];
-  async add(fn: (c?: C) => Promise<T>, id?: number): Promise<T> {
+  readonly _seqFutures: ResolveSeqItem<T, C, Promisable<T>>[] = [];
+  add<R extends Promisable<T>>(fn: (c?: C) => R, id?: number): Promise<UnPromisify<R>> {
     const future = new Future<T>();
     this._seqFutures.push({ future, fn, id });
     if (this._seqFutures.length === 1) {
-      void this._step(this._seqFutures[0]);
+      void this._step(this._seqFutures[0]); // exit into eventloop
     }
-    return future.asPromise();
+    return future.asPromise() as Promise<UnPromisify<R>>;
   }
 }
 
-export class ResolveOnce<T, CTX = void> {
-  _onceDone = false;
-  readonly _onceFutures: Future<T>[] = [];
-  _onceOk = false;
-  _onceValue?: T;
-  _onceError?: Error;
-  _isPromise = false;
-  _inProgress?: Future<T>;
+// readonly _onceFutures: Future<T>[] = [];
+// _onceDone = false;
+// _onceOk = false;
+// _onceValue?: T;
+// _onceError?: Error;
+// _isPromise = false;
+// _inProgress?: Future<T>;
 
-  readonly ctx?: CTX;
+// ResolveOnce
+// cases SyncMode, AsyncMode
 
-  constructor(ctx?: CTX) {
-    this.ctx = ctx;
+type ResolveState = "initial" | "processed" | "waiting" | "processing";
+
+interface ResolveOnceIf<T extends Promisable<unknown>, CTX = void> {
+  get ready(): boolean;
+  get value(): UnPromisify<T> | undefined;
+  get error(): Error | undefined;
+  get state(): ResolveState;
+
+  once<R extends Promisable<UnPromisify<T>>>(fn: (c?: CTX) => R): R;
+  reset<R extends Promisable<UnPromisify<T>>>(fn?: (c?: CTX) => R): R;
+}
+
+export class SyncResolveOnce<T extends Promisable<unknown>, CTX = void> {
+  state: ResolveState = "initial";
+
+  #value?: T;
+  #error?: Error;
+
+  readonly queueLength = 0;
+
+  get value(): T | undefined {
+    return this.#value;
+  }
+
+  get error(): Error | undefined {
+    return this.#error;
   }
 
   get ready(): boolean {
-    return this._onceDone;
+    return this.state === "processed";
   }
 
-  get value(): T | undefined {
-    return this._onceDone ? this._onceValue : undefined;
+  readonly #ctx?: CTX;
+  constructor(ctx?: CTX) {
+    this.#ctx = ctx;
   }
 
-  reset(): void {
-    this._onceDone = false;
-    this._onceOk = false;
-    this._onceValue = undefined;
-    this._onceError = undefined;
-    if (this._inProgress) {
-      const idx = this._onceFutures.findIndex((f) => f === this._inProgress);
-      if (idx >= 0) {
-        // leave the current in progress future
-        this._onceFutures.push(...this._onceFutures.splice(2).slice(1));
-      }
-    } else {
-      this._onceFutures.length = 0;
-    }
-  }
-
-  // T extends Option<infer U> ? U : T
-  once<R>(fn: (c?: CTX) => R): R {
-    if (this._onceDone) {
-      if (this._onceError) {
-        if (this._isPromise) {
-          return Promise.reject(this._onceError) as unknown as R;
-        } else {
-          throw this._onceError;
-        }
-      }
-      if (this._onceOk) {
-        if (this._isPromise) {
-          return Promise.resolve(this._onceValue) as unknown as R;
-        } else {
-          return this._onceValue as unknown as R;
-        }
-      }
-      throw new Error("ResolveOnce.once impossible");
-    }
-    const future = new Future<T>();
-    this._onceFutures.push(future);
-    if (this._onceFutures.length === 1) {
-      const okFn = (value: T): void => {
-        this._onceValue = value;
-        this._onceOk = true;
-        this._onceDone = true;
-        if (this._isPromise) {
-          // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-non-null-assertion
-          this._onceFutures.forEach((f) => f.resolve(this._onceValue!));
-        }
-        this._onceFutures.length = 0;
-      };
-      const catchFn = (e: Error): void => {
-        this._onceError = e;
-        this._onceOk = false;
-        this._onceValue = undefined;
-        this._onceDone = true;
-        if (this._isPromise) {
-          // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-non-null-assertion
-          this._onceFutures.forEach((f) => f.reject(this._onceError!));
-        }
-        this._onceFutures.length = 0;
-      };
-      this._inProgress = future;
-      // let inCriticalSection = false;
+  resolve(fn: (ctx?: CTX) => T): T {
+    if (this.state === "initial") {
+      this.state = "processed";
       try {
-        const ret = fn(this.ctx);
-        if (isPromise(ret)) {
-          this._isPromise = true;
-          // inCriticalSection = true;
-          (ret as Promise<T>)
-            .then(okFn)
-            .catch(catchFn)
-            .finally(() => {
-              this._inProgress = undefined;
-            });
+        this.#value = fn(this.#ctx);
+      } catch (e) {
+        this.#error = e as Error;
+      }
+      if (isPromise(this.value)) {
+        throw new Error("SyncResolveOnce.once fn returned a promise");
+      }
+    }
+    if (this.#error) {
+      throw this.#error;
+    }
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+    return this.#value as T;
+  }
+
+  reset(fn?: (c?: CTX) => T): T | undefined {
+    this.state = "initial";
+    this.#value = undefined;
+    this.#error = undefined;
+    if (fn) {
+      return this.resolve(fn);
+    }
+    return undefined as T;
+  }
+}
+
+class AsyncResolveItem<T extends Promisable<unknown>> {
+  readonly id = Math.random();
+  #state: ResolveState = "initial";
+  readonly #toResolve: Promise<UnPromisify<T>>;
+  #value: Option<UnPromisify<T>> = Option.None();
+  #error?: Error;
+
+  constructor(fn: Promise<UnPromisify<T>>) {
+    this.#toResolve = fn;
+  }
+
+  get value(): UnPromisify<T> | undefined {
+    return this.#value.IsSome() ? this.#value.unwrap() : undefined;
+  }
+
+  get error(): Error | undefined {
+    return this.#error;
+  }
+
+  readonly #queue: Future<UnPromisify<T>>[] = [];
+
+  get queuelength(): number {
+    return this.#queue.length;
+  }
+
+  isDisposable(): boolean {
+    return this.#state === "processed" && this.#queue.length === 0;
+  }
+
+  #resolveFuture(future?: Future<UnPromisify<T>>): void {
+    if (!future) {
+      return;
+    }
+    if (this.#error) {
+      future.reject(this.#error);
+      return;
+    }
+    if (this.#value.IsSome()) {
+      future.resolve(this.#value.Unwrap());
+    }
+  }
+
+  #promiseResult(): Promise<UnPromisify<T>> {
+    if (this.#error) {
+      return Promise.reject(this.#error);
+    }
+    if (this.#value.IsSome()) {
+      return Promise.resolve(this.#value.Unwrap());
+    }
+    throw new Error("AsyncResolveItem.#promiseResult impossible");
+  }
+
+  resolve(): T {
+    if (this.#state === "initial") {
+      this.#state = "waiting";
+      const future = new Future<UnPromisify<T>>();
+      // console.log("asyncItem addQueue#initial", this.id, this.#queue.length);
+      this.#queue.push(future);
+      this.#toResolve
+        .then((value) => {
+          this.#value = Option.Some(value);
+        })
+        .catch((e) => {
+          this.#error = e as Error;
+        })
+        .finally(() => {
+          this.#state = "processed";
+          while (this.#queue.length > 0) {
+            this.#resolveFuture(this.#queue.shift());
+          }
+        });
+      return future.asPromise() as T;
+    }
+    if (this.#state === "processed") {
+      return this.#promiseResult() as T;
+    }
+    if (this.#state === "waiting") {
+      const future = new Future<UnPromisify<T>>();
+      // console.log("asyncItem addQueue#waiting", this.id, this.#queue.length);
+      this.#queue.push(future);
+      return future.asPromise() as T;
+    }
+    throw new Error("AsyncResolveItem.resolve impossible");
+  }
+}
+
+export class AsyncResolveOnce<T extends Promisable<unknown>, CTX = void> {
+  // readonly id = Math.random();
+  state: ResolveState = "initial";
+
+  readonly #queue: AsyncResolveItem<T>[] = [];
+
+  readonly #ctx?: CTX;
+  constructor(ctx?: CTX) {
+    this.#ctx = ctx;
+  }
+
+  #active(): AsyncResolveItem<T> {
+    const r = this.#queue[this.#queue.length - 1];
+    if (!r) {
+      throw new Error("AsyncResolveOnce.#active impossible");
+    }
+    return r;
+  }
+
+  get queueLength(): number {
+    return this.#queue.reduce((acc, r) => acc + r.queuelength, this.#queue.length);
+  }
+
+  get ready(): boolean {
+    return this.state !== "initial";
+  }
+  get value(): UnPromisify<T> | undefined {
+    if (this.state === "initial") {
+      return undefined;
+    }
+    return this.#active().value;
+  }
+
+  get error(): Error | undefined {
+    if (this.state === "initial") {
+      return undefined;
+    }
+    return this.#active().error;
+  }
+
+  resolve(fn: (ctx?: CTX) => T): T {
+    if (this.state === "initial") {
+      this.state = "waiting";
+      let promiseResult: Promise<UnPromisify<T>>;
+      try {
+        const couldBePromise = fn(this.#ctx);
+        if (!isPromise(couldBePromise)) {
+          promiseResult = Promise.resolve(couldBePromise as UnPromisify<T>);
         } else {
-          okFn(ret as unknown as T);
+          promiseResult = couldBePromise as Promise<UnPromisify<T>>;
         }
       } catch (e) {
-        catchFn(e as Error);
+        promiseResult = Promise.reject(e as Error);
       }
-      if (!this._isPromise) {
-        this._inProgress = undefined;
-      }
+      // console.log("asyncOnce addQueue#initial", this.id, this.#queue.length);
+      this.#queue.push(new AsyncResolveItem(promiseResult));
     }
-    if (this._isPromise) {
-      return future.asPromise() as unknown as R;
+    // remove all disposable items
+    this.#queue
+      .slice(0, -1)
+      .map((i, idx) => (i.isDisposable() ? idx : undefined))
+      .filter((i) => i !== undefined)
+      .reverse()
+      .forEach((idx) => this.#queue.splice(idx, 1));
+
+    return this.#active().resolve();
+  }
+
+  reset(fn?: (c?: CTX) => T): T {
+    this.state = "initial";
+    if (fn) {
+      return this.resolve(fn);
+    }
+    return undefined as T;
+  }
+}
+
+export class ResolveOnce<T extends Promisable<unknown>, CTX = void> implements ResolveOnceIf<T, CTX> {
+  #state: ResolveState = "initial";
+
+  #syncOrAsync: Option<SyncResolveOnce<never, CTX> | AsyncResolveOnce<never, CTX>> = Option.None();
+
+  readonly #ctx?: CTX;
+  constructor(ctx?: CTX) {
+    this.#ctx = ctx;
+  }
+
+  get ready(): boolean {
+    return this.#state !== "initial" && this.#syncOrAsync.Unwrap().ready;
+  }
+
+  get value(): UnPromisify<T> | undefined {
+    if (this.#state === "initial") {
+      return undefined;
+    }
+    return this.#syncOrAsync.Unwrap().value as UnPromisify<T>;
+  }
+
+  get queueLength(): number {
+    if (this.#state === "initial") {
+      return 0;
+    }
+    return this.#syncOrAsync.Unwrap().queueLength;
+  }
+
+  get error(): Error | undefined {
+    if (this.#state === "initial") {
+      return undefined;
+    }
+    return this.#syncOrAsync.Unwrap().error;
+  }
+
+  get state(): ResolveState {
+    if (this.#state === "initial") {
+      return "initial";
+    }
+    return this.#syncOrAsync.Unwrap().state;
+  }
+
+  once<R extends Promisable<UnPromisify<T>>>(fn: (c?: CTX) => R): R {
+    let resultFn: (ctx?: CTX) => R;
+    if (this.#state === "initial") {
+      this.#state = "processing";
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+        const isSyncOrAsync = fn(this.#ctx) as R;
+        if (isPromise(isSyncOrAsync)) {
+          this.#syncOrAsync = Option.Some(new AsyncResolveOnce<never, CTX>(this.#ctx));
+        } else {
+          this.#syncOrAsync = Option.Some(new SyncResolveOnce<never, CTX>(this.#ctx));
+        }
+        resultFn = (): R => isSyncOrAsync;
+      } catch (e) {
+        this.#syncOrAsync = Option.Some(new SyncResolveOnce<never, CTX>(this.#ctx));
+        resultFn = (): R => {
+          throw e;
+        };
+      } finally {
+        this.#state = "processed";
+      }
     } else {
-      // abit funky but i don't want to impl the return just once
-      return this.once(fn);
+      resultFn = fn;
     }
+    if (!this.#syncOrAsync) {
+      throw new Error("ResolveOnce.once impossible");
+    }
+    return this.#syncOrAsync.Unwrap().resolve(resultFn as (c?: CTX) => never) as R;
+  }
+
+  reset<R extends Promisable<UnPromisify<T>>>(fn?: (c?: CTX) => R): R {
+    if (this.#state === "initial") {
+      return this.once(fn as (c?: CTX) => R);
+    }
+    if (this.#state === "processing") {
+      // eslint-disable-next-line no-console
+      console.warn("ResolveOnce.reset dropped was called while processing");
+      return undefined as R;
+    }
+    return this.#syncOrAsync.Unwrap().reset(fn as (c?: CTX) => never) as R;
   }
 }
 
@@ -175,6 +395,7 @@ export interface KeyedParam {
 
 export class Keyed<T extends { reset: () => void }, K = string> {
   protected readonly _map: LRUMap<K, T>;
+  // #lock = new ResolveSeq<T, K>();
 
   readonly factory: (key: K) => T;
   constructor(factory: (key: K) => T, params: Partial<KeyedParam>) {
@@ -217,6 +438,14 @@ export class Keyed<T extends { reset: () => void }, K = string> {
     return this._map.has(key);
   }
 
+  // lock<R extends Promisable<T>>(fn: (map: LRUMap<K, T>) => R): Promise<UnPromisify<R>>  {
+  //   return this.#lock.add(() => fn(this._map));
+  // }
+
+  delete(key: K): void {
+    this._map.delete(key);
+  }
+
   unget(key: K): void {
     const keyed = this._map.get(key);
     keyed?.reset();
@@ -241,14 +470,13 @@ export class KeyedResolvOnce<T, K = string> extends Keyed<ResolveOnce<T, K>, K> 
 
   *entries(): IterableIterator<KeyItem<K, T>> {
     for (const [k, v] of this._map.entries()) {
-      if (!v._onceDone) {
+      if (!v.ready) {
         continue;
       }
-      if (v._onceError) {
-        yield { key: k, value: Result.Err<T>(v._onceError) };
+      if (v.error) {
+        yield { key: k, value: Result.Err<T>(v.error) };
       } else {
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-non-null-assertion
-        yield { key: k, value: Result.Ok<T>(v._onceValue!) };
+        yield { key: k, value: Result.Ok<T>(v.value as T) };
       }
     }
   }
@@ -268,15 +496,15 @@ export class KeyedResolvSeq<T, K = string> extends Keyed<ResolveSeq<T, K>, K> {
   }
 }
 
-class LazyContainer<T> {
+class LazyContainer<T extends Promisable<unknown>> {
   readonly resolveOnce = new ResolveOnce<T>();
 
-  call<R>(fn: () => R): () => ReturnType<typeof fn> {
+  call<R extends Promisable<UnPromisify<T>>>(fn: () => R): () => ReturnType<typeof fn> {
     return () => this.resolveOnce.once(fn);
   }
 }
 
-export function Lazy<R>(fn: () => R): () => ReturnType<typeof fn> {
-  const lazy = new LazyContainer();
-  return lazy.call(fn);
+export function Lazy<R extends Promisable<unknown>>(fn: () => R): () => ReturnType<typeof fn> {
+  const lazy = new LazyContainer<R>();
+  return lazy.call(fn as () => Promisable<UnPromisify<R>>) as () => ReturnType<typeof fn>;
 }

@@ -1,4 +1,5 @@
 export class Future<T> {
+  // readonly id = Math.random();
   readonly #promise: Promise<T>;
   #resolveFn: (value: T) => void = () => {
     throw new Error("This Promise is not working as expected.");
@@ -14,7 +15,7 @@ export class Future<T> {
     });
   }
 
-  async asPromise(): Promise<T> {
+  asPromise(): Promise<T> {
     return this.#promise;
   }
 

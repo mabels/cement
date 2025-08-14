@@ -1,4 +1,4 @@
-import { VERSION, LoggerImpl, Result, Option, Level, runtimeFn, BasicSysAbstractionFactory } from "@adviser/cement";
+import { Lazy, VERSION, LoggerImpl, Result, Option, Level, runtimeFn, BasicSysAbstractionFactory } from "@adviser/cement";
 
 async function main(): Promise<void> {
   const none = Option.None();
@@ -28,6 +28,7 @@ async function main(): Promise<void> {
     const sys = BasicSysAbstractionFactory();
     log.Info().Str("id", sys.NextId()).Msg("Web-Alright");
   }
+  await Lazy(() => log.Flush())();
 }
 // eslint-disable-next-line no-console
 main().catch(console.error);

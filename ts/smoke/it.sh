@@ -1,3 +1,4 @@
+set -e
 
 cd smoke
 rm -f package.json pnpm-lock.yaml tsconfig.json

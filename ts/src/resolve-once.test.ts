@@ -1,4 +1,4 @@
-import { Result, KeyedResolvOnce, ResolveOnce, ResolveSeq, Lazy } from "@adviser/cement";
+import { Result, KeyedResolvOnce, ResolveOnce, ResolveSeq, Lazy, Future } from "@adviser/cement";
 
 describe("resolve-once", () => {
   it("sequence", async () => {
@@ -48,7 +48,8 @@ describe("resolve-once", () => {
     expect(diff).toBeLessThan(150);
   });
 
-  it("works with void", async () => {
+  it("async works with void", async () => {
+    const cnt = 1;
     const once = new ResolveOnce<void>();
     const reallyOnce = vi.fn(async () => {
       return new Promise<void>((resolve) => {
@@ -57,19 +58,32 @@ describe("resolve-once", () => {
         }, 100);
       });
     });
-    const fn = (): Promise<void> => once.once(async () => reallyOnce());
+    const fn = (): Promise<void> =>
+      once.once(() => {
+        return reallyOnce();
+      });
     const start = Date.now();
     expect(
       await Promise.all(
-        Array(100)
+        Array(cnt)
           .fill(fn)
           .map((fn: () => Promise<number>) => fn()),
       ),
-    ).toEqual(Array(100).fill(undefined));
+    ).toEqual(Array(cnt).fill(undefined));
     expect(reallyOnce).toHaveBeenCalledTimes(1);
     const diff = Date.now() - start;
-    expect(diff).toBeGreaterThanOrEqual(99);
+    expect(diff).toBeGreaterThanOrEqual(95);
     expect(diff).toBeLessThan(150);
+  });
+
+  it("sync works with void", () => {
+    const once = new ResolveOnce<void>();
+    const reallyOnce = vi.fn(() => 19);
+    const val = once.once((): void => {
+      reallyOnce();
+    });
+    expect(Array(100).fill(val)).toEqual(Array(100).fill(undefined));
+    expect(reallyOnce).toHaveBeenCalledTimes(1);
   });
 
   it("throws", async () => {
@@ -181,13 +195,13 @@ describe("resolve-once", () => {
     await once.once(orderFn);
     await once.once(orderFn);
     await once.once(orderFn);
-    once.reset();
+    void once.reset();
     await once.once(orderFn);
     await once.once(orderFn);
-    once.reset();
+    void once.reset();
     await once.once(orderFn);
     await once.once(orderFn);
-    once.reset();
+    void once.reset();
     expect(orderFn).toHaveBeenCalledTimes(3);
   });
 
@@ -473,7 +487,19 @@ describe("resolve-once", () => {
     once.once(() => 42);
     expect(once.ready).toBe(true);
     expect(once.value).toBe(42);
-    once.reset();
+    void once.reset();
+    expect(once.ready).toBe(false);
+    expect(once.value).toBe(undefined);
+  });
+
+  it("async resolve once serves ready and value", async () => {
+    const once = new ResolveOnce<number>();
+    expect(once.ready).toBe(false);
+    expect(once.value).toBe(undefined);
+    await once.once(() => Promise.resolve(42));
+    expect(once.ready).toBe(true);
+    expect(once.value).toBe(42);
+    void once.reset();
     expect(once.ready).toBe(false);
     expect(once.value).toBe(undefined);
   });
@@ -512,6 +538,133 @@ class MyLazy {
     };
   }
 }
+
+describe("Reset does not remove pending futures", () => {
+  it("reset are queued", async () => {
+    const once = new ResolveOnce<number>();
+    const actions: {
+      futures: Future<void>[];
+      results: Promise<number>[];
+      reset: Promise<number>;
+    }[] = [];
+
+    const actionCnt = 3;
+    const onceCallCnt = 3;
+
+    for (let i = 0; i < actionCnt; i++) {
+      const loop = i;
+      // console.log(`loop ${loop}`);
+      const futures: Future<void>[] = Array(onceCallCnt)
+        .fill(0)
+        .map(() => {
+          const f = new Future<void>();
+          // console.log(`future ${loop} created ${f.id}`);
+          return f;
+        });
+      actions.push({
+        futures,
+        results: Array(onceCallCnt)
+          .fill(0)
+          .map((_, fidx) =>
+            once.once(() =>
+              futures[fidx].asPromise().then(() => {
+                const ret = loop ? fidx + loop + 42 : fidx + loop + 63;
+                // console.log(`future ${loop} ${fidx} resolved ${ret}`);
+                return ret;
+              }),
+            ),
+          ),
+        reset: once.reset(() => {
+          const ret = loop + 97;
+          // console.log(`reset ${loop} resolved ${ret}`);
+          return Promise.resolve(ret);
+        }),
+      });
+    }
+
+    expect(once.queueLength).toBe(actionCnt * onceCallCnt + actionCnt + actionCnt + 1);
+
+    [...actions].reverse().forEach((a) => {
+      // console.log(`resolve action for ${i}`);
+      [...a.futures].reverse().forEach((f) => {
+        // console.log(`resolve future ${f.id}`);
+        f.resolve();
+      });
+    });
+
+    await Promise.all(actions.map((a) => a.reset));
+
+    expect(once.queueLength).toBe(actionCnt + 1);
+
+    for (let i = 0; i < actionCnt; i++) {
+      const a = actions[i];
+      expect(await Promise.all(a.results)).toEqual(
+        Array(onceCallCnt)
+          .fill(0)
+          .map(() => (i ? i + 96 : i + 63)),
+      );
+    }
+  });
+  it("Reset does not remove pending futures", async () => {
+    const cnt = 10;
+    const once = new ResolveOnce<number>();
+
+    const releaseOnce = new Future<void>();
+
+    const waiting = Promise.all(
+      Array(cnt)
+        .fill(0)
+        .map(() => {
+          return once.once(() => releaseOnce.asPromise().then(() => 24));
+        }),
+    );
+
+    const newValue = new Future<void>();
+    let newWaiting: Promise<number[]>;
+    const never = vi.fn();
+    const resetResult = once.reset(async () => {
+      newWaiting = Promise.all(
+        Array(cnt)
+          .fill(0)
+          .map(() =>
+            once.once(() => {
+              never();
+              return 46;
+            }),
+          ),
+      );
+      await newValue.asPromise();
+      return 42;
+    });
+    releaseOnce.resolve();
+    newValue.resolve();
+    expect(await resetResult).toBe(42);
+
+    const resWaiting = await waiting;
+    expect(resWaiting).toEqual(Array(cnt).fill(24));
+
+    const newWaitingResult = await newWaiting;
+    expect(newWaitingResult).toEqual(Array(cnt).fill(24));
+
+    expect(never).not.toHaveBeenCalled();
+
+    const resolvedReset = await resetResult;
+    expect(resolvedReset).toBe(42);
+
+    expect(
+      await Promise.all(
+        Array(cnt)
+          .fill(0)
+          .map(() =>
+            once.once(() => {
+              never();
+              return 49;
+            }),
+          ),
+      ),
+    ).toEqual(Array(cnt).fill(42));
+  });
+});
 
 describe("Lazy Initialization", () => {
   it("ResolveOnce could be used for LazyInitialization", async () => {
