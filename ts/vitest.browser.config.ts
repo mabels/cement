@@ -17,7 +17,6 @@ export default defineConfig({
           //setupFile: './chromium-setup.js',
         },
       ],
-      // name: process.env.BROWSER || "chrome", // browser name is required
     },
   },
 });

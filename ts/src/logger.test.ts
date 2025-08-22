@@ -16,8 +16,8 @@ import {
   JSONFormatter,
   YAMLFormatter,
   BasicSysAbstractionFactory,
+  utils,
 } from "@adviser/cement";
-import { stripper } from "./utils/stripper.js";
 
 describe("TestLogger", () => {
   let logCollector: LogCollector;
@@ -843,6 +843,26 @@ describe("TestLogger", () => {
     }
   });
 
+  it("browser format to console.log(msg, obj)", async () => {
+    if (runtimeFn().isBrowser) {
+      const logParams = {
+        log: vi.fn(),
+        error: vi.fn(),
+        warn: vi.fn(),
+      };
+      const logger = new LoggerImpl({
+        out: new utils.ConsoleWriterStream(logParams),
+      }).SetDebug("*");
+      logger.Debug().Msg("msg debug");
+      logger.Error().Msg("msg error");
+      logger.Warn().Msg("msg warn");
+      await logger.Flush();
+      expect(logParams.log).toBeCalledWith("msg debug", { level: "debug" });
+      expect(logParams.error).toBeCalledWith("msg error", { level: "error" });
+      expect(logParams.warn).toBeCalledWith("msg warn", { level: "warn" });
+    }
+  });
+
   it("self-ref", async () => {
     const nested: Record<string, unknown> = {
       m: 2,
@@ -1251,7 +1271,7 @@ describe("TestLogger", () => {
     async function fixupLogs(): Promise<unknown> {
       await logger.Flush();
       // return logCollector.Logs()
-      return stripper(
+      return utils.stripper(
         [
           "isReloadNavigation",
           "reason",

@@ -24,33 +24,53 @@ export class ConsoleWriterStreamDefaultWriter implements WritableStreamDefaultWr
   }
   write(chunk?: Uint8Array): Promise<void> {
     let strObj: string | { level: string } = this.decoder.decode(chunk).trimEnd();
-    let output = "log";
     try {
       strObj = JSON.parse(strObj) as { level: string };
-      output = strObj.level;
+      const output = strObj.level || "log";
+      const cargs: unknown[] = [strObj];
+      if ("msg" in strObj) {
+        cargs.unshift(strObj.msg);
+        delete strObj["msg"];
+      }
+      switch (output) {
+        case "error":
+          this._stream.params.error(...cargs);
+          break;
+        case "warn":
+          this._stream.params.warn(...cargs);
+          break;
+        default:
+          this._stream.params.log(...cargs);
+      }
     } catch (e) {
-      /* noop */
-    }
-    switch (output) {
-      case "error":
-        // eslint-disable-next-line no-console
-        console.error(strObj);
-        break;
-      case "warn":
-        // eslint-disable-next-line no-console
-        console.warn(strObj);
-        break;
-      default:
-        // eslint-disable-next-line no-console
-        console.log(strObj);
+      this._stream.params.log(strObj);
     }
     return Promise.resolve();
   }
 }
 
+export interface ConsoleWriterStreamParams {
+  log(...args: unknown[]): void;
+  error(...args: unknown[]): void;
+  warn(...args: unknown[]): void;
+}
+
 export class ConsoleWriterStream implements WritableStream<Uint8Array> {
   locked = false;
   _writer?: WritableStreamDefaultWriter<Uint8Array>;
+
+  readonly params: ConsoleWriterStreamParams;
+
+  constructor(params: Partial<ConsoleWriterStreamParams> = {}) {
+    this.params = {
+      // eslint-disable-next-line no-console
+      error: (...a): void => (params.error || console.error)(...a),
+      // eslint-disable-next-line no-console
+      log: (...a): void => (params.log || console.log)(...a),
+      // eslint-disable-next-line no-console
+      warn: (...a): void => (params.warn || console.warn)(...a),
+    };
+  }
   abort(_reason?: unknown): Promise<void> {
     throw new Error("Method not implemented.");
   }
