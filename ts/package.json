@@ -84,7 +84,7 @@
     "@typescript/native-preview": "7.0.0-dev.20250825.1",
     "@vitest/browser": "^3.2.4",
     "cmd-ts": "^0.14.1",
-    "deno": "2.4.3",
+    "deno": "2.4.4",
     "esbuild-plugin-replace": "^1.4.0",
     "esbuild-plugin-resolve": "^2.0.0",
     "eslint": "9.34.0",
