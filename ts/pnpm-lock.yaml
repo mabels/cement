@@ -38,7 +38,7 @@ importers:
         version: 7.0.0-dev.20250825.1
       '@vitest/browser':
         specifier: ^3.2.4
-        version: 3.2.4(msw@2.7.3(@types/node@24.3.0)(typescript@5.8.3))(playwright@1.54.2)(vite@7.1.1(@types/node@24.3.0)(tsx@4.20.5)(yaml@2.8.1))(vitest@3.2.4)(webdriverio@9.12.0)
+        version: 3.2.4(msw@2.7.3(@types/node@24.3.0)(typescript@5.8.3))(playwright@1.55.0)(vite@7.1.1(@types/node@24.3.0)(tsx@4.20.5)(yaml@2.8.1))(vitest@3.2.4)(webdriverio@9.12.0)
       cmd-ts:
         specifier: ^0.14.1
         version: 0.14.1
@@ -59,7 +59,7 @@ importers:
         version: 17.3.0
       playwright:
         specifier: ^1.54.1
-        version: 1.54.2
+        version: 1.55.0
       playwright-chromium:
         specifier: ^1.54.1
         version: 1.55.0
@@ -2778,18 +2778,13 @@ packages:
     engines: {node: '>=18'}
     hasBin: true
 
-  playwright-core@1.54.2:
-    resolution: {integrity: sha512-n5r4HFbMmWsB4twG7tJLDN9gmBUeSPcsBZiWSE4DnYz9mJMAFqr2ID7+eGC9kpEnxExJ1epttwR59LEWCk8mtA==}
-    engines: {node: '>=18'}
-    hasBin: true
-
   playwright-core@1.55.0:
     resolution: {integrity: sha512-GvZs4vU3U5ro2nZpeiwyb0zuFaqb9sUiAJuyrWpcGouD8y9/HLgGbNRjIph7zU9D3hnPaisMl9zG9CgFi/biIg==}
     engines: {node: '>=18'}
     hasBin: true
 
-  playwright@1.54.2:
-    resolution: {integrity: sha512-Hu/BMoA1NAdRUuulyvQC0pEqZ4vQbGfn8f7wPXcnqQmM+zct9UliKxsIkLNmz/ku7LElUNqmaiv1TG/aL5ACsw==}
+  playwright@1.55.0:
+    resolution: {integrity: sha512-sdCWStblvV1YU909Xqx0DhOjPZE4/5lJsIS84IfN9dAZfcl/CIZ5O8l3o0j7hPMjDvqoTF8ZUcc+i/GL5erstA==}
     engines: {node: '>=18'}
     hasBin: true
 
@@ -4771,7 +4766,7 @@ snapshots:
       '@typescript/native-preview-win32-arm64': 7.0.0-dev.20250825.1
       '@typescript/native-preview-win32-x64': 7.0.0-dev.20250825.1
 
-  '@vitest/browser@3.2.4(msw@2.7.3(@types/node@24.3.0)(typescript@5.8.3))(playwright@1.54.2)(vite@7.1.1(@types/node@24.3.0)(tsx@4.20.5)(yaml@2.8.1))(vitest@3.2.4)(webdriverio@9.12.0)':
+  '@vitest/browser@3.2.4(msw@2.7.3(@types/node@24.3.0)(typescript@5.8.3))(playwright@1.55.0)(vite@7.1.1(@types/node@24.3.0)(tsx@4.20.5)(yaml@2.8.1))(vitest@3.2.4)(webdriverio@9.12.0)':
     dependencies:
       '@testing-library/dom': 10.4.0
       '@testing-library/user-event': 14.6.1(@testing-library/dom@10.4.0)
@@ -4783,7 +4778,7 @@ snapshots:
       vitest: 3.2.4(@types/node@24.3.0)(@vitest/browser@3.2.4)(msw@2.7.3(@types/node@24.3.0)(typescript@5.8.3))(tsx@4.20.5)(yaml@2.8.1)
       ws: 8.18.3
     optionalDependencies:
-      playwright: 1.54.2
+      playwright: 1.55.0
       webdriverio: 9.12.0
     transitivePeerDependencies:
       - bufferutil
@@ -6217,13 +6212,11 @@ snapshots:
     dependencies:
       playwright-core: 1.55.0
 
-  playwright-core@1.54.2: {}
-
   playwright-core@1.55.0: {}
 
-  playwright@1.54.2:
+  playwright@1.55.0:
     dependencies:
-      playwright-core: 1.54.2
+      playwright-core: 1.55.0
     optionalDependencies:
       fsevents: 2.3.2
 
@@ -6881,7 +6874,7 @@ snapshots:
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/node': 24.3.0
-      '@vitest/browser': 3.2.4(msw@2.7.3(@types/node@24.3.0)(typescript@5.8.3))(playwright@1.54.2)(vite@7.1.1(@types/node@24.3.0)(tsx@4.20.5)(yaml@2.8.1))(vitest@3.2.4)(webdriverio@9.12.0)
+      '@vitest/browser': 3.2.4(msw@2.7.3(@types/node@24.3.0)(typescript@5.8.3))(playwright@1.55.0)(vite@7.1.1(@types/node@24.3.0)(tsx@4.20.5)(yaml@2.8.1))(vitest@3.2.4)(webdriverio@9.12.0)
     transitivePeerDependencies:
       - jiti
       - less
