@@ -89,7 +89,7 @@ importers:
         version: 3.2.4(@types/node@24.3.0)(@vitest/browser@3.2.4)(msw@2.7.3(@types/node@24.3.0)(typescript@5.8.3))(tsx@4.20.5)(yaml@2.8.1)
       zx:
         specifier: ^8.8.0
-        version: 8.8.0
+        version: 8.8.1
 
 packages:
 
@@ -3538,8 +3538,8 @@ packages:
   zod@3.25.76:
     resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
 
-  zx@8.8.0:
-    resolution: {integrity: sha512-v0VZXgSHusDvTtZROno3Ws8xkE1uNSSwH/yF8Fm+ZwBrYhr+bRNNpsnTJ32eR/t6umc7lAz5WqdP800ugW9zFA==}
+  zx@8.8.1:
+    resolution: {integrity: sha512-qvsKBnvWHstHKCluKPlEgI/D3+mdiQyMoSSeFR8IX/aXzWIas5A297KxKgPJhuPXdrR6ma0Jzx43+GQ/8sqbrw==}
     engines: {node: '>= 12.17.0'}
     hasBin: true
 
@@ -7104,4 +7104,4 @@ snapshots:
 
   zod@3.25.76: {}
 
-  zx@8.8.0: {}
+  zx@8.8.1: {}
