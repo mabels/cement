@@ -14,6 +14,12 @@ it("ResultOk", () => {
   expect(() => result.unwrap_err()).toThrow();
 });
 
+it("ResultOk-void", () => {
+  const result = Result.Ok();
+  expect(result.isOk()).toBe(true);
+  expect(result.Ok()).toBeFalsy();
+});
+
 it("ResultErr", () => {
   const result = Result.Err("xxx");
   expect(result.isOk()).toBe(false);

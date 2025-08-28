@@ -91,7 +91,7 @@ class WebSystemService implements BasicRuntimeService {
   }
 }
 
-const baseSysAbstraction = new ResolveOnce();
+const baseSysAbstraction = new ResolveOnce<BaseBasicSysAbstraction>();
 export function WebBasicSysAbstraction(param?: WrapperBasicSysAbstractionParams): BasicSysAbstraction {
   const my = baseSysAbstraction.once(() => {
     return new BaseBasicSysAbstraction({

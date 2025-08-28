@@ -1,8 +1,8 @@
 import { isPromise } from "./is-promise.js";
 
 export abstract class Result<T, E = Error> {
-  static Ok<T = void>(t: T): Result<T, Error> {
-    return new ResultOK(t);
+  static Ok<T = void>(...args: T[]): Result<T, Error> {
+    return args.length === 1 ? new ResultOK(args[0]) : new ResultOK(undefined);
   }
   static Err<T, E extends Error = Error>(t: E | string | Result<unknown, E>): Result<T, E> {
     if (typeof t === "string") {

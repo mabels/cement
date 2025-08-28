@@ -511,11 +511,36 @@ describe("resolve-once", () => {
     k.onDelete(fn)();
   });
 
+  it("test async version of once", () => {
+    const r = new ResolveOnce<number>();
+    const x = r.once(() => Promise.resolve(1));
+    assertType<Promise<number>>(x);
+
+    const rv = new ResolveOnce<void>();
+    const xv = rv.once(async () => {
+      /* no-op */
+    });
+    assertType<Promise<void>>(xv);
+  });
+
+  it("test sync version of once", () => {
+    const r = new ResolveOnce<number>();
+    const x = r.once(() => 1);
+    assertType<number>(x);
+
+    const rv = new ResolveOnce<void>();
+    const xv = rv.once(() => {
+      /* no-op */
+    });
+    assertType<unknown>(xv);
+  });
+
   it("once return undefined", () => {
     const once = new ResolveOnce<void>();
-    once.once(() => {
+    const x = once.once(() => {
       return undefined;
     });
+    assertType<Promise<void> | void>(x);
   });
 
   it("keyed has a has method", () => {
@@ -531,10 +556,20 @@ class MyLazy {
   readonly lazyMember = Lazy(() => ++this.initVal);
   readonly lazyAsyncMember = Lazy(() => Promise.resolve(++this.initVal));
 
-  async action(): Promise<{ sync: number; async: number }> {
+  readonly lazyPassIn = Lazy((val: number) => {
+    return val;
+  });
+
+  readonly lazyAsyncPass = Lazy((val: number) => {
+    return Promise.resolve(val);
+  });
+
+  async action(): Promise<{ sync: number; async: number; passIn: number; asyncPass: number }> {
     return {
       sync: this.lazyMember(),
       async: await this.lazyAsyncMember(),
+      passIn: this.lazyPassIn(42),
+      asyncPass: await this.lazyAsyncPass(46),
     };
   }
 }
@@ -669,8 +704,8 @@ describe("Reset does not remove pending futures", () => {
 describe("Lazy Initialization", () => {
   it("ResolveOnce could be used for LazyInitialization", async () => {
     const my = new MyLazy();
-    expect(await my.action()).toEqual({ sync: 43, async: 44 });
-    expect(await my.action()).toEqual({ sync: 43, async: 44 });
-    expect(await my.action()).toEqual({ sync: 43, async: 44 });
+    expect(await my.action()).toEqual({ sync: 43, async: 44, asyncPass: 46, passIn: 42 });
+    expect(await my.action()).toEqual({ sync: 43, async: 44, asyncPass: 46, passIn: 42 });
+    expect(await my.action()).toEqual({ sync: 43, async: 44, asyncPass: 46, passIn: 42 });
   });
 });

@@ -76,14 +76,17 @@ export class ResolveSeq<T, C = void> {
 
 type ResolveState = "initial" | "processed" | "waiting" | "processing";
 
+// export type VoidEqualUndefined<T> = T extends undefined ? void : T
+export type ResultOnce<R, T> = R extends Promise<T> ? Promise<T> : T;
+
 interface ResolveOnceIf<T extends Promisable<unknown>, CTX = void> {
   get ready(): boolean;
   get value(): UnPromisify<T> | undefined;
   get error(): Error | undefined;
   get state(): ResolveState;
 
-  once<R extends Promisable<UnPromisify<T>>>(fn: (c?: CTX) => R): R;
-  reset<R extends Promisable<UnPromisify<T>>>(fn?: (c?: CTX) => R): R;
+  once<R extends Promisable<UnPromisify<T>>>(fn: (c?: CTX) => R): ResultOnce<R, T>;
+  reset<R extends Promisable<UnPromisify<T>>>(fn?: (c?: CTX) => R): ResultOnce<R, T>;
 }
 
 export class SyncResolveOnce<T extends Promisable<unknown>, CTX = void> {
@@ -346,7 +349,7 @@ export class ResolveOnce<T extends Promisable<unknown>, CTX = void> implements R
     return this.#syncOrAsync.Unwrap().state;
   }
 
-  once<R extends Promisable<UnPromisify<T>>>(fn: (c?: CTX) => R): R {
+  once<R extends Promisable<UnPromisify<T>>>(fn: (c?: CTX) => R): ResultOnce<R, T> {
     let resultFn: (ctx?: CTX) => R;
     if (this.#state === "initial") {
       this.#state = "processing";
@@ -373,19 +376,19 @@ export class ResolveOnce<T extends Promisable<unknown>, CTX = void> implements R
     if (!this.#syncOrAsync) {
       throw new Error("ResolveOnce.once impossible");
     }
-    return this.#syncOrAsync.Unwrap().resolve(resultFn as (c?: CTX) => never) as R;
+    return this.#syncOrAsync.Unwrap().resolve(resultFn as (c?: CTX) => never) as ResultOnce<R, T>;
   }
 
-  reset<R extends Promisable<UnPromisify<T>>>(fn?: (c?: CTX) => R): R {
+  reset<R extends Promisable<UnPromisify<T>>>(fn?: (c?: CTX) => R): ResultOnce<R, T> {
     if (this.#state === "initial") {
       return this.once(fn as (c?: CTX) => R);
     }
     if (this.#state === "processing") {
       // eslint-disable-next-line no-console
       console.warn("ResolveOnce.reset dropped was called while processing");
-      return undefined as R;
+      return undefined as ResultOnce<R, T>;
     }
-    return this.#syncOrAsync.Unwrap().reset(fn as (c?: CTX) => never) as R;
+    return this.#syncOrAsync.Unwrap().reset(fn as (c?: CTX) => never) as ResultOnce<R, T>;
   }
 }
 
@@ -499,12 +502,15 @@ export class KeyedResolvSeq<T, K = string> extends Keyed<ResolveSeq<T, K>, K> {
 class LazyContainer<T extends Promisable<unknown>> {
   readonly resolveOnce = new ResolveOnce<T>();
 
-  call<R extends Promisable<UnPromisify<T>>>(fn: () => R): () => ReturnType<typeof fn> {
-    return () => this.resolveOnce.once(fn);
+  call<Args extends readonly unknown[], Return>(fn: (...args: Args) => Return): () => Return {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-explicit-any
+    return (...args: Args) => this.resolveOnce.once(() => fn(...args) as any) as unknown as Return;
   }
 }
 
-export function Lazy<R extends Promisable<unknown>>(fn: () => R): () => ReturnType<typeof fn> {
-  const lazy = new LazyContainer<R>();
-  return lazy.call(fn as () => Promisable<UnPromisify<R>>) as () => ReturnType<typeof fn>;
+// T extends (...args: infer P) => any
+// export function Lazy<R extends (...args: infer P) => infer X >(fn: R): (...args: P) =>infer
+export function Lazy<Args extends readonly unknown[], Return>(fn: (...args: Args) => Return): (...args: Args) => Return {
+  const lazy = new LazyContainer<Return>();
+  return lazy.call(fn);
 }
