@@ -8,7 +8,7 @@
   "exports": {
     ".": {
       "types": "./esm/index.d.ts",
-      "require": "./cjs/index.cjs",
+      "require": "./cjs/index.cjs.cjs",
       "import": "./esm/index.js"
     },
     "./cli": {

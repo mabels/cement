@@ -35,13 +35,18 @@ export async function loadAsset(localPath: string, opts: Partial<LoadAssetOption
     url?: URL;
     src: "import.meta.url" | "opts.fallBackUrl";
   } = import.meta?.url ? { url: new URL(pathOps.dirname(import.meta.url)), src: "import.meta.url" } : fallBackBaseUrl(opts);
-  return loadAssetReal(base, localPath, opts);
+  return loadAssetReal(base, localPath, {
+    pathCleaner: (base, localPath) => pathOps.join(base, localPath),
+    ...opts,
+  });
 }
 
 async function loadAssetReal(
   baseUrl: { url?: URL; src: "import.meta.url" | "opts.fallBackUrl" },
   localPath: string,
-  opts: Partial<LoadAssetOptions>,
+  opts: Partial<Omit<LoadAssetOptions, "pathCleaner">> & {
+    pathCleaner: (base: string, localPath: string, mode: "fallback" | "normal") => string;
+  },
 ): Promise<Result<string>> {
   if (!baseUrl.url) {
     return Result.Err(`base url not found from ${baseUrl.src}`);
@@ -80,7 +85,13 @@ async function loadAssetReal(
       baseUrl.url.pathname = opts.pathCleaner(baseUrl.url.pathname, localPath, "normal");
       break;
   }
-  const rRes = await exception2Result(() => callFetch(opts.mock)(baseUrl.url));
+
+  const rRes = await exception2Result(() => {
+    if (!baseUrl.url) {
+      throw Error(`base url not found from ${baseUrl.src}`);
+    }
+    return callFetch(opts.mock)(baseUrl.url);
+  });
   if (rRes.isErr()) {
     if (baseUrl.src === "import.meta.url") {
       // eslint-disable-next-line no-console

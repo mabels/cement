@@ -19,5 +19,5 @@
     "sourceMap": true
   },
   "include": ["src/**/*"],
-  "exclude": ["src/test/test-exit-handler.ts"]
+  "exclude": ["src/test/test-exit-handler.ts", "src/load-asset*.ts"]
 }
