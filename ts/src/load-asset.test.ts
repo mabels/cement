@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { loadAsset } from "./load-asset.js";
+import { loadAsset, urlDirname } from "./load-asset.js";
 import { runtimeFn } from "./runtime.js";
 
 describe("loadAsset", () => {
@@ -8,14 +8,27 @@ describe("loadAsset", () => {
       const result = await loadAsset("version.ts", {
         fallBackUrl: "not://working/x",
         pathCleaner: (base, localPath) => `${base}/./${localPath}`,
+        basePath: () => import.meta.url,
       });
       expect(result.isOk()).toBe(true);
       expect(result.Ok()).toContain("VERSION");
     });
     it("returns file content from fallback", async () => {
       const result = await loadAsset("version.ts", {
-        fallBackUrl: runtimeFn().isBrowser ? import.meta.url : "file://./",
+        fallBackUrl: urlDirname(import.meta.url),
         pathCleaner: (base, localPath) => `${base}/${localPath}`,
+        basePath: () => "kaput",
+      });
+      expect(result.isOk()).toBe(true);
+      expect(result.Ok()).toContain("VERSION");
+    });
+    it("failed basePath", async () => {
+      const result = await loadAsset("version.ts", {
+        fallBackUrl: urlDirname(import.meta.url),
+        pathCleaner: (base, localPath) => `${base}/${localPath}`,
+        basePath: () => {
+          throw new Error("failed basePath");
+        },
       });
       expect(result.isOk()).toBe(true);
       expect(result.Ok()).toContain("VERSION");

@@ -20,21 +20,39 @@ async function callFsReadFile(mock?: Partial<MockLoadAsset>): Promise<MockLoadAs
   return (fname: string) => fs.promises.readFile(fname);
 }
 
-export interface LoadAssetOptions {
+export interface LoadAssetOptionals {
   readonly fallBackUrl: CoerceURI;
   readonly pathCleaner: (base: string, localPath: string, mode: "fallback" | "normal") => string;
   readonly mock: Partial<MockLoadAsset>;
 }
 
-function fallBackBaseUrl(opts: Partial<LoadAssetOptions>): { url?: URL; src: "opts.fallBackUrl" } {
+// basePath could fail throw
+export type LoadAssetOpts = Partial<LoadAssetOptionals> & { readonly basePath: () => string };
+
+function fallBackBaseUrl(opts: { fallBackUrl?: CoerceURI }): { url?: URL; src: "opts.fallBackUrl" } {
   return { url: opts.fallBackUrl ? URI.from(opts.fallBackUrl).asURL() : undefined, src: "opts.fallBackUrl" };
 }
 
-export async function loadAsset(localPath: string, opts: Partial<LoadAssetOptions> = {}): Promise<Result<string>> {
+function baseUrlFromOpts(opts: LoadAssetOpts): URL | undefined {
+  try {
+    return urlDirname(opts.basePath()).asURL();
+  } catch (e) {
+    return;
+  }
+}
+
+export function urlDirname(url: CoerceURI): URI {
+  const uri = URI.from(url);
+  const buri = uri.build();
+  return buri.pathname(pathOps.dirname(uri.pathname)).URI();
+}
+
+export async function loadAsset(localPath: string, opts: LoadAssetOpts): Promise<Result<string>> {
+  const baseURL = baseUrlFromOpts(opts);
   const base: {
     url?: URL;
     src: "import.meta.url" | "opts.fallBackUrl";
-  } = import.meta?.url ? { url: new URL(pathOps.dirname(import.meta.url)), src: "import.meta.url" } : fallBackBaseUrl(opts);
+  } = baseURL ? { url: baseURL, src: "import.meta.url" } : fallBackBaseUrl(opts);
   return loadAssetReal(base, localPath, {
     pathCleaner: (base, localPath) => pathOps.join(base, localPath),
     ...opts,
@@ -44,15 +62,13 @@ export async function loadAsset(localPath: string, opts: Partial<LoadAssetOption
 async function loadAssetReal(
   baseUrl: { url?: URL; src: "import.meta.url" | "opts.fallBackUrl" },
   localPath: string,
-  opts: Partial<Omit<LoadAssetOptions, "pathCleaner">> & {
+  opts: Partial<Omit<LoadAssetOpts, "pathCleaner">> & {
     pathCleaner: (base: string, localPath: string, mode: "fallback" | "normal") => string;
   },
 ): Promise<Result<string>> {
   if (!baseUrl.url) {
     return Result.Err(`base url not found from ${baseUrl.src}`);
   }
-  const urlO = new URL(baseUrl.url.toString());
-  urlO.pathname = pathOps.dirname(urlO.pathname);
   if (baseUrl.url.protocol.startsWith("file")) {
     const rt = runtimeFn();
     const fname = opts.pathCleaner(baseUrl.url.pathname, localPath, "normal");
