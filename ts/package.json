@@ -82,7 +82,7 @@
     "@types/node": "^24.0.0",
     "@typescript-eslint/eslint-plugin": "^8.7.0",
     "@typescript-eslint/parser": "^8.7.0",
-    "@typescript/native-preview": "7.0.0-dev.20250825.1",
+    "@typescript/native-preview": "7.0.0-dev.20250907.1",
     "@vitest/browser": "^3.2.4",
     "cmd-ts": "^0.14.1",
     "deno": "2.4.4",
