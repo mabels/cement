@@ -538,9 +538,19 @@ describe("resolve-once", () => {
   it("once return undefined", () => {
     const once = new ResolveOnce<void>();
     const x = once.once(() => {
-      return undefined;
+      return; // undefined;
     });
-    assertType<Promise<void> | void>(x);
+    expect(x).toBe(undefined);
+    // assertType<void>(x);
+  });
+
+  it("once return undefined", async () => {
+    const once = new ResolveOnce();
+    const x = once.once(() => {
+      return Promise.resolve();
+    });
+    assertType<Promise<void>>(x);
+    expect(await x).toBe(undefined);
   });
 
   it("keyed has a has method", () => {
@@ -698,6 +708,52 @@ describe("Reset does not remove pending futures", () => {
           ),
       ),
     ).toEqual(Array(cnt).fill(42));
+  });
+
+  interface Type1 {
+    type1: string;
+  }
+  interface Type2 {
+    type2: number;
+  }
+  interface Type3 {
+    type3: boolean;
+  }
+  type Type = Type1 | Type2 | Type3;
+  it("Keyed Resolve ReturnType of once", () => {
+    const keyed = new KeyedResolvOnce<Type>();
+    const type1 = keyed.get("type1").once(() => ({ type1: "1" }));
+    assertType<Type1>(type1);
+    assertType<Type>(type1);
+    const type2 = keyed.get("type2").once(() => ({ type2: 1 }));
+    assertType<Type2>(type2);
+    assertType<Type>(type2);
+    const type3 = keyed.get("type3").once(() => ({ type3: true }));
+    assertType<Type3>(type3);
+    assertType<Type>(type3);
+  });
+
+  it("ResolveOnce ReturnType of once", async () => {
+    const ronce = new ResolveOnce<Type>();
+    const type1 = ronce.once(() => ({ type1: "1" }));
+    assertType<Type1>(type1);
+    assertType<Type>(type1);
+    const type2 = ronce.once(() => ({ type2: 1 }));
+    assertType<Type2>(type2);
+    assertType<Type>(type2);
+    const type3 = ronce.once(() => ({ type3: true }));
+    assertType<Type3>(type3);
+    assertType<Type>(type3);
+
+    const atype1 = await ronce.once(() => Promise.resolve({ type1: "1" }));
+    assertType<Type1>(atype1);
+    assertType<Type>(atype1);
+    const atype2 = await ronce.once(() => Promise.resolve({ type2: 1 }));
+    assertType<Type2>(atype2);
+    assertType<Type>(atype2);
+    const atype3 = await ronce.once(() => Promise.resolve({ type3: true }));
+    assertType<Type3>(atype3);
+    assertType<Type>(atype3);
   });
 });
 
