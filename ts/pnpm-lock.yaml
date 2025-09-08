@@ -20,7 +20,7 @@ importers:
         version: 0.8.66(@vitest/runner@3.2.4)(@vitest/snapshot@3.2.4)(vitest@3.2.4)
       '@eslint/js':
         specifier: ^9.20.0
-        version: 9.34.0
+        version: 9.35.0
       '@types/deno':
         specifier: ^2.3.0
         version: 2.3.0
@@ -865,6 +865,10 @@ packages:
     resolution: {integrity: sha512-EoyvqQnBNsV1CWaEJ559rxXL4c8V92gxirbawSmVUOWXlsRxxQXl6LmCpdUblgxgSkDIqKnhzba2SjRTI/A5Rw==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
+  '@eslint/js@9.35.0':
+    resolution: {integrity: sha512-30iXE9whjlILfWobBkNerJo+TXYsgVM5ERQwMcMKCHckHflCmf7wXDAHlARoWnh0s1U72WqlbeyE7iAcCzuCPw==}
+    engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+
   '@eslint/object-schema@2.1.6':
     resolution: {integrity: sha512-RBMg5FRL0I0gs51M/guSAj5/e14VQ4tpZnQNWwuDT66P14I43ItmPfIZRhO9fUVIPOAQXU47atlywZ/czoqFPA==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
@@ -1101,8 +1105,8 @@ packages:
   '@promptbook/utils@0.69.5':
     resolution: {integrity: sha512-xm5Ti/Hp3o4xHrsK9Yy3MS6KbDxYbq485hDsFvxqaNA7equHLPdo8H8faTitTeb14QCDfLW4iwCxdVYu5sn6YQ==}
 
-  '@puppeteer/browsers@2.10.7':
-    resolution: {integrity: sha512-wHWLkQWBjHtajZeqCB74nsa/X70KheyOhySYBRmVQDJiNj0zjZR/naPCvdWjMhcG1LmjaMV/9WtTo5mpe8qWLw==}
+  '@puppeteer/browsers@2.10.8':
+    resolution: {integrity: sha512-f02QYEnBDE0p8cteNoPYHHjbDuwyfbe4cCIVlNi8/MRicIxFW4w4CfgU0LNgWEID6s06P+hRJ1qjpBLMhPRCiQ==}
     engines: {node: '>=18'}
     hasBin: true
 
@@ -1356,11 +1360,14 @@ packages:
   '@types/jsonfile@6.1.4':
     resolution: {integrity: sha512-D5qGUYwjvnNNextdU59/+fI+spnwtTFmyQP0h+PfIOSkNfpU6AOICUOkm4i0OnSk+NyjdPJrxCDro0sJsWlRpQ==}
 
-  '@types/node@20.19.11':
-    resolution: {integrity: sha512-uug3FEEGv0r+jrecvUUpbY8lLisvIjg6AAic6a2bSP5OEOLeJsDSnvhCDov7ipFFMXS3orMpzlmi0ZcuGkBbow==}
+  '@types/node@20.19.13':
+    resolution: {integrity: sha512-yCAeZl7a0DxgNVteXFHt9+uyFbqXGy/ShC4BlcHkoE0AfGXYv/BUiplV72DjMYXHDBXFjhvr6DD1NiRVfB4j8g==}
 
   '@types/node@24.3.0':
     resolution: {integrity: sha512-aPTXCrfwnDLj4VvXrm+UUCQjNEvJgNA8s5F1cvwQU+3KNltTOkBm1j30uNLyqqPNe7gE3KFzImYoZEfLhp4Yow==}
+
+  '@types/node@24.3.1':
+    resolution: {integrity: sha512-3vXmQDXy+woz+gnrTvuvNrPzekOi+Ds0ReMxw0LzBiK3a+1k0kQn9f2NWk+lgD4rJehFUmYy2gMhJ2ZI+7YP9g==}
 
   '@types/sinonjs__fake-timers@8.1.5':
     resolution: {integrity: sha512-mQkU2jY8jJEF7YHjHvsQO8+3ughTL1mcnn96igfhONmR+fUPSKIkefQYpSe8bsly2Ep7oQbn/6VG5/9/0qcArQ==}
@@ -1605,8 +1612,8 @@ packages:
     resolution: {integrity: sha512-chVbHqrjDlIKCLoAPLdrFK8Qozu/S+fbubqlyazohAKnouCUCa2goYs7faYR0lkmLqm92PllJS+KBRAha9V/tg==}
     engines: {node: '>=18.20.0'}
 
-  '@zip.js/zip.js@2.7.72':
-    resolution: {integrity: sha512-3/A4JwrgkvGBlCxtItjxs8HrNbuTAAl/zlGkV6tC5Fb5k5nk4x2Dqxwl/YnUys5Ch+QB01eJ8Q5K/J2uXfy9Vw==}
+  '@zip.js/zip.js@2.7.73':
+    resolution: {integrity: sha512-I2UP8/rdQE5hTtVVL08B7P8XuwXiKuuMUPjNuFOVL/9b+8IsExR9S5jz2H58u0rJjU4M1BikLgqEMG8gZJZVBw==}
     engines: {bun: '>=0.7.0', deno: '>=1.0.0', node: '>=16.5.0'}
 
   abort-controller@3.0.0:
@@ -1708,8 +1715,8 @@ packages:
   bare-events@2.6.1:
     resolution: {integrity: sha512-AuTJkq9XmE6Vk0FJVNq5QxETrSA/vKHarWVBG5l/JbdCL1prJemiyJqUS0jrlXO0MftuPq4m3YVYhoNc5+aE/g==}
 
-  bare-fs@4.2.1:
-    resolution: {integrity: sha512-mELROzV0IhqilFgsl1gyp48pnZsaV9xhQapHLDsvn4d4ZTfbFhcghQezl7FTEDNBcGqLUnNI3lUlm6ecrLWdFA==}
+  bare-fs@4.2.3:
+    resolution: {integrity: sha512-1aGs5pRVLToMQ79elP+7cc0u0s/wXAzfBv/7hDloT7WFggLqECCas5qqPky7WHCFdsBH5WDq6sD4fAoz5sJbtA==}
     engines: {bare: '>=1.16.0'}
     peerDependencies:
       bare-buffer: '*'
@@ -2354,8 +2361,8 @@ packages:
     resolution: {integrity: sha512-TR3KfrTZTYLPB6jUjfx6MF9WcWrHL9su5TObK4ZkYgBdWKPOFoSoQIdEuTuR82pmtxH2spWG9h6etwfr1pLBqQ==}
     engines: {node: '>=6'}
 
-  import-meta-resolve@4.1.0:
-    resolution: {integrity: sha512-I6fiaX09Xivtk+THaMfAwnA3MVA5Big1WHF1Dfx9hFuvNIWpXnorlkzhcQf6ehrqQiiZECRt1poOAkPmer3ruw==}
+  import-meta-resolve@4.2.0:
+    resolution: {integrity: sha512-Iqv2fzaTQN28s/FwZAoFq0ZSs/7hMAHJVX+w8PZl3cY19Pxk6jFFalxQoIfW2826i/fDLXv8IiEZRIT0lDuWcg==}
 
   imurmurhash@0.1.4:
     resolution: {integrity: sha512-JmXMZ6wuvDmLiHEml9ykzqO6lwFbof0GG4IkcGaENdCRDDmMVnny7s5HsIgHCbaq0w2MyPhDqkhTUgS2LU2PHA==}
@@ -4151,6 +4158,8 @@ snapshots:
 
   '@eslint/js@9.34.0': {}
 
+  '@eslint/js@9.35.0': {}
+
   '@eslint/object-schema@2.1.6': {}
 
   '@eslint/plugin-kit@0.3.5':
@@ -4365,7 +4374,7 @@ snapshots:
       spacetrim: 0.11.59
     optional: true
 
-  '@puppeteer/browsers@2.10.7':
+  '@puppeteer/browsers@2.10.8':
     dependencies:
       debug: 4.4.1
       extract-zip: 2.0.1
@@ -4549,7 +4558,7 @@ snapshots:
     dependencies:
       '@types/node': 24.3.0
 
-  '@types/node@20.19.11':
+  '@types/node@20.19.13':
     dependencies:
       undici-types: 6.21.0
     optional: true
@@ -4557,6 +4566,11 @@ snapshots:
   '@types/node@24.3.0':
     dependencies:
       undici-types: 7.10.0
+
+  '@types/node@24.3.1':
+    dependencies:
+      undici-types: 7.10.0
+    optional: true
 
   '@types/sinonjs__fake-timers@8.1.5':
     optional: true
@@ -4572,12 +4586,12 @@ snapshots:
 
   '@types/ws@8.18.1':
     dependencies:
-      '@types/node': 24.3.0
+      '@types/node': 24.3.1
     optional: true
 
   '@types/yauzl@2.10.3':
     dependencies:
-      '@types/node': 24.3.0
+      '@types/node': 24.3.1
     optional: true
 
   '@typescript-eslint/eslint-plugin@8.39.0(@typescript-eslint/parser@8.40.0(eslint@9.34.0)(typescript@5.9.2))(eslint@9.34.0)(typescript@5.9.2)':
@@ -4855,7 +4869,7 @@ snapshots:
       '@wdio/utils': 9.11.0
       deepmerge-ts: 7.1.5
       glob: 10.4.5
-      import-meta-resolve: 4.1.0
+      import-meta-resolve: 4.2.0
     transitivePeerDependencies:
       - bare-buffer
       - supports-color
@@ -4874,17 +4888,17 @@ snapshots:
 
   '@wdio/repl@9.4.4':
     dependencies:
-      '@types/node': 20.19.11
+      '@types/node': 20.19.13
     optional: true
 
   '@wdio/types@9.10.1':
     dependencies:
-      '@types/node': 20.19.11
+      '@types/node': 20.19.13
     optional: true
 
   '@wdio/utils@9.11.0':
     dependencies:
-      '@puppeteer/browsers': 2.10.7
+      '@puppeteer/browsers': 2.10.8
       '@wdio/logger': 9.4.4
       '@wdio/types': 9.10.1
       decamelize: 6.0.1
@@ -4892,7 +4906,7 @@ snapshots:
       edgedriver: 6.1.2
       geckodriver: 5.0.0
       get-port: 7.1.0
-      import-meta-resolve: 4.1.0
+      import-meta-resolve: 4.2.0
       locate-app: 2.5.0
       safaridriver: 1.0.0
       split2: 4.2.0
@@ -4902,7 +4916,7 @@ snapshots:
       - supports-color
     optional: true
 
-  '@zip.js/zip.js@2.7.72':
+  '@zip.js/zip.js@2.7.73':
     optional: true
 
   abort-controller@3.0.0:
@@ -5002,7 +5016,7 @@ snapshots:
   bare-events@2.6.1:
     optional: true
 
-  bare-fs@4.2.1:
+  bare-fs@4.2.3:
     dependencies:
       bare-events: 2.6.1
       bare-path: 3.0.0
@@ -5321,7 +5335,7 @@ snapshots:
   edgedriver@6.1.2:
     dependencies:
       '@wdio/logger': 9.4.4
-      '@zip.js/zip.js': 2.7.72
+      '@zip.js/zip.js': 2.7.73
       decamelize: 6.0.1
       edge-paths: 3.0.5
       fast-xml-parser: 5.2.5
@@ -5662,7 +5676,7 @@ snapshots:
   geckodriver@5.0.0:
     dependencies:
       '@wdio/logger': 9.4.4
-      '@zip.js/zip.js': 2.7.72
+      '@zip.js/zip.js': 2.7.73
       decamelize: 6.0.1
       http-proxy-agent: 7.0.2
       https-proxy-agent: 7.0.6
@@ -5787,7 +5801,7 @@ snapshots:
       parent-module: 1.0.1
       resolve-from: 4.0.0
 
-  import-meta-resolve@4.1.0:
+  import-meta-resolve@4.2.0:
     optional: true
 
   imurmurhash@0.1.4: {}
@@ -6622,7 +6636,7 @@ snapshots:
       pump: 3.0.3
       tar-stream: 3.1.7
     optionalDependencies:
-      bare-fs: 4.2.1
+      bare-fs: 4.2.3
       bare-path: 3.0.0
     transitivePeerDependencies:
       - bare-buffer
@@ -6922,7 +6936,7 @@ snapshots:
 
   webdriver@9.11.0:
     dependencies:
-      '@types/node': 20.19.11
+      '@types/node': 20.19.13
       '@types/ws': 8.18.1
       '@wdio/config': 9.11.0
       '@wdio/logger': 9.4.4
@@ -6941,7 +6955,7 @@ snapshots:
 
   webdriverio@9.12.0:
     dependencies:
-      '@types/node': 20.19.11
+      '@types/node': 20.19.13
       '@types/sinonjs__fake-timers': 8.1.5
       '@wdio/config': 9.11.0
       '@wdio/logger': 9.4.4
