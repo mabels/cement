@@ -2,13 +2,13 @@ import { ResolveOnce } from "./resolve-once.js";
 import { Result } from "./result.js";
 import { coerceIntoUint8, ToUInt8 } from "./utils/coerce-uint8.js";
 
-export type ToEnDecoder = ToUInt8 | string | Result<string>;
-export type AsyncToEnDecoder = ToEnDecoder | Blob | Promise<ToEnDecoder | Blob>;
+export type ToDecoder = ToUInt8 | string | Result<string>;
+export type AsyncToDecoder = ToDecoder | Blob | Promise<ToDecoder | Blob>;
 
 export interface TxtEnDecoder {
   encode(input: string): Uint8Array;
-  decode(input: ToEnDecoder): string;
-  asyncDecode(input: AsyncToEnDecoder): Promise<string>;
+  decode(input?: ToDecoder): string;
+  asyncDecode(input?: AsyncToDecoder): Promise<string>;
 }
 
 class TxtOps implements TxtEnDecoder {
@@ -18,7 +18,10 @@ class TxtOps implements TxtEnDecoder {
   encode(str: string): Uint8Array {
     return this.encoder.encode(str);
   }
-  decode(data: ToEnDecoder): string {
+  decode(data?: ToDecoder): string {
+    if (!data) {
+      return "";
+    }
     if (Result.Is(data)) {
       if (data.isErr()) {
         throw data.Err();
@@ -35,7 +38,10 @@ class TxtOps implements TxtEnDecoder {
     return this.decoder.decode(coerceIntoUint8(data as ToUInt8).Ok());
   }
 
-  async asyncDecode(data: AsyncToEnDecoder): Promise<string> {
+  async asyncDecode(data?: AsyncToDecoder): Promise<string> {
+    if (!data) {
+      return "";
+    }
     let resolved = await data;
     if (resolved instanceof Blob) {
       resolved = await resolved.arrayBuffer();

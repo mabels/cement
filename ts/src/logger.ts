@@ -3,7 +3,7 @@ import { isPromise } from "./is-promise.js";
 import { bin2string } from "./bin2text.js";
 import { Option } from "./option.js";
 import { Result } from "./result.js";
-import { TxtEnDecoder } from "./txt-en-decoder.js";
+import { TxtEnDecoder, TxtEnDecoderSingleton } from "./txt-en-decoder.js";
 import { CoerceURI, MutableURL } from "./uri.js";
 import { isJSON } from "./is-json.js";
 
@@ -106,7 +106,7 @@ function logValueInternal(val: LogValueArg, ctx: LogValueStateInternal): LogValu
       if (ArrayBuffer.isView(val)) {
         try {
           // should be injected
-          const decoder = new TextDecoder();
+          const decoder = TxtEnDecoderSingleton();
           const asStr = decoder.decode(val);
           const resIsJson = isJSON<LogValueArg>(asStr);
           if (resIsJson.isJSON) {

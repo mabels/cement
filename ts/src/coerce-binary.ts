@@ -1,3 +1,5 @@
+import { TxtEnDecoderSingleton } from "./txt-en-decoder.js";
+
 export type CoerceBinaryInput = string | ArrayBufferLike | ArrayBufferView | Uint8Array; // | SharedArrayBuffer
 
 export async function top_uint8(input: CoerceBinaryInput | Blob): Promise<Uint8Array> {
@@ -9,7 +11,7 @@ export async function top_uint8(input: CoerceBinaryInput | Blob): Promise<Uint8A
 
 export function to_uint8(input: CoerceBinaryInput, encoder?: TextEncoder): Uint8Array {
   if (typeof input === "string") {
-    return (encoder ?? new TextEncoder()).encode(input);
+    return (encoder ?? TxtEnDecoderSingleton()).encode(input);
   }
   if (input instanceof ArrayBuffer /* || input instanceof SharedArrayBuffer */) {
     return new Uint8Array(input);

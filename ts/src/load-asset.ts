@@ -1,6 +1,7 @@
 import { pathOps } from "./path-ops.js";
 import { Result, exception2Result } from "./result.js";
 import { runtimeFn } from "./runtime.js";
+import { TxtEnDecoderSingleton } from "./txt-en-decoder.js";
 import { CoerceURI, URI } from "./uri.js";
 
 interface MockLoadAsset {
@@ -16,7 +17,8 @@ async function callFsReadFile(mock?: Partial<MockLoadAsset>): Promise<MockLoadAs
   if (mock?.fsReadFile) {
     return mock.fsReadFile;
   }
-  const fs = await import("fs");
+  const fsMod = "node:fs"; // make ts and esbuild happy
+  const fs = (await import(fsMod)) as typeof import("node:fs");
   return (fname: string) => fs.promises.readFile(fname);
 }
 
@@ -75,7 +77,7 @@ async function loadAssetReal(
     if (rt.isNodeIsh || rt.isDeno) {
       try {
         const out = await callFsReadFile(opts.mock).then((fn) => fn(fname));
-        const txt = new TextDecoder().decode(out);
+        const txt = TxtEnDecoderSingleton().decode(out);
         return Result.Ok(txt);
       } catch (e) {
         // eslint-disable-next-line no-console

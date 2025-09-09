@@ -1,6 +1,8 @@
+import { TxtEnDecoderSingleton } from "../txt-en-decoder.js";
+
 export class ConsoleWriterStreamDefaultWriter implements WritableStreamDefaultWriter<Uint8Array> {
   readonly desiredSize: number | null = null;
-  readonly decoder: TextDecoder = new TextDecoder();
+  // readonly decoder: TextDecoder = new TextDecoder();
 
   closed: Promise<never>;
   ready: Promise<never>;
@@ -23,7 +25,7 @@ export class ConsoleWriterStreamDefaultWriter implements WritableStreamDefaultWr
     this.closed = Promise.resolve() as Promise<never>;
   }
   write(chunk?: Uint8Array): Promise<void> {
-    let strObj: string | { level: string } = this.decoder.decode(chunk).trimEnd();
+    let strObj: string | { level: string } = TxtEnDecoderSingleton().decode(chunk).trimEnd();
     try {
       strObj = JSON.parse(strObj) as { level: string };
       const output = strObj.level || "log";

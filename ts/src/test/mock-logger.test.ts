@@ -1,4 +1,4 @@
-import { LogWriteStream, MockLogger } from "@adviser/cement";
+import { LogWriteStream, MockLogger, TxtEnDecoderSingleton } from "@adviser/cement";
 
 describe("logger", () => {
   it("with logcollector", async () => {
@@ -58,7 +58,7 @@ describe("logger", () => {
     await l.logger.Flush();
     expect(l.logCollector.Logs()).toEqual([{ level: "error", msg: "should been shown in console", module: "MockLogger" }]);
     expect(lc2Buffer.length).toBe(1);
-    expect(JSON.parse(new TextDecoder().decode(lc2Buffer[0]))).toEqual({
+    expect(JSON.parse(TxtEnDecoderSingleton().decode(lc2Buffer[0]))).toEqual({
       level: "error",
       msg: "should been shown in console",
       module: "MockLogger",

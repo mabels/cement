@@ -17,6 +17,7 @@ import {
   YAMLFormatter,
   BasicSysAbstractionFactory,
   utils,
+  TxtEnDecoderSingleton,
 } from "@adviser/cement";
 
 describe("TestLogger", () => {
@@ -1652,7 +1653,7 @@ describe("TestLogger", () => {
   it("if uint8array is json do not hexdump", async () => {
     logger
       .Error()
-      .Any("res", new TextEncoder().encode(JSON.stringify({ a: 1, b: { c: "x" } })))
+      .Any("res", TxtEnDecoderSingleton().encode(JSON.stringify({ a: 1, b: { c: "x" } })))
       .Msg("ok");
     await logger.Flush();
     expect(logCollector.Logs()).toEqual([

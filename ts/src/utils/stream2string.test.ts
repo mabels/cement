@@ -1,3 +1,4 @@
+import { TxtEnDecoderSingleton } from "../txt-en-decoder.js";
 import { stream2string } from "./stream2string.js";
 
 it("stream2string", async () => {
@@ -5,7 +6,7 @@ it("stream2string", async () => {
     await stream2string(
       new ReadableStream({
         start(controller): void {
-          const encoder = new TextEncoder();
+          const encoder = TxtEnDecoderSingleton();
           controller.enqueue(encoder.encode("Hello"));
           controller.enqueue(encoder.encode(" "));
           controller.enqueue(encoder.encode("World"));
@@ -24,7 +25,7 @@ it("stream2string maxSize", async () => {
       await stream2string(
         new ReadableStream({
           start(controller): void {
-            const encoder = new TextEncoder();
+            const encoder = TxtEnDecoderSingleton();
             controller.enqueue(encoder.encode("Hello"));
             controller.enqueue(encoder.encode(" "));
             controller.enqueue(encoder.encode("World"));

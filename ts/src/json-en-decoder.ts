@@ -1,5 +1,5 @@
 import { exception2Result, Result } from "./result.js";
-import { AsyncToEnDecoder, ToEnDecoder, TxtEnDecoder, TxtEnDecoderSingleton as TxtEnDecoderSingleton } from "./txt-en-decoder.js";
+import { AsyncToDecoder, ToDecoder, TxtEnDecoder, TxtEnDecoderSingleton as TxtEnDecoderSingleton } from "./txt-en-decoder.js";
 
 export interface JSONEnDecoder {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -20,9 +20,9 @@ export interface JSONEnDecoder {
     space?: string | number,
   ): Promise<Uint8Array>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  parse<T>(input: ToEnDecoder, reviver?: (this: any, key: string, value: any) => any): Result<T>;
+  parse<T>(input: ToDecoder, reviver?: (this: any, key: string, value: any) => any): Result<T>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  asyncParse<T>(input: AsyncToEnDecoder, reviver?: (this: any, key: string, value: any) => any): Promise<Result<T>>;
+  asyncParse<T>(input: AsyncToDecoder, reviver?: (this: any, key: string, value: any) => any): Promise<Result<T>>;
 }
 
 class JSONOps implements JSONEnDecoder {
@@ -50,7 +50,7 @@ class JSONOps implements JSONEnDecoder {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  async asyncParse<T>(input: AsyncToEnDecoder, reviver?: (this: any, key: string, value: any) => any): Promise<Result<T>> {
+  async asyncParse<T>(input: AsyncToDecoder, reviver?: (this: any, key: string, value: any) => any): Promise<Result<T>> {
     return this.parse(await this.txtOps.asyncDecode(input), reviver);
   }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -63,7 +63,7 @@ class JSONOps implements JSONEnDecoder {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  parse<T>(input: ToEnDecoder, reviver?: (this: any, key: string, value: any) => any): Result<T> {
+  parse<T>(input: ToDecoder, reviver?: (this: any, key: string, value: any) => any): Result<T> {
     return exception2Result(() => JSON.parse(this.txtOps.decode(input), reviver) as T) as Result<T>;
   }
 }

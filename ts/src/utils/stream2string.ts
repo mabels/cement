@@ -4,7 +4,7 @@ export async function stream2string(stream?: ReadableStream<Uint8Array> | null, 
   }
   const reader = stream.getReader();
   let res = "";
-  const decoder = new TextDecoder();
+  const decoder = new TextDecoder(); // we use stream: true so no TxtEnDecoderSingleton
   let rSize = 0;
   while (typeof maxSize === "undefined" || rSize < maxSize) {
     try {
