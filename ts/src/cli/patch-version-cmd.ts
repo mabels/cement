@@ -146,7 +146,7 @@ function setupDenoJson(packageJsonFile: string, jsrJsonFile: string): void {
   const packageJson = JSON.parse(fs.readFileSync(packageJsonFile).toString()) as { dependencies: Record<string, string> };
   const jsrJson = JSON.parse(fs.readFileSync(jsrJsonFile).toString()) as { imports: Record<string, string> };
   jsrJson.imports = Object.fromEntries(
-    Array.from(Object.entries(packageJson.dependencies)).map(([k, v]) => [k, `npm:${k}@${v.replace(/^npm:/, "")}`]),
+    Array.from(Object.entries(packageJson.dependencies ?? {})).map(([k, v]) => [k, `npm:${k}@${v.replace(/^npm:/, "")}`]),
   );
   fs.writeFileSync(jsrJsonFile, JSON.stringify(jsrJson, undefined, 2) + "\n");
 }
