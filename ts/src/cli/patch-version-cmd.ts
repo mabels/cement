@@ -72,6 +72,7 @@ export function generateVersionTsCmd(): ReturnType<typeof command> {
         type: string,
         description: "Path to the file containing the version, defaults to './src/version.ts'.",
       }),
+
       tsconfig: option({
         long: "tsconfig",
         short: "t",
@@ -181,7 +182,7 @@ export function setUpDenoJsonCmd(): ReturnType<typeof command> {
   });
 }
 
-export async function preparePubdir(pubdir: string, version: string): Promise<void> {
+export async function preparePubdir(pubdir: string, version: string, baseDir: string, srcDir: string): Promise<void> {
   // Set shell options equivalent to 'set -ex'
   $.verbose = true;
 
@@ -195,7 +196,7 @@ export async function preparePubdir(pubdir: string, version: string): Promise<vo
   await $`mkdir -p ${pubdir}`;
 
   // Copy files to pubdir
-  await $`cp -pr ../.gitignore ../README.md ../LICENSE ./dist/ts/ ${pubdir}/`;
+  await $`cp -pr ${path.join(baseDir, ".gitignore")} ${path.join(baseDir, "README.md")} ${path.join(baseDir, "LICENSE")} ./dist/ts/ ${pubdir}/`;
 
   // Copy from dist/pkg
   cd("dist/pkg");
@@ -203,8 +204,8 @@ export async function preparePubdir(pubdir: string, version: string): Promise<vo
   cd("../..");
 
   // Copy from src
-  cd("src");
-  await $`cp -pr . ../${pubdir}/src/`;
+  cd(srcDir);
+  await $`cp -pr . ../${pubdir}/${srcDir}/`;
   cd("..");
 
   // Rename .js files to .cjs in pubdir/cjs
@@ -231,20 +232,20 @@ export async function preparePubdir(pubdir: string, version: string): Promise<vo
   await $`cp package.json ${pubdir}/`;
 
   // Clean up test files in pubdir/src
-  cd(`${pubdir}/src`);
+  cd(`${pubdir}/${srcDir}`);
   await $`rm -f test/test-exit-handler.* ./utils/stream-test-helper.ts`.catch(() => {
     // Ignore errors if files don't exist
   });
   cd("../..");
 
   // Remove __screenshots__ directories
-  const screenshotDirs = await glob(`${pubdir}/src/**/__screenshots__`);
+  const screenshotDirs = await glob(`${pubdir}/${srcDir}/**/__screenshots__`);
   for (const dir of screenshotDirs) {
     await $`rm -rf ${dir}`;
   }
 
   // Remove test files
-  const testFiles = await glob(`${pubdir}/src/**/*.test.ts`);
+  const testFiles = await glob(`${pubdir}/${srcDir}/**/*.test.ts`);
   for (const file of testFiles) {
     await $`rm -f ${file}`;
   }
@@ -280,6 +281,22 @@ export function preparePubdirCmd(): ReturnType<typeof command> {
         type: string,
         description: "Path to the pubdir, defaults to './pubdir'.",
       }),
+      srcDir: option({
+        long: "srcDir",
+        short: "s",
+        defaultValue: () => "src",
+        defaultValueIsSerializable: true,
+        type: string,
+        description: "Path to the src directory, defaults to './src'.",
+      }),
+      baseDir: option({
+        long: "baseDir",
+        short: "b",
+        defaultValue: () => "../",
+        defaultValueIsSerializable: true,
+        type: string,
+        description: "Path to the base directory of the project, defaults to '../'.",
+      }),
       version: option({
         long: "version",
         short: "v",
@@ -290,7 +307,7 @@ export function preparePubdirCmd(): ReturnType<typeof command> {
       }),
     },
     handler: async (args) => {
-      await preparePubdir(args.pubdir, args.version);
+      await preparePubdir(args.pubdir, args.version, args.baseDir, args.srcDir);
     },
   });
 }
