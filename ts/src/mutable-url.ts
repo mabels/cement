@@ -62,7 +62,7 @@ export class ReadonlyURL extends URL {
     // this.hash = this._sysURL.hash;
   }
 
-  set origin(h: string) {
+  override set origin(h: string) {
     throw new Error("origin is readonly");
   }
 
@@ -70,7 +70,7 @@ export class ReadonlyURL extends URL {
     return this.toString();
   }
 
-  set href(h: string) {
+  override set href(h: string) {
     throw new Error("href is readonly");
   }
 
@@ -78,7 +78,7 @@ export class ReadonlyURL extends URL {
     return this._sysURL.password;
   }
 
-  set password(h: string) {
+  override set password(h: string) {
     throw new Error("password is readonly");
   }
 
@@ -86,11 +86,11 @@ export class ReadonlyURL extends URL {
     return this._sysURL.username;
   }
 
-  set username(h: string) {
+  override set username(h: string) {
     throw new Error("username is readonly");
   }
 
-  toJSON(): string {
+  override toJSON(): string {
     return this.toString();
   }
 
@@ -108,12 +108,12 @@ export class ReadonlyURL extends URL {
     return this._sysURL.hash;
   }
 
-  set hash(h: string) {
+  override set hash(h: string) {
     throw new Error("hash is readonly");
   }
 
   // Host getter and setter
-  get host(): string {
+  override get host(): string {
     if (!this._hasHostpart) {
       throw new Error(
         `you can use hostname only if protocol is ${this.toString()} ${JSON.stringify(Array.from(hasHostPartProtocols.keys()))}`,
@@ -122,19 +122,19 @@ export class ReadonlyURL extends URL {
     return this._sysURL.host;
   }
 
-  set host(h: string) {
+  override set host(h: string) {
     throw new Error("host is readonly");
   }
 
   // Hostname getter and setter
-  get hostname(): string {
+  override get hostname(): string {
     if (!this._hasHostpart) {
       throw new Error(`you can use hostname only if protocol is ${JSON.stringify(Array.from(hasHostPartProtocols.keys()))}`);
     }
     return this._sysURL.hostname;
   }
 
-  set hostname(h: string) {
+  override set hostname(h: string) {
     throw new Error("hostname is readonly");
   }
 
@@ -143,7 +143,7 @@ export class ReadonlyURL extends URL {
     return this._pathname;
   }
 
-  set pathname(h: string) {
+  override set pathname(h: string) {
     throw new Error("pathname is readonly");
   }
 
@@ -155,7 +155,7 @@ export class ReadonlyURL extends URL {
     return this._sysURL.port;
   }
 
-  set port(h: string) {
+ override  set port(h: string) {
     throw new Error("port is readonly");
   }
 
@@ -164,12 +164,12 @@ export class ReadonlyURL extends URL {
     return this._protocol;
   }
 
-  set protocol(h: string) {
+  override set protocol(h: string) {
     throw new Error("protocol is readonly");
   }
 
   // Search getter and setter
-  get search(): string {
+  override get search(): string {
     let search = "";
     if (this._sysURL.searchParams.size) {
       for (const [key, value] of Array.from(URLSearchParamsEntries(this._sysURL.searchParams)).sort((a, b) =>
@@ -181,7 +181,7 @@ export class ReadonlyURL extends URL {
     return search;
   }
 
-  set search(h: string) {
+  override set search(h: string) {
     throw new Error("search is readonly");
   }
 
@@ -190,7 +190,7 @@ export class ReadonlyURL extends URL {
     return this._sysURL.searchParams;
   }
 
-  set searchParams(h: URLSearchParams) {
+  override set searchParams(h: URLSearchParams) {
     throw new Error("searchParams is readonly");
   }
 
@@ -216,11 +216,11 @@ export class ReadonlyURL extends URL {
 export class WritableURL extends ReadonlyURL {
   // override readonly hash: string;
 
-  static readonly fromThrow = (urlStr: string): WritableURL => {
+  static override readonly fromThrow = (urlStr: string): WritableURL => {
     return new WritableURL(urlStr);
   };
 
-  static from(urlStr: string): Result<WritableURL> {
+  static override from(urlStr: string): Result<WritableURL> {
     if (urlRegex.test(urlStr)) {
       return exception2Result(() => new WritableURL(urlStr));
     }
@@ -235,24 +235,24 @@ export class WritableURL extends ReadonlyURL {
     return this.toString();
   }
 
-  [customInspectSymbol](): string {
+  override [customInspectSymbol](): string {
     // make node inspect to show the URL and not crash if URI is not http/https/file
     return this.toString();
   }
 
-  clone(): WritableURL {
+  override clone(): WritableURL {
     return new WritableURL(this.toString());
   }
 
-  set origin(_h: string) {
+  override set origin(_h: string) {
     throw new Error("don't use origin");
   }
 
-  get href(): string {
+  override get href(): string {
     return super.href;
   }
 
-  set href(h: string) {
+  override set href(h: string) {
     throw new Error("don't use href");
   }
 
@@ -260,7 +260,7 @@ export class WritableURL extends ReadonlyURL {
     return super.password;
   }
 
-  set password(h: string) {
+ override  set password(h: string) {
     this._sysURL.password = h;
   }
 
@@ -268,7 +268,7 @@ export class WritableURL extends ReadonlyURL {
     return super.username;
   }
 
-  set username(h: string) {
+  override set username(h: string) {
     this._sysURL.username = h;
   }
 
