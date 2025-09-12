@@ -155,7 +155,7 @@ export class ReadonlyURL extends URL {
     return this._sysURL.port;
   }
 
- override  set port(h: string) {
+  override set port(h: string) {
     throw new Error("port is readonly");
   }
 
@@ -260,7 +260,7 @@ export class WritableURL extends ReadonlyURL {
     return super.password;
   }
 
- override  set password(h: string) {
+  override set password(h: string) {
     this._sysURL.password = h;
   }
 
