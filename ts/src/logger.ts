@@ -4,8 +4,9 @@ import { bin2string } from "./bin2text.js";
 import { Option } from "./option.js";
 import { Result } from "./result.js";
 import { TxtEnDecoder, TxtEnDecoderSingleton } from "./txt-en-decoder.js";
-import { CoerceURI, MutableURL } from "./uri.js";
+import { CoerceURI } from "./uri.js";
 import { isJSON } from "./is-json.js";
+import { ReadonlyURL } from "./mutable-url.js";
 
 export const Level = {
   WARN: "warn",
@@ -85,7 +86,7 @@ function logValueInternal(val: LogValueArg, ctx: LogValueStateInternal): LogValu
           return logValueInternal(ret, ctx);
         }
       }
-      const resIsURI = MutableURL.from(val);
+      const resIsURI = ReadonlyURL.from(val);
       if (resIsURI.isOk()) {
         return new LogValue(() => resIsURI.Ok().toString());
       }

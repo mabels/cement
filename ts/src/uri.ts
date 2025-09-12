@@ -3,6 +3,8 @@ import { exception2Result, Result } from "./result.js";
 import { getParamsResult, KeysParam } from "./utils/get-params-result.js";
 import { relativePath } from "./utils/relative-path.js";
 import { StripCommand, stripper } from "./utils/stripper.js";
+import { ReadonlyURL, URLSearchParamsEntries, WritableURL } from "./mutable-url.js";
+import { KeyedResolvOnce } from "./resolve-once.ts";
 // import { param } from "./types.js";
 
 type NullOrUndef = null | undefined;
@@ -84,7 +86,7 @@ function match(iref: CoerceURI, ioth: CoerceURI): MatchResult {
       mr.score += 1;
       mr.port = true;
     }
-  } catch (e) {
+  } catch (_e) {
     // ignore
   }
   if (ref.pathname.length && ref.pathname !== "/") {
@@ -149,18 +151,24 @@ function falsy2undef<T>(value: T | NullOrUndef): T | undefined {
   return value === undefined || value === null ? undefined : value;
 }
 
-function ensureURLWithDefaultProto(url: string | URL, defaultProtocol: string): MutableURL {
+function ensureURLWithDefaultProto<T>(
+  url: string | URL,
+  defaultProtocol: string,
+  action: {
+    fromThrow: (urlStr: string) => T;
+  },
+): T {
   if (!url) {
-    return MutableURL.fromThrow(`${defaultProtocol}//`);
+    return action.fromThrow(`${defaultProtocol}//`);
   }
   if (typeof url === "string") {
     try {
-      return MutableURL.fromThrow(url);
-    } catch (e) {
-      return MutableURL.fromThrow(`${defaultProtocol}//${url}`);
+      return action.fromThrow(url);
+    } catch (_e) {
+      return action.fromThrow(`${defaultProtocol}//${url}`);
     }
   } else {
-    return MutableURL.fromThrow(url.toString());
+    return action.fromThrow(url.toString());
   }
 }
 
@@ -174,180 +182,26 @@ export function isURL(value: unknown): value is URL {
   );
 }
 
-// due to that the System URL class is has a strange behavior
-// on different platforms, we need to implement our own URL class
-const customInspectSymbol = Symbol.for("nodejs.util.inspect.custom");
-
-const urlRegex = /^([a-z][a-z0-9_-]*):\/\/[^:]*$/i;
-
-export class MutableURL extends URL {
-  private readonly _sysURL: URL;
-  // private readonly _urlStr: string;
-
-  private _protocol: string;
-  private _pathname: string;
-  private _hasHostpart: boolean;
-
-  // override readonly hash: string;
-
-  static fromThrow(urlStr: string): MutableURL {
-    return new MutableURL(urlStr);
-  }
-
-  static from(urlStr: string): Result<MutableURL> {
-    if (urlRegex.test(urlStr)) {
-      return exception2Result(() => new MutableURL(urlStr));
-    }
-    return Result.Err(`Invalid URL: ${urlStr}`);
-  }
-
-  private constructor(urlStr: string) {
-    super("defect://does.not.exist");
-    const partedURL = urlStr.split(":");
-    this._hasHostpart = hasHostPartProtocols.has(partedURL[0]);
-    let hostPartUrl = ["http", ...partedURL.slice(1)].join(":");
-    if (!this._hasHostpart) {
-      const pathname = hostPartUrl.replace(/http:\/\/[/]*/, "").replace(/[#?].*$/, "");
-      hostPartUrl = hostPartUrl.replace(/http:\/\//, `http://localhost/${pathname}`);
-    }
-    try {
-      this._sysURL = new URL(hostPartUrl);
-    } catch (ie) {
-      const e = ie as Error;
-      e.message = `${e.message} for URL: ${urlStr}`;
-      throw e;
-    }
-    this._protocol = `${partedURL[0]}:`; // this._sysURL.protocol.replace(new RegExp("^cement-"), "");
-    if (this._hasHostpart) {
-      this._pathname = this._sysURL.pathname;
-    } else {
-      this._pathname = urlStr.replace(new RegExp(`^${this._protocol}//`), "").replace(/[#?].*$/, "");
-    }
-    // this.hash = this._sysURL.hash;
-  }
-
-  override toJSON(): string {
-    throw new Error("toJSON: Method not implemented.");
-  }
-
-  [customInspectSymbol](): string {
-    // make node inspect to show the URL and not crash if URI is not http/https/file
-    return this.toString();
-  }
-
-  clone(): MutableURL {
-    return new MutableURL(this.toString());
-  }
-
-  override get host(): string {
-    if (!this._hasHostpart) {
-      throw new Error(
-        `you can use hostname only if protocol is ${this.toString()} ${JSON.stringify(Array.from(hasHostPartProtocols.keys()))}`,
-      );
-    }
-    return this._sysURL.host;
-  }
-
-  override get port(): string {
-    if (!this._hasHostpart) {
-      throw new Error(`you can use hostname only if protocol is ${JSON.stringify(Array.from(hasHostPartProtocols.keys()))}`);
-    }
-    return this._sysURL.port;
-  }
-
-  override set port(p: string) {
-    if (!this._hasHostpart) {
-      throw new Error(`you can use port only if protocol is ${JSON.stringify(Array.from(hasHostPartProtocols.keys()))}`);
-    }
-    this._sysURL.port = p;
-  }
-
-  override get hostname(): string {
-    if (!this._hasHostpart) {
-      throw new Error(`you can use hostname only if protocol is ${JSON.stringify(Array.from(hasHostPartProtocols.keys()))}`);
-    }
-    return this._sysURL.hostname;
-  }
-
-  override set hostname(h: string) {
-    if (!this._hasHostpart) {
-      throw new Error(`you can use hostname only if protocol is ${JSON.stringify(Array.from(hasHostPartProtocols.keys()))}`);
-    }
-    this._sysURL.hostname = h;
-  }
-
-  override set pathname(p: string) {
-    this._pathname = p;
-  }
-
-  override get pathname(): string {
-    return this._pathname;
-  }
-
-  override get protocol(): string {
-    return this._protocol;
-  }
-
-  override set protocol(p: string) {
-    if (!p.endsWith(":")) {
-      p = `${p}:`;
-    }
-    this._protocol = p;
-  }
-
-  override get hash(): string {
-    return this._sysURL.hash;
-  }
-
-  override set hash(h: string) {
-    this._sysURL.hash = h;
-  }
-
-  override get searchParams(): URLSearchParams {
-    return this._sysURL.searchParams;
-  }
-
-  override get search(): string {
-    let search = "";
-    if (this._sysURL.searchParams.size) {
-      for (const [key, value] of Array.from(URLSearchParamsEntries(this._sysURL.searchParams)).sort((a, b) =>
-        a[0].localeCompare(b[0]),
-      )) {
-        search += `${!search.length ? "?" : "&"}${key}=${encodeURIComponent(value)}`;
-      }
-    }
-    return search;
-  }
-
-  override toString(): string {
-    const search = this.search;
-    let hostpart = "";
-    if (this._hasHostpart) {
-      hostpart = this._sysURL.hostname;
-      if (this._sysURL.port) {
-        hostpart += `:${this._sysURL.port}`;
-      }
-      if (!this._pathname.startsWith("/")) {
-        hostpart += "/";
-      }
-    }
-    return `${this._protocol}//${hostpart}${this._pathname}${search}${this.hash}`;
-  }
-}
-
-function from<T>(fac: (url: MutableURL) => T, strURLUri: CoerceURI | undefined, defaultProtocol: string): T {
+function from<R, T extends ReadonlyURL | WritableURL>(
+  fac: (url: T) => R,
+  strURLUri: CoerceURI | undefined,
+  defaultProtocol: string,
+  action: {
+    fromThrow: (urlStr: string) => T;
+  },
+): R {
   switch (typeof falsy2undef(strURLUri)) {
     case "undefined":
-      return fac(MutableURL.fromThrow(`${defaultProtocol}///`));
+      return fac(action.fromThrow(`${defaultProtocol}///`));
     case "string":
-      return fac(ensureURLWithDefaultProto(strURLUri as string, defaultProtocol));
+      return fac(ensureURLWithDefaultProto(strURLUri as string, defaultProtocol, action));
     case "object":
       if (BuildURI.is(strURLUri)) {
-        return fac(MutableURL.fromThrow(strURLUri._url.toString()));
+        return fac(action.fromThrow(strURLUri._url.toString()));
       } else if (URI.is(strURLUri)) {
-        return fac(MutableURL.fromThrow(strURLUri._url.toString()));
+        return fac(action.fromThrow(strURLUri._url.toString()));
       } else if (isURL(strURLUri)) {
-        return fac(MutableURL.fromThrow(strURLUri.toString()));
+        return fac(action.fromThrow(strURLUri.toString()));
       }
       throw new Error(`unknown object type: ${strURLUri}`);
     default:
@@ -366,17 +220,6 @@ function getParamResult(
     return Result.Err(msgFn(key));
   }
   return Result.Ok(val);
-}
-
-// there are deno which does not have URLSearchParams.entries() in types
-function* URLSearchParamsEntries(src: URLSearchParams): IterableIterator<[string, string]> {
-  const entries: [string, string][] = [];
-  src.forEach((v, k) => {
-    entries.push([k, v]);
-  });
-  for (const [key, value] of entries) {
-    yield [key, value];
-  }
 }
 
 function setParams(
@@ -421,8 +264,8 @@ function setParams(
 }
 
 export class BuildURI implements URIInterface<BuildURI> {
-  _url: MutableURL; // pathname needs this
-  private constructor(url: MutableURL) {
+  _url: WritableURL; // pathname needs this
+  private constructor(url: WritableURL) {
     this._url = url;
   }
 
@@ -433,7 +276,7 @@ export class BuildURI implements URIInterface<BuildURI> {
     );
   }
   static from(strURLUri?: CoerceURI, defaultProtocol = "file:"): BuildURI {
-    return from((url) => new BuildURI(url), strURLUri, defaultProtocol);
+    return from((url) => new BuildURI(url), strURLUri, defaultProtocol, { fromThrow: WritableURL.fromThrow });
   }
 
   match(other: CoerceURI): MatchResult {
@@ -484,7 +327,7 @@ export class BuildURI implements URIInterface<BuildURI> {
         return this.appendRelative(p);
       }
     }
-    this._url = MutableURL.fromThrow(p.toString());
+    this._url = WritableURL.fromThrow(p.toString());
     return this;
   }
 
@@ -623,7 +466,7 @@ export class BuildURI implements URIInterface<BuildURI> {
   }
 }
 
-export type CoerceURI = string | URI | MutableURL | URL | BuildURI | NullOrUndef;
+export type CoerceURI = string | URI | ReadonlyURL | WritableURL | URL | BuildURI | NullOrUndef;
 
 export function isCoerceURI(value: unknown): value is CoerceURI {
   if (!value) {
@@ -647,6 +490,9 @@ export function isCoerceURI(value: unknown): value is CoerceURI {
 
 export const hasHostPartProtocols: Set<string> = new Set<string>(["http", "https", "ws", "wss"]);
 
+const uriInstances = new KeyedResolvOnce<URI>({
+  lru: { maxEntries: 1000 },
+});
 // non mutable URL Implementation
 export class URI implements URIInterface<URI> {
   static protocolHasHostpart(protocol: string): () => void {
@@ -689,15 +535,25 @@ export class URI implements URIInterface<URI> {
 
   // if no protocol is provided, default to file:
   static from(strURLUri?: CoerceURI, defaultProtocol = "file:"): URI {
-    return from((url) => new URI(url), strURLUri, defaultProtocol);
+    // this is not optimal, but it is a start
+    // the problem is that from creates ReadonlyURLs which we then use to sort
+    // the params and render as string --> this instance is only shortlived but
+    // it's some extra cost.
+    return from((url) => uriInstances.get(url.toString()).once(() => new URI(url)), strURLUri, defaultProtocol, {
+      fromThrow: ReadonlyURL.fromThrow,
+    });
   }
 
   static fromResult(strURLUri?: CoerceURI, defaultProtocol = "file:"): Result<URI> {
-    return exception2Result(() => from((url) => new URI(url), strURLUri, defaultProtocol)) as Result<URI>;
+    return exception2Result(() =>
+      from((url) => uriInstances.get(url.toString()).once(() => new URI(url)), strURLUri, defaultProtocol, {
+        fromThrow: ReadonlyURL.fromThrow,
+      }),
+    ) as Result<URI>;
   }
 
-  readonly _url: MutableURL;
-  private constructor(url: MutableURL) {
+  readonly _url: ReadonlyURL;
+  private constructor(url: ReadonlyURL) {
     this._url = url.clone();
   }
 
@@ -797,7 +653,7 @@ export class URI implements URIInterface<URI> {
   asURL(): URL {
     // const url = new URL(this._url.toString());
     // url.searchParams.sort();
-    return this._url.clone() as unknown as URL;
+    return this._url.clone(); // as unknown as URL;
   }
 
   toString(): string {

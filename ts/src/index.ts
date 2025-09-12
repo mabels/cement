@@ -27,6 +27,7 @@ export * from "./coerce-binary.js";
 export * from "./is-promise.js";
 export * from "./app-context.js";
 export * from "./load-asset.js";
+export * from "./mutable-url.js";
 
 // ugly
 export * as utils from "./utils/index.js";

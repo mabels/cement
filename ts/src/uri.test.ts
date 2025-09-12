@@ -1,9 +1,10 @@
-import { BuildURI, HostURIObject, MutableURL, PathURIObject, URI, isCoerceURI, param } from "@adviser/cement";
+import { BuildURI, HostURIObject, PathURIObject, URI, isCoerceURI, param } from "@adviser/cement";
+import { ReadonlyURL } from "./mutable-url.js";
 
 describe("BuildURI", () => {
   let uri: BuildURI;
   beforeEach(() => {
-    uri = BuildURI.from(MutableURL.fromThrow("http://example.com"));
+    uri = BuildURI.from(ReadonlyURL.fromThrow("http://example.com"));
     uri.hostname("example");
     uri.setParam("key", "value");
   });
@@ -43,7 +44,7 @@ describe("URI", () => {
     expect(URI.from("bla://example/com?key=value").toString()).toBe("bla://example/com?key=value");
   });
   it("from URL", () => {
-    expect(URI.from(MutableURL.fromThrow("blix://example.com?key=value")).toString()).toBe("blix://example.com?key=value");
+    expect(URI.from(ReadonlyURL.fromThrow("blix://example.com?key=value")).toString()).toBe("blix://example.com?key=value");
   });
   it("from URI", () => {
     expect(URI.from(URI.from("blix://example.com?key=value")).toString()).toBe("blix://example.com?key=value");
@@ -129,7 +130,7 @@ describe("URI", () => {
   });
 
   it("MutableURL is instance of URL", () => {
-    expect(MutableURL.fromThrow("http://example.com") instanceof URL).toBe(true);
+    expect(ReadonlyURL.fromThrow("http://example.com") instanceof URL).toBe(true);
   });
 
   it("file url", () => {
@@ -475,7 +476,7 @@ describe("URI", () => {
     expect(isCoerceURI(null)).toBe(false);
     expect(isCoerceURI(undefined)).toBe(false);
     expect(isCoerceURI(new URL("http://example.com"))).toBe(true);
-    expect(isCoerceURI(MutableURL.fromThrow("http://example.com"))).toBe(true);
+    expect(isCoerceURI(ReadonlyURL.fromThrow("http://example.com"))).toBe(true);
     expect(isCoerceURI(URI.from("http://example.com"))).toBe(true);
     expect(isCoerceURI(BuildURI.from("http://example.com"))).toBe(true);
     expect(isCoerceURI("http://example.com")).toBe(true);
@@ -757,44 +758,25 @@ describe("URI", () => {
     expect(uri.URI().search).toEqual("?a=1&b=2&c=3");
     expect(uri.URI().hash).toEqual("#a=1&b=2&c=3");
   });
-});
 
-describe("MutableURL.fromThrow", () => {
-  it("should return Ok for valid url with protocol", () => {
-    const result = MutableURL.from("http://example.com/foo");
-    expect(result.isOk()).toBe(true);
-    expect(result.Ok().toString()).toBe("http://example.com/foo");
-  });
-
-  it("should return Err for invalid url", () => {
-    const result = MutableURL.from("not-a-url");
-    expect(result.isErr()).toBe(true);
-  });
-
-  it("should return Err for invalid url 1", () => {
-    const result = MutableURL.from("not-a-url:");
-    expect(result.isErr()).toBe(true);
-  });
-
-  it("should return Err for invalid url 2", () => {
-    const result = MutableURL.from("not-a-url:/");
-    expect(result.isErr()).toBe(true);
-  });
-
-  it("should return Err for invalid urll 3", () => {
-    const result = MutableURL.from("not-a-url://kdkkef/df:dkdkfkdk");
-    expect(result.isErr()).toBe(true);
-  });
-
-  it("should return Ok for custom protocol", () => {
-    const result = MutableURL.from("b0lix://foo/bar");
-    expect(result.isOk()).toBe(true);
-    expect(result.Ok().toString()).toContain("b0lix://");
-  });
-
-  it("should return Ok for short custom protocol", () => {
-    const result = MutableURL.from("b0_-Ix://");
-    expect(result.isOk()).toBe(true);
-    expect(result.Ok().toString()).toContain("b0_-Ix://");
+  it("URI is NonMutable", () => {
+    const ruriFromString = URI.from("http://key.bag");
+    const ruriFromURL = URI.from(new URL("http://key.bag"));
+    const ruriFromURI = URI.from(ruriFromString.clone());
+    const ruriFromBuildURI = URI.from(ruriFromString.clone().build());
+    expect(ruriFromString).toBeInstanceOf(URI);
+    expect(ruriFromString).toBe(ruriFromURL);
+    expect(ruriFromString).toBe(ruriFromURI);
+    expect(ruriFromString).toBe(ruriFromBuildURI);
+    for (let i = 0; i < 10; i++) {
+      const uriFromString = URI.from("http://key.bag");
+      const uriFromURL = URI.from(new URL("http://key.bag"));
+      const uriFromURI = URI.from(uriFromString);
+      const uriFromBuildURI = URI.from(uriFromString.build());
+      expect(uriFromString).toBe(ruriFromString);
+      expect(uriFromURL).toBe(ruriFromURL);
+      expect(uriFromURI).toBe(ruriFromURI);
+      expect(uriFromBuildURI).toBe(ruriFromBuildURI);
+    }
   });
 });

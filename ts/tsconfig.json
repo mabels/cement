@@ -19,6 +19,6 @@
     "removeComments": true,
     "skipLibCheck": true
   },
-  "include": ["src/**/*", "vitest.*.ts", "eslint.config.mjs", "smoke/smoke.cjs", "smoke/smoke.ts", "to-cjs.js"],
+  "include": ["src/**/*", "vitest.*.ts", "eslint.config.mjs", "smoke/smoke.cjs", "smoke/smoke.ts", "to-cjs.js", "./deno-pool.ts"],
   "exclude": ["dist/**", "eslint.config.js"]
 }

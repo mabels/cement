@@ -4,8 +4,7 @@ import { Result } from "../result.js";
 
 interface GlobalBuffer {
   Buffer?: {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    isBuffer: (obj: any) => obj is {
+    isBuffer: (obj: unknown) => obj is {
       buffer: ArrayBufferLike;
       byteOffset: number;
       byteLength: number;

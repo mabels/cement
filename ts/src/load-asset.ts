@@ -2,7 +2,7 @@ import { pathOps } from "./path-ops.js";
 import { Result, exception2Result } from "./result.js";
 import { runtimeFn } from "./runtime.js";
 import { TxtEnDecoderSingleton } from "./txt-en-decoder.js";
-import { CoerceURI, URI } from "./uri.js";
+import { BuildURI, CoerceURI, URI } from "./uri.js";
 
 interface MockLoadAsset {
   fetch: typeof globalThis.fetch;
@@ -95,25 +95,26 @@ async function loadAssetReal(
     }
     return Result.Err(`cannot load file: ${baseUrl.url.toString()} from ${baseUrl.src}`);
   }
+  const urlToFetch = BuildURI.from(baseUrl.url);
   switch (baseUrl.src) {
     case "opts.fallBackUrl":
-      baseUrl.url.pathname = opts.pathCleaner(baseUrl.url.pathname, localPath, "fallback");
+      urlToFetch.pathname(opts.pathCleaner(baseUrl.url.pathname, localPath, "fallback"));
       break;
     case "import.meta.url":
-      baseUrl.url.pathname = opts.pathCleaner(baseUrl.url.pathname, localPath, "normal");
+      urlToFetch.pathname(opts.pathCleaner(baseUrl.url.pathname, localPath, "normal"));
       break;
   }
 
   const rRes = await exception2Result(() => {
-    if (!baseUrl.url) {
+    if (!urlToFetch) {
       throw Error(`base url not found from ${baseUrl.src}`);
     }
-    return callFetch(opts.mock)(baseUrl.url);
+    return callFetch(opts.mock)(urlToFetch.asURL());
   });
   if (rRes.isErr()) {
     if (baseUrl.src === "import.meta.url") {
       // eslint-disable-next-line no-console
-      console.warn(`fetch failed for: ${baseUrl.url}`);
+      console.warn(`fetch failed for: ${urlToFetch.toString()}`);
       return loadAssetReal(fallBackBaseUrl(opts), localPath, opts);
     }
     return Result.Err(rRes);

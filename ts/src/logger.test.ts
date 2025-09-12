@@ -12,12 +12,12 @@ import {
   TimeMode,
   BuildURI,
   URI,
-  MutableURL,
   JSONFormatter,
   YAMLFormatter,
   BasicSysAbstractionFactory,
   utils,
   TxtEnDecoderSingleton,
+  ReadonlyURL,
 } from "@adviser/cement";
 
 describe("TestLogger", () => {
@@ -596,7 +596,7 @@ describe("TestLogger", () => {
   });
   it("url", async () => {
     const log = logger;
-    const url = MutableURL.fromThrow("http://localhost:8080");
+    const url = ReadonlyURL.fromThrow("http://localhost:8080");
     log.Info().Url(url).Msg("1");
     url.searchParams.set("test", "1");
     log.Info().Url(url).Msg("2");
