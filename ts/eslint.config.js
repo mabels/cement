@@ -24,6 +24,7 @@ export default tseslint.config(
       "**/dist/",
       "**/pubdir/",
       "**/node_modules/",
+      "./src/import-meta-env.commonjs.ts",
       "patch-version.cjs",
       "setup-jsr-json.cjs",
     ],

@@ -40,6 +40,11 @@
       "types": "./esm/deno/index.d.ts",
       "require": "./cjs/deno/index.cjs",
       "import": "./esm/deno/index.js"
+    },
+    "./import-meta-env": {
+      "types": "./esm/import-meta-env.module.d.ts",
+      "require": "./cjs/import-meta-env.commonjs.cjs",
+      "import": "./esm/import-meta-env.module.js"
     }
   },
   "scripts": {

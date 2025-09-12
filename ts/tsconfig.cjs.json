@@ -6,6 +6,14 @@
     "outDir": "./dist/ts/cjs", // <-- Output directory for CJS files
 
     //    "module": "NodeNext" /* Specify what module code is generated. */,
+    "paths": {
+      "@adviser/cement": ["./src/index.js"],
+      "@adviser/cement/node": ["./src/node/index.js"],
+      "@adviser/cement/deno": ["./src/deno/index.js"],
+      "@adviser/cement/web": ["./src/web/index.js"],
+      "@adviser/cement/cf": ["./src/cf/index.js"],
+      "@adviser/cement/import-meta-env": ["./src/import-meta-env.commonjs.js"]
+    },
 
     "declaration": true, // <--- Set this to false
     "declarationMap": true,
@@ -19,5 +27,5 @@
     "sourceMap": true
   },
   "include": ["src/**/*"],
-  "exclude": ["src/test/test-exit-handler.ts", "src/load-asset*.ts"]
+  "exclude": ["src/test/test-exit-handler.ts", "src/load-asset*.ts", "src/import-meta-env.module.ts"]
 }

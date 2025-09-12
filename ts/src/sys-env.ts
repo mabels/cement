@@ -5,6 +5,7 @@ import { CFEnvActions } from "./cf/cf-env-actions.js";
 import { KeyedResolvOnce } from "./resolve-once.js";
 import { Result } from "./result.js";
 import { getParamsResult, KeysParam } from "./utils/get-params-result.js";
+import { wrapImportMetaEnv, testInjectImportMetaEnv } from "@adviser/cement/import-meta-env";
 
 export type EnvTuple = ([string, string] | [string, string][] | Record<string, string> | Iterator<[string, string]>)[];
 
@@ -22,6 +23,7 @@ export interface EnvActions extends EnvMap {
 export interface EnvFactoryOpts {
   readonly symbol: string; // default "CP_ENV" used by BrowserEnvActions
   readonly presetEnv: Map<string, string>;
+  testPatchImportMetaEnv?: Record<string, string>;
   readonly id: string; // to reinit in tests
 }
 
@@ -66,8 +68,11 @@ export function envFactory(opts: Partial<EnvFactoryOpts> = {}): Env {
   if (!found) {
     throw new Error("SysContainer:envFactory: no env available");
   }
+
+  testInjectImportMetaEnv(opts.testPatchImportMetaEnv);
+
   return _envFactories.get(opts.id ?? found.id).once(() => {
-    const action = found.fn(opts);
+    const action = wrapImportMetaEnv(found.fn(opts));
     const ret = new EnvImpl(action, opts);
     action.register(ret);
     return ret;

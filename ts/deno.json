@@ -8,19 +8,23 @@
     "./utils": "./src/utils/index.ts",
     "./cf": "./src/cf/index.ts",
     "./node": "./src/node/index.ts",
-    "./deno": "./src/deno/index.ts"
+    "./deno": "./src/deno/index.ts",
+    "./cli": "./src/cli/index.ts",
+    "./import-meta-env": "./src/import-meta-env.module.ts"
   },
   "unstable": ["sloppy-imports"],
   "lint": {
     "rules": {
       "tags": ["recommended"],
       "exclude": ["no-sloppy-imports"]
-    }
+    },
+    "exclude": ["cjs/", "esm/**/*", "node_modules/"]
   },
   "imports": {
-    "yaml": "npm:yaml@^2.5.1",
-    "ts-essentials": "npm:ts-essentials@^10.0.2"
+    "ts-essentials": "npm:ts-essentials@^10.0.2",
+    "yaml": "npm:yaml@^2.7.1"
   },
+  "exclude": ["cjs/", "esm/**/*", "node_modules/"],
   "publish": {
     "include": ["src/**/*.ts", "README.md", "LICENSE"]
   }

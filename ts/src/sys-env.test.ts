@@ -196,6 +196,13 @@ describe("sys_env", () => {
     expect(envImpl.get("key8")).toBe("value8");
   });
 
+  it("test import.meta.env wrapper", () => {
+    const env = envFactory({
+      testPatchImportMetaEnv: { HELLO: "world" },
+    });
+    expect(env.get("HELLO")).toBe("world");
+  });
+
   it("set into provider", () => {
     const key = `ENV-${Math.random()}`;
     envImpl.set(key, "value");

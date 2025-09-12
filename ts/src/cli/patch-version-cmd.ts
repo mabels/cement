@@ -13,6 +13,9 @@ function createCompilerHost(options: ts.CompilerOptions, version: string): ts.Co
 
   host.getSourceFile = (fileName, languageVersion, onError, shouldCreateNewSourceFile): ts.SourceFile => {
     const sourceFile = myGetSourceFile(fileName, languageVersion, onError, shouldCreateNewSourceFile);
+    if (!sourceFile) {
+      throw new Error("getSourceFile is not defined");
+    }
 
     // Patch version.ts during compilation
     if (fileName.endsWith("version.ts") && sourceFile) {
@@ -50,45 +53,47 @@ function versionFromPackageJson(): string {
   return packageJson.version;
 }
 
+const versionArgs = {
+  version: option({
+    long: "version",
+    short: "v",
+    defaultValue: () => getVersion(),
+    defaultValueIsSerializable: true,
+    type: string,
+    description: "Version to patch in, defaults to reading from package.json.",
+  }),
+  versionFile: option({
+    long: "versionFile",
+    short: "f",
+    defaultValue: () => "src/version.ts",
+    defaultValueIsSerializable: true,
+    type: string,
+    description: "Path to the file containing the version, defaults to './src/version.ts'.",
+  }),
+
+  tsconfig: option({
+    long: "tsconfig",
+    short: "t",
+    defaultValue: () => "tsconfig.json",
+    defaultValueIsSerializable: true,
+    type: string,
+    description: "Path to the tsconfig.json file, defaults to './tsconfig.json'.",
+  }),
+};
+
 export function generateVersionTsCmd(): ReturnType<typeof command> {
   return command({
     name: "fireproof build cli",
     description: "helps to build fp",
     version: "1.0.0",
-    args: {
-      version: option({
-        long: "version",
-        short: "v",
-        defaultValue: () => getVersion(),
-        defaultValueIsSerializable: true,
-        type: string,
-        description: "Version to patch in, defaults to reading from package.json.",
-      }),
-      versionFile: option({
-        long: "versionFile",
-        short: "f",
-        defaultValue: () => "src/version.ts",
-        defaultValueIsSerializable: true,
-        type: string,
-        description: "Path to the file containing the version, defaults to './src/version.ts'.",
-      }),
-
-      tsconfig: option({
-        long: "tsconfig",
-        short: "t",
-        defaultValue: () => "tsconfig.json",
-        defaultValueIsSerializable: true,
-        type: string,
-        description: "Path to the tsconfig.json file, defaults to './tsconfig.json'.",
-      }),
-    },
+    args: versionArgs,
     handler: (args) => {
       const options = readTSConfig(args.tsconfig);
       const host = createCompilerHost(options, args.version);
       const program = ts.createProgram([args.versionFile], options, host);
       program.emit();
     },
-  });
+  }) as ReturnType<typeof command>;
 }
 
 function getVersion(iversion?: string): string {
@@ -138,7 +143,7 @@ export function patchVersionCmd(): ReturnType<typeof command> {
         fs.writeFileSync(fileToPatch, JSON.stringify(packageJson, undefined, 2) + "\n");
       }
     },
-  });
+  }) as ReturnType<typeof command>;
 }
 
 // node ./setup-jsr-json.cjs ./pubdir/deno.json
@@ -179,7 +184,7 @@ export function setUpDenoJsonCmd(): ReturnType<typeof command> {
       console.log(`Setup deno.json ${args.jsrJson} from ${args.packageJson}`);
       setupDenoJson(args.packageJson, args.jsrJson);
     },
-  });
+  }) as ReturnType<typeof command>;
 }
 
 export async function preparePubdir(pubdir: string, version: string, baseDir: string, srcDir: string): Promise<void> {
@@ -309,5 +314,5 @@ export function preparePubdirCmd(): ReturnType<typeof command> {
     handler: async (args) => {
       await preparePubdir(args.pubdir, args.version, args.baseDir, args.srcDir);
     },
-  });
+  }) as ReturnType<typeof command>;
 }
