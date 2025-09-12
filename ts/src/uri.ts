@@ -4,7 +4,7 @@ import { getParamsResult, KeysParam } from "./utils/get-params-result.js";
 import { relativePath } from "./utils/relative-path.js";
 import { StripCommand, stripper } from "./utils/stripper.js";
 import { ReadonlyURL, URLSearchParamsEntries, WritableURL } from "./mutable-url.js";
-import { KeyedResolvOnce } from "./resolve-once.ts";
+import { KeyedResolvOnce } from "./resolve-once.js";
 // import { param } from "./types.js";
 
 type NullOrUndef = null | undefined;
