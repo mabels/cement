@@ -12,20 +12,24 @@ export function stripper<T extends ArrayLike<S> | S, S>(
     }
     return s;
   });
-  return localStripper(undefined, restrips, obj) as T extends ArrayLike<unknown>
+  const selfRef = new WeakSet<object>();
+  return localStripper(undefined, restrips, obj, selfRef) as T extends ArrayLike<unknown>
     ? Record<string, unknown>[]
     : Record<string, unknown>;
 }
 
-function localStripper<T>(path: string | undefined, restrips: RegExp[], obj: T): unknown {
+function localStripper<T>(path: string | undefined, restrips: RegExp[], obj: T, selfRef: WeakSet<object>): unknown {
   if (typeof obj !== "object" || obj === null) {
     return obj;
   }
-  if (Array.isArray(obj)) {
-    return obj.map((i) => localStripper(path, restrips, i));
+  if (selfRef.has(obj)) {
+    return obj;
   }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const ret = { ...obj } as Record<string, any>;
+  selfRef.add(obj);
+  if (Array.isArray(obj)) {
+    return obj.map((i) => localStripper(path, restrips, i, selfRef));
+  }
+  const ret = { ...obj } as Record<string, unknown>;
   const matcher = (key: string, nextPath: string): boolean => {
     for (const re of restrips) {
       if (re.test(key) || re.test(nextPath)) {
@@ -53,12 +57,12 @@ function localStripper<T>(path: string | undefined, restrips: RegExp[], obj: T):
           ret[key] = ret[key].reduce((acc: unknown[], v, i) => {
             const toDelete = matcher(key, `${nextPath}[${i}]`);
             if (!toDelete) {
-              acc.push(localStripper(`${nextPath}[${i}]`, restrips, v));
+              acc.push(localStripper(`${nextPath}[${i}]`, restrips, v, selfRef));
             }
             return acc;
           }, []);
         } else {
-          ret[key] = localStripper(nextPath, restrips, ret[key]);
+          ret[key] = localStripper(nextPath, restrips, ret[key], selfRef);
         }
       }
     }

@@ -103,6 +103,25 @@ it("array dotted concrete stripper", () => {
     ],
   });
 });
+it("self ref", () => {
+  const nested: Record<string, string | Record<string, unknown>> = {
+    main: "main",
+    Main: "main",
+    nested: {
+      main: "main",
+      Main: "main",
+    },
+  };
+  nested.layer = nested;
+  (nested.nested as Record<string, unknown>).layer2 = nested;
+  expect(stripper(["main", "Main"], nested)).toEqual({
+    nested: {
+      layer2: nested,
+    },
+    layer: nested,
+  });
+});
+
 it("return type unknown|unknown[]", () => {
   const plain = stripper(["main"], { main: "main" });
   expectTypeOf(plain).toEqualTypeOf<Record<string, unknown>>();
