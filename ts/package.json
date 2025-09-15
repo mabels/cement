@@ -91,7 +91,7 @@
     "@vitest/browser": "^3.2.4",
     "@vitest/runner": "^3.2.4",
     "cmd-ts": "^0.14.1",
-    "deno": "2.4.4",
+    "deno": "2.5.0",
     "esbuild-plugin-replace": "^1.4.0",
     "esbuild-plugin-resolve": "^2.0.0",
     "eslint": "9.35.0",
