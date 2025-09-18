@@ -204,3 +204,24 @@ it("use ctx", () => {
   expect(cache.getItem("a")?.ctx?.asObj()).toEqual({ a: 1 });
   expect(cache.getItem("b")?.ctx?.asObj()).toEqual({ b: 2 });
 });
+
+it("ownStrategie to evict", () => {
+  const cache = new LRUMap<string, number>({
+    evict: (_p, _newItem, map): boolean => {
+      return map.size >= 5;
+    },
+  });
+  cache.set("a", 1);
+  cache.set("b", 2);
+  cache.set("c", 3);
+  cache.set("d", 4);
+  cache.set("e", 5);
+  cache.set("f", 6);
+  expect(cache.size).toBe(5);
+  expect(cache.get("a")).toBe(undefined);
+  expect(cache.get("b")).toBe(2);
+  expect(cache.get("c")).toBe(3);
+  expect(cache.get("d")).toBe(4);
+  expect(cache.get("e")).toBe(5);
+  expect(cache.get("f")).toBe(6);
+});

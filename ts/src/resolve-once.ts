@@ -5,14 +5,17 @@ import { LRUMap, LRUParam, UnregFn } from "./lru-map-set.js";
 import { Result } from "./result.js";
 import { Option } from "./option.js";
 
-interface ResolveSeqItem<C, R extends NonPromise<X>, X = string | number | boolean | symbol | object> {
-  readonly future: Future<R>;
-  readonly fn: (c?: C) => R | Promise<R>;
+// interface ResolveSeqItem<C, R extends NonPromise<X>, X = string | number | boolean | symbol | object> {
+interface ResolveSeqItem<C, T, R> {
+  readonly future: Future<T>;
+  readonly fn: (c?: C) => R;
   readonly id?: number;
 }
 
-export class ResolveSeq<T extends NonPromise<X>, C = void, X = string | number | boolean | symbol | object> {
+export class ResolveSeq<T, C = void> {
   readonly ctx?: C;
+  readonly _seqFutures: ResolveSeqItem<C, T, unknown>[] = [];
+
   constructor(ctx?: C) {
     this.ctx = ctx;
   }
@@ -29,14 +32,14 @@ export class ResolveSeq<T extends NonPromise<X>, C = void, X = string | number |
     }
     return Promise.resolve();
   }
-  async _step(item?: ResolveSeqItem<C, T, X>): Promise<void> {
+  async _step(item?: ResolveSeqItem<C, T, Promise<T> | T>): Promise<void> {
     if (!item) {
       // done
       this._flushWaiting.forEach((f) => f.resolve());
       this._flushWaiting?.splice(0, this._flushWaiting.length);
       return Promise.resolve();
     }
-    let value;
+    let value: T;
     try {
       const promiseOrValue = item.fn(this.ctx);
       if (isPromise(promiseOrValue)) {
@@ -44,20 +47,19 @@ export class ResolveSeq<T extends NonPromise<X>, C = void, X = string | number |
       } else {
         value = promiseOrValue;
       }
-      item.future.resolve(value as T);
+      item.future.resolve(value);
     } catch (e) {
       item.future.reject(e as Error);
     } finally {
       this._seqFutures.shift();
     }
-    return this._step(this._seqFutures[0]);
+    return this._step(this._seqFutures[0] as ResolveSeqItem<C, T, Promise<T> | T>);
   }
-  readonly _seqFutures: ResolveSeqItem<C, T, X>[] = [];
   add<R extends Promise<T> | T>(fn: (c?: C) => R, id?: number): R {
     const future = new Future<T>();
     this._seqFutures.push({ future, fn, id });
     if (this._seqFutures.length === 1) {
-      void this._step(this._seqFutures[0]); // exit into eventloop
+      void this._step(this._seqFutures[0] as ResolveSeqItem<C, T, Promise<T> | T>); // exit into eventloop
     }
     return future.asPromise() as R; // as Promise<UnPromisify<R>>;
   }
@@ -392,8 +394,8 @@ export class ResolveOnce<T, CTX = void> implements ResolveOnceIf<T, CTX> {
   }
 }
 
-export interface KeyedParam {
-  readonly lru: Partial<LRUParam>;
+export interface KeyedParam<K, V> {
+  readonly lru: Partial<LRUParam<V, K>>;
 }
 
 export class Keyed<T extends { reset: () => void }, K = string> {
@@ -401,9 +403,9 @@ export class Keyed<T extends { reset: () => void }, K = string> {
   // #lock = new ResolveSeq<T, K>();
 
   readonly factory: (key: K) => T;
-  constructor(factory: (key: K) => T, params: Partial<KeyedParam>) {
+  constructor(factory: (key: K) => T, params: Partial<KeyedParam<K, T>>) {
     this.factory = factory;
-    this._map = new LRUMap<K, T>(params?.lru ?? { maxEntries: -1 });
+    this._map = new LRUMap<K, T>(params?.lru ?? ({ maxEntries: -1 } as LRUParam<T, K>));
   }
 
   onSet(fn: (key: K, value: T) => void): UnregFn {
@@ -414,7 +416,7 @@ export class Keyed<T extends { reset: () => void }, K = string> {
     return this._map.onDelete(fn);
   }
 
-  setParam(params: KeyedParam): void {
+  setParam(params: KeyedParam<K, T>): void {
     this._map.setParam(params.lru);
   }
 
@@ -466,9 +468,9 @@ interface KeyItem<K, V> {
   readonly value: Result<V>;
 }
 
-export class KeyedResolvOnce<T, K = string> extends Keyed<ResolveOnce<T, K>, K> {
-  constructor(kp: Partial<KeyedParam> = {}) {
-    super((key) => new ResolveOnce<T, K>(key), kp);
+export class KeyedResolvOnce<T, K = string, CTX = void> extends Keyed<ResolveOnce<T, CTX>, K> {
+  constructor(kp: Partial<KeyedParam<K, ResolveOnce<T, CTX>> & { readonly ctx?: CTX }> = {}) {
+    super((key) => new ResolveOnce<T, CTX & { key: K }>({ ...kp.ctx, key }), kp);
   }
 
   *entries(): IterableIterator<KeyItem<K, T>> {
@@ -493,9 +495,9 @@ export class KeyedResolvOnce<T, K = string> extends Keyed<ResolveOnce<T, K>, K> 
   }
 }
 
-export class KeyedResolvSeq<T extends NonPromise<never>, K = string> extends Keyed<ResolveSeq<T, K>, K> {
-  constructor(kp: Partial<KeyedParam> = {}) {
-    super((key) => new ResolveSeq<T, K>(key), kp);
+export class KeyedResolvSeq<T extends NonPromise<never>, K = string, CTX = void> extends Keyed<ResolveSeq<T, CTX>, K> {
+  constructor(kp: Partial<KeyedParam<K, ResolveSeq<T, CTX>> & { readonly ctx?: CTX }> = {}) {
+    super((key) => new ResolveSeq<T, CTX & { key: K }>({ ...kp.ctx, key }), kp);
   }
 }
 

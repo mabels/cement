@@ -1,18 +1,24 @@
 import { AppContext } from "./app-context.js";
 
-export interface LRUParam {
-  readonly maxEntries: number;
-  readonly maxAge: number; // not implemented
+interface MutableLRUParam<T, K> {
+  evict: (param: LRUParam<T, K>, newItem: T, map: LRUMap<K, T>) => boolean;
+  // is called if the params are changed
+  // default it removes the least recently accessed
+  refresh: (param: LRUParam<T, K>, map: Map<K, LRUItem<T>>) => void;
+  maxEntries: number;
+  maxAge: number; // not implemented
 }
+
+export type LRUParam<T = string, K = string> = Readonly<MutableLRUParam<T, K>>;
 
 export class LRUSet<T> {
   private readonly _lruMap: LRUMap<T, T>;
 
-  constructor(param: Partial<LRUParam> = {}) {
+  constructor(param: Partial<LRUParam<T, T>> = {}) {
     this._lruMap = new LRUMap<T, T>(param);
   }
 
-  setParam(param: Partial<LRUParam> = {}): void {
+  setParam(param: Partial<LRUParam<T, T>> = {}): void {
     this._lruMap.setParam(param);
   }
 
@@ -47,22 +53,40 @@ export class LRUSet<T> {
 
 export interface LRUCtx<T, K> {
   readonly update: boolean;
-  readonly ref: LRUMap<T, K>;
+  readonly ref: LRUMap<K, T>;
   readonly stats: LRUMap<T, K>["stats"];
-  readonly item: LRUItem<K>;
+  readonly item: LRUItem<T>;
 }
 
-export interface LRUItem<K> {
-  readonly value: K;
+export interface LRUItem<V> {
+  readonly value: V;
   ctx?: AppContext;
 }
 
-export type LRUMapFn<K, T> = (key: K, value: T, meta: LRUCtx<K, T>) => void;
+export type LRUMapFn<K, T> = (value: T, key: K, meta: LRUCtx<K, T>) => void;
 export type UnregFn = () => void;
 
-export class LRUMap<T, K> {
-  private _map: Map<T, LRUItem<K>> = new Map<T, LRUItem<K>>();
-  private param: LRUParam;
+function defaultRefresh<V, K>(param: LRUParam<V, K>, map: Map<K, LRUItem<V>>): void {
+  if (param.maxEntries > 0 && map.size > param.maxEntries) {
+    const toDelete: K[] = [];
+    let cacheSize = map.size;
+    for (const key of map.keys()) {
+      if (cacheSize > param.maxEntries) {
+        toDelete.push(key);
+        cacheSize--;
+      } else {
+        break;
+      }
+    }
+    for (const key of toDelete) {
+      map.delete(key);
+    }
+  }
+}
+
+export class LRUMap<K, V> {
+  private _map: Map<K, LRUItem<V>> = new Map<K, LRUItem<V>>();
+  private param: MutableLRUParam<V, K>;
 
   readonly stats = {
     gets: 0,
@@ -70,23 +94,25 @@ export class LRUMap<T, K> {
     deletes: 0,
   };
 
-  constructor(c: Partial<LRUParam> = {}) {
+  constructor(c: Partial<LRUParam<V, K>> = {}) {
     this.param = {
       maxEntries: c.maxEntries || 100,
       maxAge: c.maxAge || 0,
+      evict: c.evict || ((param, _newItem, map): boolean => param.maxEntries > 0 && map.size >= param.maxEntries),
+      refresh: c.refresh || ((param: LRUParam<V, K>, map: Map<K, LRUItem<V>>): void => defaultRefresh(param, map)),
     };
   }
 
-  private _onSetFns: Map<string, LRUMapFn<T, K>> = new Map<string, LRUMapFn<T, K>>();
-  onSet(fn: LRUMapFn<T, K>): UnregFn {
+  private _onSetFns: Map<string, LRUMapFn<V, K>> = new Map<string, LRUMapFn<V, K>>();
+  onSet(fn: LRUMapFn<V, K>): UnregFn {
     const id = Math.random().toString(36);
     this._onSetFns.set(id, fn);
     return () => {
       this._onSetFns.delete(id);
     };
   }
-  private _onDeleteFns: Map<string, LRUMapFn<T, K>> = new Map<string, LRUMapFn<T, K>>();
-  onDelete(fn: LRUMapFn<T, K>): UnregFn {
+  private _onDeleteFns: Map<string, LRUMapFn<V, K>> = new Map<string, LRUMapFn<V, K>>();
+  onDelete(fn: LRUMapFn<V, K>): UnregFn {
     const id = Math.random().toString(36);
     this._onDeleteFns.set(id, fn);
     return () => {
@@ -94,39 +120,35 @@ export class LRUMap<T, K> {
     };
   }
 
-  private touch(key: T): LRUItem<K> {
+  private touch(key: K): LRUItem<V> {
     if (!this._map.has(key)) {
       throw new Error(`key not found in cache: ${key as unknown as string}`);
     }
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-    const value = this._map.get(key) as LRUItem<K>;
+    const value = this._map.get(key) as LRUItem<V>;
     this._map.delete(key);
     this._map.set(key, value);
     return value;
   }
 
-  setParam(param: Partial<LRUParam> = {}): void {
-    if (typeof param.maxEntries === "number") {
-      (this.param as { maxEntries: number }).maxEntries = param.maxEntries;
-      if (param.maxEntries > 0 && this._map.size > param.maxEntries) {
-        const toDelete: T[] = [];
-        let cacheSize = this._map.size;
-        for (const key of this._map.keys()) {
-          if (cacheSize > param.maxEntries) {
-            toDelete.push(key);
-            cacheSize--;
-          } else {
-            break;
-          }
-        }
-        for (const key of toDelete) {
-          this._map.delete(key);
-        }
-      }
+  setParam(param: Partial<LRUParam<V, K>> = {}): void {
+    if (param.evict) {
+      this.param.evict = param.evict;
     }
+    if (param.refresh) {
+      this.param.refresh = param.refresh;
+    }
+    if (typeof param.maxEntries === "number") {
+      this.param.maxEntries = param.maxEntries;
+    }
+    if (typeof param.maxAge === "number") {
+      this.param.maxAge = param.maxAge;
+    }
+
+    this.param.refresh(this.param, this._map);
   }
 
-  has(key: T): boolean {
+  has(key: K): boolean {
     return this._map.has(key);
   }
 
@@ -134,22 +156,22 @@ export class LRUMap<T, K> {
     return this._map.size;
   }
 
-  async getSet(key: T, createFN: (key: T) => Promise<K>): Promise<K | undefined> {
+  async getSet(key: K, createFN: (key: K) => Promise<V>): Promise<V | undefined> {
     const val = this.get(key);
     if (val) {
       return val;
     } else {
       const val = await createFN(key);
-      this.set(key, val as K);
+      this.set(key, val as V);
       return val;
     }
   }
 
-  get(key: T): K | undefined {
+  get(key: K): V | undefined {
     return this.getItem(key)?.value;
   }
 
-  getItem(key: T): LRUItem<K> | undefined {
+  getItem(key: K): LRUItem<V> | undefined {
     if (this._map.has(key)) {
       this.stats.gets++;
       return this.touch(key);
@@ -157,14 +179,14 @@ export class LRUMap<T, K> {
     return undefined;
   }
 
-  private buildItem(item: LRUItem<K> | undefined, value: K): LRUItem<K> {
+  private buildItem(item: LRUItem<V> | undefined, value: V): LRUItem<V> {
     return {
       ...item,
       value,
     };
   }
 
-  set(key: T, value: K): void {
+  set(key: K, value: V): void {
     const update = this._map.has(key);
     let item = this._map.get(key);
     if (update) {
@@ -175,13 +197,13 @@ export class LRUMap<T, K> {
       this._map.delete(key);
     }
     item = this.buildItem(item, value);
-    if (this.param.maxEntries > 0 && this._map.size >= this.param.maxEntries) {
+    if (this.param.evict(this.param, value, this)) {
       // delete the least recently accessed
       // const key = Array.from(this.cache.keys())[0];
       // this.cache.delete(key) or
-      const v = this._map.keys().next();
-      if (!v.done) {
-        this._map.delete(v.value as T);
+      const k = this._map.keys().next();
+      if (!k.done) {
+        this._map.delete(k.value as K);
       }
     }
     this._map.set(key, item);
@@ -189,7 +211,7 @@ export class LRUMap<T, K> {
     this._onSetFns.forEach((fn) => fn(key, item?.value, this.buildItemCtx(item, update)));
   }
 
-  private buildItemCtx(item: LRUItem<K>, update: boolean): LRUCtx<T, K> {
+  private buildItemCtx(item: LRUItem<V>, update: boolean): LRUCtx<V, K> {
     return {
       update,
       ref: this,
@@ -198,10 +220,10 @@ export class LRUMap<T, K> {
     };
   }
 
-  delete(key: T): void {
+  delete(key: K): void {
     if (this._map.has(key)) {
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-      const item = this._map.get(key) as LRUItem<K>;
+      const item = this._map.get(key) as LRUItem<V>;
       this._onDeleteFns.forEach((fn) => fn(key, item?.value, this.buildItemCtx(item, true)));
       this._map.delete(key);
       this.stats.deletes++;
@@ -217,13 +239,13 @@ export class LRUMap<T, K> {
     this._map.clear();
   }
 
-  forEach(fn: (value: K, key: T, ctx: LRUCtx<T, K>) => void): void {
+  forEach(fn: (value: V, key: K, ctx: LRUCtx<V, K>) => void): void {
     this._map.forEach((v, k) => {
       fn(v.value, k, this.buildItemCtx(v, false));
     });
   }
 
-  *entries(): IterableIterator<[T, K, LRUCtx<T, K>]> {
+  *entries(): IterableIterator<[K, V, LRUCtx<V, K>]> {
     for (const [key, value] of this._map.entries()) {
       yield [key, value.value, this.buildItemCtx(value, true)];
     }

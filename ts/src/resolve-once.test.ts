@@ -231,9 +231,9 @@ describe("resolve-once", () => {
       keyed.get(() => "b").once(b_orderFn),
     ]);
     expect(a_orderFn).toHaveBeenCalledTimes(1);
-    expect(a_orderFn).toHaveBeenCalledWith("a");
+    expect(a_orderFn).toHaveBeenCalledWith({ key: "a" });
     expect(b_orderFn).toHaveBeenCalledTimes(1);
-    expect(b_orderFn).toHaveBeenCalledWith("b");
+    expect(b_orderFn).toHaveBeenCalledWith({ key: "b" });
   });
 
   it("keyed asyncGet", async () => {
@@ -255,9 +255,9 @@ describe("resolve-once", () => {
         .then((resolveOnce) => resolveOnce.once(b_orderFn)),
     ]);
     expect(a_orderFn).toHaveBeenCalledTimes(1);
-    expect(a_orderFn).toHaveBeenCalledWith("a");
+    expect(a_orderFn).toHaveBeenCalledWith({ key: "a" });
     expect(b_orderFn).toHaveBeenCalledTimes(1);
-    expect(b_orderFn).toHaveBeenCalledWith("b");
+    expect(b_orderFn).toHaveBeenCalledWith({ key: "b" });
   });
 
   function shuffle<T>(array: T[]): T[] {

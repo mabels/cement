@@ -18,7 +18,7 @@ async function callFsReadFile(mock?: Partial<MockLoadAsset>): Promise<MockLoadAs
     return mock.fsReadFile;
   }
   const fsMod = "node:fs"; // make ts and esbuild happy
-  const fs = (await import(fsMod)) as typeof import("node:fs");
+  const fs = (await import(fsMod /* @vite-ignore */)) as typeof import("node:fs");
   return (fname: string) => fs.promises.readFile(fname);
 }
 

@@ -53,7 +53,6 @@ function localStripper<T>(path: string | undefined, restrips: RegExp[], obj: T, 
       }
       if (typeof ret[key] === "object") {
         if (Array.isArray(ret[key])) {
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           ret[key] = ret[key].reduce((acc: unknown[], v, i) => {
             const toDelete = matcher(key, `${nextPath}[${i}]`);
             if (!toDelete) {
