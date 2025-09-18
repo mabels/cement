@@ -28,7 +28,8 @@ export function to_blob(input: CoerceBinaryInput | Blob, encoder?: TextEncoder):
   if (input instanceof Blob) {
     return input;
   }
-  return new Blob([to_uint8(input, encoder)]);
+  const ab = to_arraybuf(to_uint8(input, encoder));
+  return new Blob([ab]);
 }
 
 export function to_arraybuf(input: CoerceBinaryInput, encoder?: TextEncoder): ArrayBuffer {

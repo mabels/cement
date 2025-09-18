@@ -1,3 +1,5 @@
+import { to_arraybuf } from "./coerce-binary.js";
+
 export interface CTRsaOtherPrimesInfo {
   d?: string;
   r?: string;
@@ -117,7 +119,7 @@ function randomBytes(crypto: typeof globalThis.crypto): CryptoRuntime["randomByt
 
 function digestSHA256(crypto: typeof globalThis.crypto): (data: Uint8Array) => Promise<ArrayBuffer> {
   return (data: Uint8Array): Promise<ArrayBuffer> => {
-    return crypto.subtle.digest("SHA-256", data);
+    return crypto.subtle.digest("SHA-256", to_arraybuf(data)); // .then((d) => to_arraybuf(d));
   };
 }
 
@@ -149,14 +151,10 @@ export function toCryptoRuntime(cryptoOpts: Partial<CryptoRuntime> = {}): Crypto
     crypto = globalThis.crypto;
   }
   const runtime = {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    importKey: cryptoOpts.importKey || crypto.subtle.importKey.bind(crypto.subtle),
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    exportKey: cryptoOpts.exportKey || crypto.subtle.exportKey.bind(crypto.subtle),
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    encrypt: cryptoOpts.encrypt || crypto.subtle.encrypt.bind(crypto.subtle),
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    decrypt: cryptoOpts.decrypt || crypto.subtle.decrypt.bind(crypto.subtle),
+    importKey: cryptoOpts.importKey || (crypto.subtle.importKey.bind(crypto.subtle) as CryptoRuntime["importKey"]),
+    exportKey: cryptoOpts.exportKey || (crypto.subtle.exportKey.bind(crypto.subtle) as CryptoRuntime["exportKey"]),
+    encrypt: cryptoOpts.encrypt || (crypto.subtle.encrypt.bind(crypto.subtle) as CryptoRuntime["encrypt"]),
+    decrypt: cryptoOpts.decrypt || (crypto.subtle.decrypt.bind(crypto.subtle) as CryptoRuntime["decrypt"]),
     randomBytes: cryptoOpts.randomBytes || randomBytes(crypto),
     digestSHA256: cryptoOpts.digestSHA256 || digestSHA256(crypto),
   };

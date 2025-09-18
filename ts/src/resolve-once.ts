@@ -1,5 +1,5 @@
 import { Future } from "./future.js";
-import { NonPromise, UnPromisify } from "./is-promise.js";
+import { UnPromisify } from "./is-promise.js";
 import { isPromise } from "./is-promise.js";
 import { LRUMap, LRUParam, UnregFn } from "./lru-map-set.js";
 import { Result } from "./result.js";
@@ -12,7 +12,7 @@ interface ResolveSeqItem<C, T, R> {
   readonly id?: number;
 }
 
-export class ResolveSeq<T, C = void> {
+export class ResolveSeq<T, C extends NonNullable<object> = object> {
   readonly ctx?: C;
   readonly _seqFutures: ResolveSeqItem<C, T, unknown>[] = [];
 
@@ -398,14 +398,19 @@ export interface KeyedParam<K, V> {
   readonly lru: Partial<LRUParam<V, K>>;
 }
 
-export class Keyed<T extends { reset: () => void }, K = string> {
+type AddKeyedParam<K, V, CTX extends NonNullable<object>> = KeyedParam<K, V> & { readonly ctx: CTX };
+
+export class Keyed<T extends { reset: () => void }, K = string, CTX extends NonNullable<object> = object> {
   protected readonly _map: LRUMap<K, T>;
   // #lock = new ResolveSeq<T, K>();
+  readonly #ctx: CTX;
 
-  readonly factory: (key: K) => T;
-  constructor(factory: (key: K) => T, params: Partial<KeyedParam<K, T>>) {
+  readonly factory: (ctx: AddKey<CTX, K>) => T;
+
+  constructor(factory: (ctx: AddKey<CTX, K>) => T, ctx: Partial<AddKeyedParam<K, T, CTX>>) {
+    this.#ctx = ctx.ctx || ({} as CTX);
     this.factory = factory;
-    this._map = new LRUMap<K, T>(params?.lru ?? ({ maxEntries: -1 } as LRUParam<T, K>));
+    this._map = new LRUMap<K, T>(ctx?.lru ?? ({ maxEntries: -1 } as LRUParam<T, K>));
   }
 
   onSet(fn: (key: K, value: T) => void): UnregFn {
@@ -430,7 +435,7 @@ export class Keyed<T extends { reset: () => void }, K = string> {
     }
     let keyed = this._map.get(key);
     if (!keyed) {
-      keyed = this.factory(key);
+      keyed = this.factory({ ...this.#ctx, key: key });
       this._map.set(key, keyed);
     }
     return keyed;
@@ -468,9 +473,9 @@ interface KeyItem<K, V> {
   readonly value: Result<V>;
 }
 
-export class KeyedResolvOnce<T, K = string, CTX = void> extends Keyed<ResolveOnce<T, CTX>, K> {
-  constructor(kp: Partial<KeyedParam<K, ResolveOnce<T, CTX>> & { readonly ctx?: CTX }> = {}) {
-    super((key) => new ResolveOnce<T, CTX & { key: K }>({ ...kp.ctx, key }), kp);
+export class KeyedResolvOnce<T, K = string, CTX extends NonNullable<object> = object> extends Keyed<ResolveOnce<T, CTX>, K, CTX> {
+  constructor(kp: Partial<AddKeyedParam<K, ResolveOnce<T, CTX>, CTX>> = {}) {
+    super((ctx) => new ResolveOnce<T, AddKey<CTX, K>>(ctx), kp);
   }
 
   *entries(): IterableIterator<KeyItem<K, T>> {
@@ -495,9 +500,16 @@ export class KeyedResolvOnce<T, K = string, CTX = void> extends Keyed<ResolveOnc
   }
 }
 
-export class KeyedResolvSeq<T extends NonPromise<never>, K = string, CTX = void> extends Keyed<ResolveSeq<T, CTX>, K> {
-  constructor(kp: Partial<KeyedParam<K, ResolveSeq<T, CTX>> & { readonly ctx?: CTX }> = {}) {
-    super((key) => new ResolveSeq<T, CTX & { key: K }>({ ...kp.ctx, key }), kp);
+type AddKey<X extends NonNullable<object>, K> = X & { key: K };
+type WithCTX<K, T, CTX extends NonNullable<object>> = KeyedParam<K, ResolveSeq<T, AddKey<CTX, K>>> & { readonly ctx: CTX };
+
+export class KeyedResolvSeq<T extends NonNullable<unknown>, K = string, CTX extends NonNullable<object> = object> extends Keyed<
+  ResolveSeq<T, AddKey<CTX, K>>,
+  K,
+  CTX
+> {
+  constructor(kp: Partial<WithCTX<K, T, CTX>> = {}) {
+    super((ctx) => new ResolveSeq<T, AddKey<CTX, K>>(ctx), kp);
   }
 }
 
