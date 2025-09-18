@@ -149,10 +149,17 @@ export function patchVersionCmd(): ReturnType<typeof command> {
 // node ./setup-jsr-json.cjs ./pubdir/deno.json
 function setupDenoJson(packageJsonFile: string, jsrJsonFile: string): void {
   const packageJson = JSON.parse(fs.readFileSync(packageJsonFile).toString()) as { dependencies: Record<string, string> };
-  const jsrJson = JSON.parse(fs.readFileSync(jsrJsonFile).toString()) as { imports: Record<string, string> };
-  jsrJson.imports = Object.fromEntries(
+  const jsrJson = JSON.parse(fs.readFileSync(jsrJsonFile).toString()) as {
+    name: string;
+    exports: Record<string, string>;
+    imports: Record<string, string>;
+  };
+  // self imports
+  const jsrJsonImports = Object.fromEntries(Object.entries(jsrJson.exports ?? {}).map(([k, v]) => [path.join(jsrJson.name, k), v]));
+  const nodeJsonImports = Object.fromEntries(
     Array.from(Object.entries(packageJson.dependencies ?? {})).map(([k, v]) => [k, `npm:${k}@${v.replace(/^npm:/, "")}`]),
   );
+  jsrJson.imports = { ...jsrJson.imports, ...jsrJsonImports, ...nodeJsonImports };
   fs.writeFileSync(jsrJsonFile, JSON.stringify(jsrJson, undefined, 2) + "\n");
 }
 
