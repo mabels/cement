@@ -674,7 +674,7 @@ describe("Reset does not remove pending futures", () => {
           .map(() =>
             once.once(() => {
               never();
-              return 46;
+              return 46 as Promise<number>;
             }),
           ),
       );
@@ -703,7 +703,7 @@ describe("Reset does not remove pending futures", () => {
           .map(() =>
             once.once(() => {
               never();
-              return 49;
+              return 49 as Promise<number>;
             }),
           ),
       ),
