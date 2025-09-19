@@ -9,3 +9,4 @@ export * from "./stripper.js";
 export * from "./sorted-object.js";
 export * from "./uint8array-equal.js";
 export * from "./coerce-uint8.js";
+export * from "./consume.js";
