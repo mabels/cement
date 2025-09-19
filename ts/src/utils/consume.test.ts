@@ -101,6 +101,14 @@ describe("consumeStream", () => {
 });
 
 describe("consumeIterator", () => {
+  it("handles objectentries type safe", async () => {
+    const obj = { a: 1, b: 2, c: 3 };
+    const result = await consumeIterator(Object.entries(obj).values(), (x) => {
+      assertType<[string, number]>(x);
+      return x[1] * 2;
+    });
+    expect(result).toEqual([2, 4, 6]);
+  });
   it("should consume an empty sync iterator", async () => {
     function* emptyGen(): Generator<number, void, unknown> {
       // Empty generator
