@@ -31,7 +31,7 @@ interface StepArgs<I extends IterableIterator<E> | AsyncIterableIterator<E>, E, 
 
 function step<I extends IterableIterator<E> | AsyncIterableIterator<E>, R, E>(args: StepArgs<I, E, R>): Promise<void> {
   const item = args.iter.next();
-  return Promise.resolve(item).then(({ done, value }: { done: boolean; value: E }) => {
+  return Promise.resolve(item).then(({ done, value }: { done?: boolean; value: E }) => {
     if (done) {
       args.resolve(args.ret);
       return Promise.resolve();
