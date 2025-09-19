@@ -4,7 +4,7 @@ interface MutableLRUParam<T, K> {
   evict: (param: LRUParam<T, K>, newItem: T, map: LRUMap<K, T>) => boolean;
   // is called if the params are changed
   // default it removes the least recently accessed
-  refresh: (param: LRUParam<T, K>, map: Map<K, LRUItem<T>>) => void;
+  refresh: (param: LRUParam<T, K>, map: LRUMap<K, T>) => void;
   maxEntries: number;
   maxAge: number; // not implemented
 }
@@ -12,42 +12,42 @@ interface MutableLRUParam<T, K> {
 export type LRUParam<T = string, K = string> = Readonly<MutableLRUParam<T, K>>;
 
 export class LRUSet<T> {
-  private readonly _lruMap: LRUMap<T, T>;
+  readonly #lruMap: LRUMap<T, T>;
 
   constructor(param: Partial<LRUParam<T, T>> = {}) {
-    this._lruMap = new LRUMap<T, T>(param);
+    this.#lruMap = new LRUMap<T, T>(param);
   }
 
   setParam(param: Partial<LRUParam<T, T>> = {}): void {
-    this._lruMap.setParam(param);
+    this.#lruMap.setParam(param);
   }
 
   get size(): number {
-    return this._lruMap.size;
+    return this.#lruMap.size;
   }
 
   has(key: T): boolean {
-    return this._lruMap.has(key);
+    return this.#lruMap.has(key);
   }
 
   add(key: T): void {
-    this._lruMap.set(key, key);
+    this.#lruMap.set(key, key);
   }
 
   delete(key: T): void {
-    this._lruMap.delete(key);
+    this.#lruMap.delete(key);
   }
 
   clear(): void {
-    this._lruMap.clear();
+    this.#lruMap.clear();
   }
 
   forEach(callbackfn: (value: T, key: T) => void): void {
-    this._lruMap.forEach((value) => callbackfn(value, value));
+    this.#lruMap.forEach((value) => callbackfn(value, value));
   }
 
   entries(): IterableIterator<[T, T, LRUCtx<T, T>]> {
-    return this._lruMap.entries();
+    return this.#lruMap.entries();
   }
 }
 
@@ -66,7 +66,7 @@ export interface LRUItem<V> {
 export type LRUMapFn<K, T> = (value: T, key: K, meta: LRUCtx<K, T>) => void;
 export type UnregFn = () => void;
 
-function defaultRefresh<V, K>(param: LRUParam<V, K>, map: Map<K, LRUItem<V>>): void {
+function defaultRefresh<V, K>(param: LRUParam<V, K>, map: LRUMap<K, V>): void {
   if (param.maxEntries > 0 && map.size > param.maxEntries) {
     const toDelete: K[] = [];
     let cacheSize = map.size;
@@ -99,7 +99,7 @@ export class LRUMap<K, V> {
       maxEntries: c.maxEntries || 100,
       maxAge: c.maxAge || 0,
       evict: c.evict || ((param, _newItem, map): boolean => param.maxEntries > 0 && map.size >= param.maxEntries),
-      refresh: c.refresh || ((param: LRUParam<V, K>, map: Map<K, LRUItem<V>>): void => defaultRefresh(param, map)),
+      refresh: c.refresh || ((param: LRUParam<V, K>, map: LRUMap<K, V>): void => defaultRefresh(param, map)),
     };
   }
 
@@ -145,7 +145,11 @@ export class LRUMap<K, V> {
       this.param.maxAge = param.maxAge;
     }
 
-    this.param.refresh(this.param, this._map);
+    this.param.refresh(this.param, this);
+  }
+
+  keys(): IterableIterator<K> {
+    return this._map.keys();
   }
 
   has(key: K): boolean {
