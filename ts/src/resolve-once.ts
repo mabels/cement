@@ -473,7 +473,11 @@ interface KeyItem<K, V> {
   readonly value: Result<V>;
 }
 
-export class KeyedResolvOnce<T, K = string, CTX extends NonNullable<object> = object> extends Keyed<ResolveOnce<T, CTX>, K, CTX> {
+export class KeyedResolvOnce<T, K = string, CTX extends NonNullable<object> = object> extends Keyed<
+  ResolveOnce<T, AddKey<CTX, K>>,
+  K,
+  CTX
+> {
   constructor(kp: Partial<AddKeyedParam<K, ResolveOnce<T, CTX>, CTX>> = {}) {
     super((ctx) => new ResolveOnce<T, AddKey<CTX, K>>(ctx), kp);
   }

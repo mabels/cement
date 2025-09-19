@@ -1,4 +1,4 @@
-import { Result, KeyedResolvOnce, ResolveOnce, ResolveSeq, Lazy, Future } from "@adviser/cement";
+import { Result, KeyedResolvOnce, ResolveOnce, ResolveSeq, Lazy, Future, KeyedResolvSeq } from "@adviser/cement";
 
 describe("resolve-once", () => {
   it("sequence", async () => {
@@ -234,6 +234,31 @@ describe("resolve-once", () => {
     expect(a_orderFn).toHaveBeenCalledWith({ key: "a" });
     expect(b_orderFn).toHaveBeenCalledTimes(1);
     expect(b_orderFn).toHaveBeenCalledWith({ key: "b" });
+  });
+
+  it("keyedResolvOnce with pass ctx & {key: K}", () => {
+    const my = new KeyedResolvOnce<{ hello: string }, number, { wurst: string }>({ ctx: { wurst: "world" } });
+    my.get(1).once((ctx) => {
+      assertType<{ key: number }>(ctx);
+      assertType<{ wurst: string }>(ctx);
+      assertType<number>(ctx.key);
+      assertType<string>(ctx.wurst);
+      expect(ctx.key).toBe(1);
+      expect(ctx.wurst).toBe("world");
+      return { hello: "world" };
+    });
+  });
+  it("keyedResolvSeq with pass ctx & {key: K}", () => {
+    const my = new KeyedResolvSeq<{ hello: string }, number, { wurst: string }>({ ctx: { wurst: "world" } });
+    my.get(1).add((ctx) => {
+      assertType<{ key: number }>(ctx);
+      assertType<{ wurst: string }>(ctx);
+      assertType<number>(ctx.key);
+      assertType<string>(ctx.wurst);
+      expect(ctx.wurst).toBe("world");
+      expect(ctx.key).toBe(1);
+      return { hello: "world" };
+    });
   });
 
   it("keyed asyncGet", async () => {
