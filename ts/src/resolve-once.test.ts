@@ -261,6 +261,39 @@ describe("resolve-once", () => {
     });
   });
 
+  it("ResolveOnce plain", () => {
+    const my = new ResolveOnce<{ hello: string }, { wurst: string }>();
+    my.once(() => {
+      return { hello: "world" };
+    });
+    my.once((x) => {
+      return { hello: x.wurst };
+    });
+  });
+
+  it("keyedResolvOnce with pass decompose", () => {
+    const my = new KeyedResolvOnce<{ hello: string }>();
+    my.get("1").once(({ key }) => {
+      assertType<string>(key);
+      return { hello: "world" };
+    });
+    my.get("2").once(() => {
+      return { hello: "world" };
+    });
+    my.get("3").once((ctx) => {
+      assertType<{ key: string }>(ctx);
+      return { hello: "world" };
+    });
+  });
+
+  it("keyedResolvOnce with pass decompose", () => {
+    const my = new KeyedResolvSeq<{ hello: string }>();
+    my.get("1").add(({ key }) => {
+      assertType<string>(key);
+      return { hello: "world" };
+    });
+  });
+
   it("keyed asyncGet", async () => {
     const keyed = new KeyedResolvOnce<number>();
     const a_orderFn = vi.fn((key) => Promise.resolve(key));

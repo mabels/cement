@@ -8,15 +8,15 @@ import { Option } from "./option.js";
 // interface ResolveSeqItem<C, R extends NonPromise<X>, X = string | number | boolean | symbol | object> {
 interface ResolveSeqItem<C, T, R> {
   readonly future: Future<T>;
-  readonly fn: (c?: C) => R;
+  readonly fn: (c: C) => R;
   readonly id?: number;
 }
 
-export class ResolveSeq<T, C extends NonNullable<object> = object> {
-  readonly ctx?: C;
-  readonly _seqFutures: ResolveSeqItem<C, T, unknown>[] = [];
+export class ResolveSeq<T, CTX extends NonNullable<object> = object> {
+  readonly ctx?: CTX;
+  readonly _seqFutures: ResolveSeqItem<CTX, T, unknown>[] = [];
 
-  constructor(ctx?: C) {
+  constructor(ctx?: CTX) {
     this.ctx = ctx;
   }
   reset(): void {
@@ -32,7 +32,7 @@ export class ResolveSeq<T, C extends NonNullable<object> = object> {
     }
     return Promise.resolve();
   }
-  async _step(item?: ResolveSeqItem<C, T, Promise<T> | T>): Promise<void> {
+  async _step(item?: ResolveSeqItem<CTX, T, Promise<T> | T>): Promise<void> {
     if (!item) {
       // done
       this._flushWaiting.forEach((f) => f.resolve());
@@ -41,7 +41,7 @@ export class ResolveSeq<T, C extends NonNullable<object> = object> {
     }
     let value: T;
     try {
-      const promiseOrValue = item.fn(this.ctx);
+      const promiseOrValue = item.fn(this.ctx ?? ({} as CTX));
       if (isPromise(promiseOrValue)) {
         value = await promiseOrValue;
       } else {
@@ -53,13 +53,13 @@ export class ResolveSeq<T, C extends NonNullable<object> = object> {
     } finally {
       this._seqFutures.shift();
     }
-    return this._step(this._seqFutures[0] as ResolveSeqItem<C, T, Promise<T> | T>);
+    return this._step(this._seqFutures[0] as ResolveSeqItem<CTX, T, Promise<T> | T>);
   }
-  add<R extends Promise<T> | T>(fn: (c?: C) => R, id?: number): R {
+  add<R extends Promise<T> | T>(fn: (c: CTX) => R, id?: number): R {
     const future = new Future<T>();
     this._seqFutures.push({ future, fn, id });
     if (this._seqFutures.length === 1) {
-      void this._step(this._seqFutures[0] as ResolveSeqItem<C, T, Promise<T> | T>); // exit into eventloop
+      void this._step(this._seqFutures[0] as ResolveSeqItem<CTX, T, Promise<T> | T>); // exit into eventloop
     }
     return future.asPromise() as R; // as Promise<UnPromisify<R>>;
   }
@@ -351,13 +351,13 @@ export class ResolveOnce<T, CTX = void> implements ResolveOnceIf<T, CTX> {
     return this.#syncOrAsync.Unwrap().state;
   }
 
-  once<R>(fn: (c?: CTX) => R): ResultOnce<R> {
-    let resultFn: (ctx?: CTX) => R;
+  once<R>(fn: (c: CTX) => R): ResultOnce<R> {
+    let resultFn: (ctx: CTX) => R;
     if (this.#state === "initial") {
       this.#state = "processing";
       try {
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-        const isSyncOrAsync = fn(this.#ctx) as R;
+        const isSyncOrAsync = fn(this.#ctx ?? ({} as CTX)) as R;
         if (isPromise(isSyncOrAsync)) {
           this.#syncOrAsync = Option.Some(new AsyncResolveOnce<never, CTX>(this.#ctx));
         } else {
@@ -381,9 +381,9 @@ export class ResolveOnce<T, CTX = void> implements ResolveOnceIf<T, CTX> {
     return this.#syncOrAsync.Unwrap().resolve(resultFn as (c?: CTX) => never) as ResultOnce<R>;
   }
 
-  reset<R>(fn?: (c?: CTX) => R): ResultOnce<R> {
+  reset<R>(fn?: (c: CTX) => R): ResultOnce<R> {
     if (this.#state === "initial") {
-      return this.once(fn as (c?: CTX) => R);
+      return this.once(fn as (c: CTX) => R);
     }
     if (this.#state === "processing") {
       // eslint-disable-next-line no-console
@@ -479,7 +479,8 @@ export class KeyedResolvOnce<T, K = string, CTX extends NonNullable<object> = ob
   CTX
 > {
   constructor(kp: Partial<AddKeyedParam<K, ResolveOnce<T, CTX>, CTX>> = {}) {
-    super((ctx) => new ResolveOnce<T, AddKey<CTX, K>>(ctx), kp);
+    // need the upcast we add to ResolvOnce CTX the Key
+    super((ctx) => new ResolveOnce<T, AddKey<CTX, K>>(ctx), kp as AddKeyedParam<K, ResolveOnce<T, AddKey<CTX, K>>, CTX>);
   }
 
   *entries(): IterableIterator<KeyItem<K, T>> {
