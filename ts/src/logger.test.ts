@@ -1153,7 +1153,11 @@ describe("TestLogger", () => {
   });
 
   it("my own yaml formatter", async () => {
-    const log = logger.SetExposeStack(true).SetFormatter(new YAMLFormatter(logger.TxtEnDe(), 2)).With().Logger();
+    const log = logger
+      .SetExposeStack(true)
+      .SetFormatter(await YAMLFormatter.create(logger.TxtEnDe(), 2))
+      .With()
+      .Logger();
     log
       .Error()
       .Str("bla", "blub")

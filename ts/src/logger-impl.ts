@@ -1,5 +1,5 @@
 // import { v4 } from "uuid";
-import YAML from "yaml";
+// import YAML from "yaml";
 import {
   AsError,
   FnSerialized,
@@ -26,6 +26,7 @@ import { TxtEnDecoder, TxtEnDecoderSingleton } from "./txt-en-decoder.js";
 import { LevelHandlerSingleton } from "./log-level-impl.js";
 import { BasicSysAbstractionFactory } from "./base-sys-abstraction.js";
 import { LogWriterStream } from "./log-writer-impl.js";
+import type YAML from "yaml";
 
 function getLen(value: unknown, lvs: LogValueState): LogValue {
   if (Array.isArray(value)) {
@@ -75,16 +76,22 @@ export class JSONFormatter implements LogFormatter {
     return this._txtEnDe.encode(ret + "\n");
   }
 }
-
 export class YAMLFormatter implements LogFormatter {
   private readonly _txtEnDe: TxtEnDecoder;
   private readonly _space?: number;
-  constructor(txtEnde: TxtEnDecoder, space?: number) {
+  private readonly _yaml: typeof YAML;
+
+  static create(txtEnde: TxtEnDecoder, space?: number): Promise<YAMLFormatter> {
+    return import("yaml").then((yaml) => new YAMLFormatter(txtEnde, space, yaml));
+  }
+
+  private constructor(txtEnde: TxtEnDecoder, space: number | undefined, yaml: typeof YAML) {
     this._txtEnDe = txtEnde;
     this._space = space;
+    this._yaml = yaml;
   }
   format(attr: LogSerializable): Uint8Array {
-    return this._txtEnDe.encode("---\n" + YAML.stringify(attr, null, this._space) + "\n");
+    return this._txtEnDe.encode("---\n" + this._yaml.stringify(attr, null, this._space) + "\n");
   }
 }
 
