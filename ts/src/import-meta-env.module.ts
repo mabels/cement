@@ -1,14 +1,9 @@
 import { Env, EnvActions } from "./sys-env.js";
 
-export function testInjectImportMetaEnv(env?: Record<string, string>): void {
-  (import.meta as { env?: Record<string, string> }).env = {
-    ...((import.meta as { env?: Record<string, string> }).env ?? {}),
-    ...(env ?? {}),
-  };
-}
-
-class ImportMetaEnv implements EnvActions {
+export class ImportMetaEnv implements EnvActions {
   readonly #wrap: EnvActions;
+  readonly importMetaEnv? = (import.meta as { env?: Record<string, string> }).env || {};
+
   constructor(ea: EnvActions) {
     this.#wrap = ea;
   }
@@ -24,7 +19,7 @@ class ImportMetaEnv implements EnvActions {
     if (v) {
       return v;
     }
-    return (import.meta as { env?: Record<string, string> }).env?.[key];
+    return this.importMetaEnv[key];
   }
   set(key: string, value?: string): void {
     this.#wrap.set(key, value);
@@ -33,11 +28,7 @@ class ImportMetaEnv implements EnvActions {
     this.#wrap.delete(key);
   }
   keys(): string[] {
-    const metaEnv = (import.meta as { env?: Record<string, string> }).env;
-    if (metaEnv) {
-      return Array.from(new Set([...this.#wrap.keys(), ...Object.keys(metaEnv)])).sort();
-    }
-    return this.#wrap.keys();
+    return Array.from(new Set([...this.#wrap.keys(), ...Object.keys(this.importMetaEnv)])).sort();
   }
 }
 
