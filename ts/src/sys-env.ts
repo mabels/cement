@@ -74,7 +74,7 @@ export function envFactory(opts: Partial<EnvFactoryOpts> = {}): Env {
     action.register(ret);
     return ret;
   });
-  if (opts.testPatchImportMetaEnv && isImportMetaEnv(res._map)) {
+  if (opts.testPatchImportMetaEnv && isImportMetaEnv(res._map) && res._map.importMetaEnv) {
     // do not override possible readonly meta.env
     Object.assign(res._map.importMetaEnv, opts.testPatchImportMetaEnv);
   }
