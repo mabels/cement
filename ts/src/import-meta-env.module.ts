@@ -19,7 +19,7 @@ export class ImportMetaEnv implements EnvActions {
     if (v) {
       return v;
     }
-    return this.importMetaEnv[key];
+    return this.importMetaEnv?.[key];
   }
   set(key: string, value?: string): void {
     this.#wrap.set(key, value);
@@ -28,7 +28,7 @@ export class ImportMetaEnv implements EnvActions {
     this.#wrap.delete(key);
   }
   keys(): string[] {
-    return Array.from(new Set([...this.#wrap.keys(), ...Object.keys(this.importMetaEnv)])).sort();
+    return Array.from(new Set([...this.#wrap.keys(), ...Object.keys(this.importMetaEnv ?? {})])).sort();
   }
 }
 
