@@ -5,7 +5,7 @@ import { CFEnvActions } from "./cf/cf-env-actions.js";
 import { KeyedResolvOnce } from "./resolve-once.js";
 import { Result } from "./result.js";
 import { getParamsResult, KeysParam } from "./utils/get-params-result.js";
-import { wrapImportMetaEnv, testInjectImportMetaEnv } from "@adviser/cement/import-meta-env";
+import { wrapImportMetaEnv, ImportMetaEnv } from "@adviser/cement/import-meta-env";
 
 export type EnvTuple = ([string, string] | [string, string][] | Record<string, string> | Iterator<[string, string]>)[];
 
@@ -68,15 +68,21 @@ export function envFactory(opts: Partial<EnvFactoryOpts> = {}): Env {
   if (!found) {
     throw new Error("SysContainer:envFactory: no env available");
   }
-
-  testInjectImportMetaEnv(opts.testPatchImportMetaEnv);
-
-  return _envFactories.get(opts.id ?? found.id).once(() => {
+  const res = _envFactories.get(opts.id ?? found.id).once(() => {
     const action = wrapImportMetaEnv(found.fn(opts));
     const ret = new EnvImpl(action, opts);
     action.register(ret);
     return ret;
   });
+  if (opts.testPatchImportMetaEnv && isImportMetaEnv(res._map)) {
+    // do not override possible readonly meta.env
+    Object.assign(res._map.importMetaEnv, opts.testPatchImportMetaEnv);
+  }
+  return res;
+}
+
+function isImportMetaEnv(obj: EnvMap): obj is ImportMetaEnv {
+  return !!(obj as ImportMetaEnv).importMetaEnv;
 }
 
 function isIterable(obj: unknown): obj is Iterable<[string, string]> {
