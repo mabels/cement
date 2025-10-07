@@ -23,7 +23,7 @@ importers:
         version: 9.36.0
       '@types/deno':
         specifier: ^2.3.0
-        version: 2.3.0
+        version: 2.5.0
       '@types/fs-extra':
         specifier: ^11.0.4
         version: 11.0.4
@@ -50,7 +50,7 @@ importers:
         version: 0.14.2
       deno:
         specifier: ^2.5.1
-        version: 2.5.2
+        version: 2.5.3
       esbuild-plugin-replace:
         specifier: ^1.4.0
         version: 1.4.0
@@ -343,33 +343,33 @@ packages:
     resolution: {integrity: sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw==}
     engines: {node: '>=12'}
 
-  '@deno/darwin-arm64@2.5.2':
-    resolution: {integrity: sha512-z2sjlI2e4KxYS3lXwvRv+6LptV+H2ejEsLrIM13omwfzh/PRBmmqJKlnmzr1z1/2LjlU7jy/ZMFXH/KmLUZ4pw==}
+  '@deno/darwin-arm64@2.5.3':
+    resolution: {integrity: sha512-s15f7EvOtNtdGhl7dAiKHN51qEub2pJToRxl5yzNjai1HuRyQzAhG5VUdJTb4dXbpuPclb5pI9oXo2wySVL75Q==}
     cpu: [arm64]
     os: [darwin]
 
-  '@deno/darwin-x64@2.5.2':
-    resolution: {integrity: sha512-CGGhbNZFA9X1A9C2IZXHS8UXb11OhnZZDj0pKOy76TGCGp6KHM9aJHUYGlAT+KPRg67RthWK1oNKHvXzMQa8GA==}
+  '@deno/darwin-x64@2.5.3':
+    resolution: {integrity: sha512-Racx5DVlOzeT6ep1RSEK95f8RQGp+UY0K+PLCwrMGbfPpkkhCrAkXBQgY+og3DiIBTG0VHn1Lt8WAtQ5t3eRGw==}
     cpu: [x64]
     os: [darwin]
 
-  '@deno/linux-arm64-glibc@2.5.2':
-    resolution: {integrity: sha512-WVF37ORK/gFI31lT+bFsuYigUde1vvqRz8nItYlBQ9Vfbbn9esVq1OQ5a7HStVavTMoghrJIspry2fucgW2ouA==}
+  '@deno/linux-arm64-glibc@2.5.3':
+    resolution: {integrity: sha512-3LczF6gOEIOfJ056d1l4LeOdi1EWhIRHUHq1bYDZTpvr+XL62Pq1s2gzcd5RucD6Pc1I3KxYDHVGOTwYi9hFoQ==}
     cpu: [arm64]
     os: [linux]
 
-  '@deno/linux-x64-glibc@2.5.2':
-    resolution: {integrity: sha512-jFGgYAYgDqb6mOBrQKavUem8/VhcK9DNKTuwzCYPq7As2ex/SWoQ8zRjrpNhXTRP3JlB4CQCJ6burQ+Fq5C0gA==}
+  '@deno/linux-x64-glibc@2.5.3':
+    resolution: {integrity: sha512-J7dsT+Llc1PAssuZDT1ZifOIz4SRRTfl6eJEYM6GnSTTtGhmCUfUZPHQGEj1dIF60Vce/+cfInjTLqWIdMm/0g==}
     cpu: [x64]
     os: [linux]
 
-  '@deno/win32-arm64@2.5.2':
-    resolution: {integrity: sha512-c8S/lVwsyv4ge2m9xWBUGNZ42TA93GXSmk+qNQRhxwNif3+Wbfno19ujuWtYVqbT/fmFGSGi+STHPAkWTWMT9g==}
+  '@deno/win32-arm64@2.5.3':
+    resolution: {integrity: sha512-m3MRGURfUMYAMFlLllDOoZFP4vX9u8wdabVMM6SQreNuH14oTTERPUs9s+bNS/0+Wz/MP1+uXKP3s+7//LsvHw==}
     cpu: [arm64]
     os: [win32]
 
-  '@deno/win32-x64@2.5.2':
-    resolution: {integrity: sha512-iuoS2gvLiZWG7AGVQm3ALEyP9I2bHIO38XXADFaFBNX26I6tso3Dk/AyC67xt3QKapUEAP44ICNPpRxHtgvw/Q==}
+  '@deno/win32-x64@2.5.3':
+    resolution: {integrity: sha512-5Gb/YtkFrEk88lND7U1qcFbd6RASfmIAqZ8AJf98j+qsUSzjeK8GoXMNaEkhyBEfdsTdQHpbtsS0E+JG6dZXVQ==}
     cpu: [x64]
     os: [win32]
 
@@ -1195,8 +1195,8 @@ packages:
   '@types/deep-eql@4.0.2':
     resolution: {integrity: sha512-c9h9dVVMigMPc4bwTvC5dxqtqJZwQPePsWjPlpSOnojbor6pGqdk541lfA7AqFQr5pB1BRdq0juY9db81BwyFw==}
 
-  '@types/deno@2.3.0':
-    resolution: {integrity: sha512-/4SyefQpKjwNKGkq9qG3Ln7MazfbWKvydyVFBnXzP5OQA4u1paoFtaOe1iHKycIWHHkhYag0lPxyheThV1ijzw==}
+  '@types/deno@2.5.0':
+    resolution: {integrity: sha512-g8JS38vmc0S87jKsFzre+0ZyMOUDHPVokEJymSCRlL57h6f/FdKPWBXgdFh3Z8Ees9sz11qt9VWELU9Y9ZkiVw==}
 
   '@types/estree@1.0.7':
     resolution: {integrity: sha512-w28IoSUCJpidD/TGviZwwMJckNESJZXFu7NBZ5YJ4mEUnNraUn9Pm8HSZm/jDF1pDWYKspWE7oVphigUPRakIQ==}
@@ -1219,8 +1219,8 @@ packages:
   '@types/node@24.5.2':
     resolution: {integrity: sha512-FYxk1I7wPv3K2XBaoyH2cTnocQEu8AOZ60hPbsyukMPLv5/5qr7V1i8PLHdl6Zf87I+xZXFvPCXYjiTFq+YSDQ==}
 
-  '@types/node@24.6.2':
-    resolution: {integrity: sha512-d2L25Y4j+W3ZlNAeMKcy7yDsK425ibcAOO2t7aPTz6gNMH0z2GThtwENCDc0d/Pw9wgyRqE5Px1wkV7naz8ang==}
+  '@types/node@24.7.0':
+    resolution: {integrity: sha512-IbKooQVqUBrlzWTi79E8Fw78l8k1RNtlDDNWsFZs7XonuQSJ8oNYfEeclhprUldXISRMLzBpILuKgPlIxm+/Yw==}
 
   '@types/sinonjs__fake-timers@8.1.5':
     resolution: {integrity: sha512-mQkU2jY8jJEF7YHjHvsQO8+3ughTL1mcnn96igfhONmR+fUPSKIkefQYpSe8bsly2Ep7oQbn/6VG5/9/0qcArQ==}
@@ -1833,8 +1833,8 @@ packages:
     resolution: {integrity: sha512-TllpMR/t0M5sqCXfj85i4XaAzxmS5tVA16dqvdkMwGmzI+dXLXnw3J+3Vdv7VKw+ThlTMboK6i9rnZ6Nntj5CQ==}
     engines: {node: '>= 14'}
 
-  deno@2.5.2:
-    resolution: {integrity: sha512-Zb1iLpHRN67LfSym7iwyxUXSEZQ/VhipMsGyp7gQUCHJze0Q78neC6+YPMrZI7FP/RbqAIGNB7vfFz2EUZUQEQ==}
+  deno@2.5.3:
+    resolution: {integrity: sha512-JHNQG7QLkBi+ZKgTEQ1powU7oeI28fGlYp/ftS57xeIkMe74gvHX4tVORLRStgBa9dzPvmtKbNC82eVAAfCMZw==}
     hasBin: true
 
   dequal@2.0.3:
@@ -3128,8 +3128,8 @@ packages:
   undici-types@7.12.0:
     resolution: {integrity: sha512-goOacqME2GYyOZZfb5Lgtu+1IDmAlAEu5xnD3+xTzS10hT0vzpf0SPjkXwAw9Jm+4n/mQGDP3LO8CPbYROeBfQ==}
 
-  undici-types@7.13.0:
-    resolution: {integrity: sha512-Ov2Rr9Sx+fRgagJ5AX0qvItZG/JKKoBRAVITs1zk7IqZGTJUwgUr7qoYBpWwakpWilTZFM98rG/AFRocu10iIQ==}
+  undici-types@7.14.0:
+    resolution: {integrity: sha512-QQiYxHuyZ9gQUIrmPo3IA+hUl4KYk8uSA7cHrcKd/l3p1OTpZcM0Tbp9x7FAtXdAYhlasd60ncPpgu6ihG6TOA==}
 
   undici@6.22.0:
     resolution: {integrity: sha512-hU/10obOIu62MGYjdskASR3CUAiYaFTtC9Pa6vHyf//mAipSvSQg6od2CnJswq7fvzNS3zJhxoRkgNVaHurWKw==}
@@ -3731,22 +3731,22 @@ snapshots:
     dependencies:
       '@jridgewell/trace-mapping': 0.3.9
 
-  '@deno/darwin-arm64@2.5.2':
+  '@deno/darwin-arm64@2.5.3':
     optional: true
 
-  '@deno/darwin-x64@2.5.2':
+  '@deno/darwin-x64@2.5.3':
     optional: true
 
-  '@deno/linux-arm64-glibc@2.5.2':
+  '@deno/linux-arm64-glibc@2.5.3':
     optional: true
 
-  '@deno/linux-x64-glibc@2.5.2':
+  '@deno/linux-x64-glibc@2.5.3':
     optional: true
 
-  '@deno/win32-arm64@2.5.2':
+  '@deno/win32-arm64@2.5.3':
     optional: true
 
-  '@deno/win32-x64@2.5.2':
+  '@deno/win32-x64@2.5.3':
     optional: true
 
   '@emnapi/runtime@1.5.0':
@@ -4333,7 +4333,7 @@ snapshots:
 
   '@types/deep-eql@4.0.2': {}
 
-  '@types/deno@2.3.0': {}
+  '@types/deno@2.5.0': {}
 
   '@types/estree@1.0.7': {}
 
@@ -4359,9 +4359,9 @@ snapshots:
     dependencies:
       undici-types: 7.12.0
 
-  '@types/node@24.6.2':
+  '@types/node@24.7.0':
     dependencies:
-      undici-types: 7.13.0
+      undici-types: 7.14.0
     optional: true
 
   '@types/sinonjs__fake-timers@8.1.5':
@@ -4378,12 +4378,12 @@ snapshots:
 
   '@types/ws@8.18.1':
     dependencies:
-      '@types/node': 24.6.2
+      '@types/node': 24.7.0
     optional: true
 
   '@types/yauzl@2.10.3':
     dependencies:
-      '@types/node': 24.6.2
+      '@types/node': 24.7.0
     optional: true
 
   '@typescript-eslint/eslint-plugin@8.44.0(@typescript-eslint/parser@8.44.1(eslint@9.36.0)(typescript@5.9.3))(eslint@9.36.0)(typescript@5.9.3)':
@@ -5089,14 +5089,14 @@ snapshots:
       esprima: 4.0.1
     optional: true
 
-  deno@2.5.2:
+  deno@2.5.3:
     optionalDependencies:
-      '@deno/darwin-arm64': 2.5.2
-      '@deno/darwin-x64': 2.5.2
-      '@deno/linux-arm64-glibc': 2.5.2
-      '@deno/linux-x64-glibc': 2.5.2
-      '@deno/win32-arm64': 2.5.2
-      '@deno/win32-x64': 2.5.2
+      '@deno/darwin-arm64': 2.5.3
+      '@deno/darwin-x64': 2.5.3
+      '@deno/linux-arm64-glibc': 2.5.3
+      '@deno/linux-x64-glibc': 2.5.3
+      '@deno/win32-arm64': 2.5.3
+      '@deno/win32-x64': 2.5.3
 
   dequal@2.0.3: {}
 
@@ -6590,7 +6590,7 @@ snapshots:
 
   undici-types@7.12.0: {}
 
-  undici-types@7.13.0:
+  undici-types@7.14.0:
     optional: true
 
   undici@6.22.0:
