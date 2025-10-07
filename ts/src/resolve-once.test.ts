@@ -1,4 +1,4 @@
-import { Result, KeyedResolvOnce, ResolveOnce, ResolveSeq, Lazy, Future, KeyedResolvSeq } from "@adviser/cement";
+import { Result, KeyedResolvOnce, ResolveOnce, ResolveSeq, Lazy, Future, KeyedResolvSeq, WaitForAsync } from "@adviser/cement";
 
 describe("resolve-once", () => {
   it("sequence", async () => {
@@ -821,5 +821,144 @@ describe("Lazy Initialization", () => {
     expect(await my.action()).toEqual({ sync: 43, async: 44, asyncPass: 46, passIn: 42 });
     expect(await my.action()).toEqual({ sync: 43, async: 44, asyncPass: 46, passIn: 42 });
     expect(await my.action()).toEqual({ sync: 43, async: 44, asyncPass: 46, passIn: 42 });
+  });
+
+  it("WaitForAsync works full async", async () => {
+    const onReady = new Future<void>();
+    const wfa = WaitForAsync(() => import("yaml"));
+    const resultFn = vi.fn();
+    for (let i = 0; i < 10; i++) {
+      void wfa((ctx) => {
+        return new Promise((resolve) => {
+          setTimeout(() => {
+            const res = ctx.Ok().stringify({ a: i });
+            resultFn(res, new Date().getTime());
+            resolve(res);
+            if (i === 9) {
+              onReady.resolve();
+            }
+          }, 1);
+        });
+      });
+    }
+    await onReady.asPromise();
+    expect(resultFn).toHaveBeenCalledTimes(10);
+    const myYaml = await import("yaml");
+    const last = { a: -1, time: 0 };
+    for (const [yaml, time] of resultFn.mock.calls) {
+      const parsed = myYaml.parse(yaml as string) as { a: number };
+      expect(parsed.a).toBeGreaterThan(last.a);
+      expect(time as number).toBeGreaterThanOrEqual(last.time);
+      last.a = parsed.a;
+      last.time = time as number;
+    }
+  });
+
+  it("WaitForAsync works sync", async () => {
+    const onReady = new Future<void>();
+    const onLast = new Future<void>();
+    const wfa = WaitForAsync(() => import("yaml"), { onReady: () => onReady.resolve() });
+    const resultFn = vi.fn();
+    for (let i = 0; i < 10; i++) {
+      void wfa((ctx) => {
+        const res = ctx.Ok().stringify({ a: i });
+        resultFn(res, new Date().getTime());
+        if (i === 9) {
+          onLast.resolve();
+        }
+      });
+    }
+    await onReady.asPromise();
+    await onLast.asPromise();
+    expect(resultFn).toHaveBeenCalledTimes(10);
+    const myYaml = await import("yaml");
+    const last = { a: -1, time: 0 };
+    for (const [yaml, time] of resultFn.mock.calls) {
+      const parsed = myYaml.parse(yaml as string) as { a: number };
+      expect(parsed.a).toBeGreaterThan(last.a);
+      expect(time as number).toBeGreaterThanOrEqual(last.time);
+      last.a = parsed.a;
+      last.time = time as number;
+    }
+  });
+
+  it("WaitForAsync works async", async () => {
+    const wfa = WaitForAsync(() => import("yaml"));
+    const resultFn = vi.fn();
+    for (let i = 0; i < 10; i++) {
+      const res = await wfa((ctx) => ctx.Ok().stringify({ a: i }));
+      resultFn(res, new Date().getTime());
+    }
+    expect(resultFn).toHaveBeenCalledTimes(10);
+    const myYaml = await import("yaml");
+    const last = { a: -1, time: 0 };
+    for (const [yaml, time] of resultFn.mock.calls) {
+      const parsed = myYaml.parse(yaml as string) as { a: number };
+      expect(parsed.a).toBeGreaterThan(last.a);
+      expect(time as number).toBeGreaterThanOrEqual(last.time);
+      last.a = parsed.a;
+      last.time = time as number;
+    }
+  });
+
+  it("ResolveOnce onReady() sync", () => {
+    const once = new ResolveOnce<number, { x: number }>({ x: 1 });
+
+    const onReadyFn = vi.fn();
+    once.onReady(onReadyFn);
+
+    once.once(() => 42);
+
+    once.once(() => 47);
+    once.once(() => 48);
+
+    once.onReady(onReadyFn);
+
+    expect(onReadyFn.mock.calls).toEqual([
+      [42, { x: 1 }],
+      [42, { x: 1 }],
+    ]);
+  });
+
+  it("ResolveOnce onReady() async", async () => {
+    const once = new ResolveOnce<number, { x: number }>({ x: 1 });
+
+    const onReadyFn = vi.fn();
+    once.onReady(onReadyFn);
+    await once.once(() => Promise.resolve(42));
+    await once.once(() => Promise.resolve(43));
+    await once.once(() => Promise.resolve(44));
+
+    once.onReady(onReadyFn);
+
+    expect(onReadyFn.mock.calls).toEqual([
+      [42, { x: 1 }],
+      [42, { x: 1 }],
+    ]);
+  });
+
+  it("ResolveOnce onReady() background", async () => {
+    const once = new ResolveOnce<number, { x: number }>({ x: 1 });
+
+    const done = new Future<void>();
+    const onReadyFn = vi.fn();
+    once.onReady((v, ctx) => {
+      onReadyFn(v, ctx);
+    });
+    void once.once(() => Promise.resolve(42));
+    void once.once(() => Promise.resolve(43));
+    void once.once(() => Promise.resolve(44));
+
+    once.onReady((v, ctx) => {
+      onReadyFn(v, ctx);
+      done.resolve();
+    });
+
+    await done.asPromise();
+
+    expect(onReadyFn.mock.calls).toEqual([
+      [42, { x: 1 }],
+      [42, { x: 1 }],
+    ]);
   });
 });

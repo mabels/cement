@@ -26,7 +26,8 @@ import { TxtEnDecoder, TxtEnDecoderSingleton } from "./txt-en-decoder.js";
 import { LevelHandlerSingleton } from "./log-level-impl.js";
 import { BasicSysAbstractionFactory } from "./base-sys-abstraction.js";
 import { LogWriterStream } from "./log-writer-impl.js";
-import type YAML from "yaml";
+import YAML from "yaml";
+import { ResolveOnce } from "./resolve-once.js";
 
 function getLen(value: unknown, lvs: LogValueState): LogValue {
   if (Array.isArray(value)) {
@@ -76,22 +77,41 @@ export class JSONFormatter implements LogFormatter {
     return this._txtEnDe.encode(ret + "\n");
   }
 }
+
+const yaml = new ResolveOnce<typeof YAML>();
 export class YAMLFormatter implements LogFormatter {
   private readonly _txtEnDe: TxtEnDecoder;
   private readonly _space?: number;
-  private readonly _yaml: typeof YAML;
 
-  static create(txtEnde: TxtEnDecoder, space?: number): Promise<YAMLFormatter> {
-    return import("yaml").then((yaml) => new YAMLFormatter(txtEnde, space, yaml));
-  }
+  // static create(txtEnde: TxtEnDecoder, space?: number): Promise<YAMLFormatter> {
+  //   return import("yaml").thehn((yaml) => new YAMLFormatter(txtEnde, space, yaml));
+  // }
 
-  private constructor(txtEnde: TxtEnDecoder, space: number | undefined, yaml: typeof YAML) {
+  format: (attr: LogSerializable) => Uint8Array;
+
+  constructor(txtEnde: TxtEnDecoder, space: number | undefined) {
     this._txtEnDe = txtEnde;
     this._space = space;
-    this._yaml = yaml;
+    this.format = (attr: LogSerializable): Uint8Array =>
+      txtEnde.encode(
+        "---\n" + "WARNING: yaml not loaded yet\n" + "AsJSON: " + JSON.stringify(attr, null, this._space) + "\n" + "\n",
+      );
+
+    void yaml.once(() => import("yaml"));
+    yaml.onReady((yaml) => {
+      this.format = (attr): Uint8Array => this._txtEnDe.encode("---\n" + yaml.stringify(attr, null, this._space) + "\n");
+      this._onReadys.forEach((fn) => fn(yaml));
+      this._onReadys.splice(0, this._onReadys.length);
+    });
   }
-  format(attr: LogSerializable): Uint8Array {
-    return this._txtEnDe.encode("---\n" + this._yaml.stringify(attr, null, this._space) + "\n");
+
+  readonly _onReadys: ((y: typeof YAML) => void)[] = [];
+  onReady(fn: (y: typeof YAML) => void): void {
+    if (yaml.ready) {
+      fn(yaml.value);
+      return;
+    }
+    this._onReadys.push(fn);
   }
 }
 
