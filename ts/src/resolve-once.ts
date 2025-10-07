@@ -81,11 +81,14 @@ type ResolveState = "initial" | "processed" | "waiting" | "processing";
 // export type VoidEqualUndefined<T> = T extends undefined ? void : T
 export type ResultOnce<R> = R extends Promise<infer T> ? Promise<T> : R;
 
+type OnReadyFn<T, CTX> = (val: T, ctx?: CTX) => void;
 interface ResolveOnceIf<R, CTX = void> {
   get ready(): boolean;
-  get value(): UnPromisify<R> | undefined;
+  get value(): R | undefined;
   get error(): Error | undefined;
   get state(): ResolveState;
+
+  onReady(fn: OnReadyFn<R | undefined, CTX>): void;
 
   once<R>(fn: (c?: CTX) => R): ResultOnce<R>;
   reset<R>(fn?: (c?: CTX) => R): ResultOnce<R>;
@@ -112,15 +115,16 @@ export class SyncResolveOnce<T, CTX = void> {
   }
 
   readonly #ctx?: CTX;
-  constructor(ctx?: CTX) {
+  constructor(ctx: CTX | undefined) {
     this.#ctx = ctx;
   }
 
-  resolve(fn: (ctx?: CTX) => T): T {
+  resolve(fn: (ctx?: CTX) => T, onReadyFn: OnReadyFn<T | undefined, CTX>): T {
     if (this.state === "initial") {
       this.state = "processed";
       try {
         this.#value = fn(this.#ctx);
+        onReadyFn(this.#value, this.#ctx);
       } catch (e) {
         this.#error = e as Error;
       }
@@ -140,7 +144,7 @@ export class SyncResolveOnce<T, CTX = void> {
     this.#value = undefined;
     this.#error = undefined;
     if (fn) {
-      return this.resolve(fn);
+      return this.resolve(fn, () => undefined as T | undefined);
     }
     return undefined as T;
   }
@@ -198,7 +202,7 @@ class AsyncResolveItem<T> {
     throw new Error("AsyncResolveItem.#promiseResult impossible");
   }
 
-  resolve(): T {
+  resolve(onReadyFn: (val: UnPromisify<T> | undefined) => void): T {
     if (this.#state === "initial") {
       this.#state = "waiting";
       const future = new Future<UnPromisify<T>>();
@@ -207,12 +211,13 @@ class AsyncResolveItem<T> {
       this.#toResolve
         .then((value) => {
           this.#value = Option.Some(value);
+          this.#state = "processed";
+          onReadyFn(value);
         })
         .catch((e) => {
           this.#error = e as Error;
         })
         .finally(() => {
-          this.#state = "processed";
           while (this.#queue.length > 0) {
             this.#resolveFuture(this.#queue.shift());
           }
@@ -239,7 +244,7 @@ export class AsyncResolveOnce<T, CTX = void> {
   readonly #queue: AsyncResolveItem<T>[] = [];
 
   readonly #ctx?: CTX;
-  constructor(ctx?: CTX) {
+  constructor(ctx: CTX | undefined) {
     this.#ctx = ctx;
   }
 
@@ -272,7 +277,7 @@ export class AsyncResolveOnce<T, CTX = void> {
     return this.#active().error;
   }
 
-  resolve(fn: (ctx?: CTX) => T): T {
+  resolve(fn: (ctx?: CTX) => T, onReadyFn: OnReadyFn<UnPromisify<T> | undefined, CTX>): T {
     if (this.state === "initial") {
       this.state = "waiting";
       let promiseResult: Promise<UnPromisify<T>>;
@@ -297,13 +302,17 @@ export class AsyncResolveOnce<T, CTX = void> {
       .reverse()
       .forEach((idx) => this.#queue.splice(idx, 1));
 
-    return this.#active().resolve();
+    return this.#active().resolve((val) => {
+      onReadyFn(val, this.#ctx);
+    });
   }
 
   reset(fn?: (c?: CTX) => T): T {
     this.state = "initial";
     if (fn) {
-      return this.resolve(fn);
+      return this.resolve(fn, () => {
+        /* no-op */
+      });
     }
     return undefined as T;
   }
@@ -319,15 +328,24 @@ export class ResolveOnce<T, CTX = void> implements ResolveOnceIf<T, CTX> {
     this.#ctx = ctx;
   }
 
+  #onReadyFns: ((val: T | undefined, ctx?: CTX) => void)[] = [];
+  onReady(fn: (val: T | undefined, ctx?: CTX) => void): void {
+    if (this.#state === "processed") {
+      fn(this.value, this.#ctx);
+      return;
+    }
+    this.#onReadyFns.push(fn);
+  }
+
   get ready(): boolean {
     return this.#state !== "initial" && this.#syncOrAsync.Unwrap().ready;
   }
 
-  get value(): UnPromisify<T> | undefined {
+  get value(): T | undefined {
     if (this.#state === "initial") {
       return undefined;
     }
-    return this.#syncOrAsync.Unwrap().value as UnPromisify<T>;
+    return this.#syncOrAsync.Unwrap().value as T;
   }
 
   get queueLength(): number {
@@ -353,6 +371,9 @@ export class ResolveOnce<T, CTX = void> implements ResolveOnceIf<T, CTX> {
 
   once<R>(fn: (c: CTX) => R): ResultOnce<R> {
     let resultFn: (ctx: CTX) => R;
+    let onReadyFn: OnReadyFn<T | undefined, CTX> = () => {
+      /* no-op */
+    };
     if (this.#state === "initial") {
       this.#state = "processing";
       try {
@@ -364,13 +385,17 @@ export class ResolveOnce<T, CTX = void> implements ResolveOnceIf<T, CTX> {
           this.#syncOrAsync = Option.Some(new SyncResolveOnce<never, CTX>(this.#ctx));
         }
         resultFn = (): R => isSyncOrAsync;
+        onReadyFn = (val: T | undefined, ctx?: CTX): void => {
+          this.#state = "processed";
+          // call all the onReadyFns
+          this.#onReadyFns.forEach((f) => f(val, ctx));
+          this.#onReadyFns.splice(0, this.#onReadyFns.length);
+        };
       } catch (e) {
         this.#syncOrAsync = Option.Some(new SyncResolveOnce<never, CTX>(this.#ctx));
         resultFn = (): R => {
           throw e;
         };
-      } finally {
-        this.#state = "processed";
       }
     } else {
       resultFn = fn;
@@ -378,7 +403,7 @@ export class ResolveOnce<T, CTX = void> implements ResolveOnceIf<T, CTX> {
     if (!this.#syncOrAsync) {
       throw new Error("ResolveOnce.once impossible");
     }
-    return this.#syncOrAsync.Unwrap().resolve(resultFn as (c?: CTX) => never) as ResultOnce<R>;
+    return this.#syncOrAsync.Unwrap().resolve(resultFn as (c?: CTX) => never, onReadyFn) as ResultOnce<R>;
   }
 
   reset<R>(fn?: (c: CTX) => R): ResultOnce<R> {
@@ -491,7 +516,7 @@ export class KeyedResolvOnce<T, K = string, CTX extends NonNullable<object> = ob
       if (v.error) {
         yield { key: k, value: Result.Err<T>(v.error) };
       } else {
-        yield { key: k, value: Result.Ok<T>(v.value as T) };
+        yield { key: k, value: Result.Ok<T>(v.value) };
       }
     }
   }
@@ -532,4 +557,35 @@ class LazyContainer<T> {
 export function Lazy<Args extends readonly unknown[], Return>(fn: (...args: Args) => Return): (...args: Args) => Return {
   const lazy = new LazyContainer<Return>();
   return lazy.call(fn);
+}
+
+// enable sync functions waiting for async functions without blocking the event loop
+// will be used for loading yaml dependency lazy in sync logger
+export function WaitForAsync<T, X>(
+  fn: () => Promise<T>,
+  opts: { onReady: (ctx: Result<T>) => void } = {
+    onReady: () => {
+      /* no-op */
+    },
+  },
+): (cb: (ctx: Result<T>) => ResultOnce<X>) => Promise<Result<UnPromisify<X>>> {
+  const once = Lazy(() =>
+    fn()
+      .then((v) => {
+        opts.onReady(Result.Ok(v));
+        return v;
+      })
+      .catch((e: Error) => {
+        opts.onReady(Result.Err(e));
+        throw e;
+      }),
+  );
+  const seq = new ResolveSeq<Result<UnPromisify<X>>>();
+  return (cb: (ctx: Result<T>) => ResultOnce<X>): Promise<Result<UnPromisify<X>>> =>
+    seq.add<Promise<Result<UnPromisify<X>>>>(
+      () =>
+        once()
+          .then((ctx) => Promise.resolve<UnPromisify<X>>(cb(Result.Ok(ctx)) as UnPromisify<X>))
+          .catch((err: Error) => Promise.resolve(Result.Err(err))) as Promise<Result<UnPromisify<X>>>,
+    );
 }
