@@ -68,7 +68,7 @@ importers:
         version: 1.55.1
       playwright-chromium:
         specifier: ^1.54.1
-        version: 1.55.1
+        version: 1.56.0
       prettier:
         specifier: ^3.6.2
         version: 3.6.2
@@ -948,8 +948,8 @@ packages:
   '@promptbook/utils@0.69.5':
     resolution: {integrity: sha512-xm5Ti/Hp3o4xHrsK9Yy3MS6KbDxYbq485hDsFvxqaNA7equHLPdo8H8faTitTeb14QCDfLW4iwCxdVYu5sn6YQ==}
 
-  '@puppeteer/browsers@2.10.10':
-    resolution: {integrity: sha512-3ZG500+ZeLql8rE0hjfhkycJjDj0pI/btEh3L9IkWUYcOrgP0xCNRq3HbtbqOPbvDhFaAWD88pDFtlLv8ns8gA==}
+  '@puppeteer/browsers@2.10.11':
+    resolution: {integrity: sha512-kp3ORGce+oC3qUMJ+g5NH9W4Q7mMG7gV2I+alv0bCbfkZ36B2V/xKCg9uYavSgjmsElhwBneahWjJP7A6fuKLw==}
     engines: {node: '>=18'}
     hasBin: true
 
@@ -1213,11 +1213,14 @@ packages:
   '@types/jsonfile@6.1.4':
     resolution: {integrity: sha512-D5qGUYwjvnNNextdU59/+fI+spnwtTFmyQP0h+PfIOSkNfpU6AOICUOkm4i0OnSk+NyjdPJrxCDro0sJsWlRpQ==}
 
-  '@types/node@20.19.19':
-    resolution: {integrity: sha512-pb1Uqj5WJP7wrcbLU7Ru4QtA0+3kAXrkutGiD26wUKzSMgNNaPARTUDQmElUXp64kh3cWdou3Q0C7qwwxqSFmg==}
+  '@types/node@20.19.21':
+    resolution: {integrity: sha512-CsGG2P3I5y48RPMfprQGfy4JPRZ6csfC3ltBZSRItG3ngggmNY/qs2uZKp4p9VbrpqNNSMzUZNFZKzgOGnd/VA==}
 
   '@types/node@24.7.0':
     resolution: {integrity: sha512-IbKooQVqUBrlzWTi79E8Fw78l8k1RNtlDDNWsFZs7XonuQSJ8oNYfEeclhprUldXISRMLzBpILuKgPlIxm+/Yw==}
+
+  '@types/node@24.7.2':
+    resolution: {integrity: sha512-/NbVmcGTP+lj5oa4yiYxxeBjRivKQ5Ns1eSZeB99ExsEQ6rX5XYU1Zy/gGxY/ilqtD4Etx9mKyrPxZRetiahhA==}
 
   '@types/sinonjs__fake-timers@8.1.5':
     resolution: {integrity: sha512-mQkU2jY8jJEF7YHjHvsQO8+3ughTL1mcnn96igfhONmR+fUPSKIkefQYpSe8bsly2Ep7oQbn/6VG5/9/0qcArQ==}
@@ -1555,11 +1558,16 @@ packages:
   balanced-match@1.0.2:
     resolution: {integrity: sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw==}
 
-  bare-events@2.7.0:
-    resolution: {integrity: sha512-b3N5eTW1g7vXkw+0CXh/HazGTcO5KYuu/RCNaJbDMPI6LHDi+7qe8EmxKUVe1sUbY2KZOVZFyj62x0OEz9qyAA==}
+  bare-events@2.8.0:
+    resolution: {integrity: sha512-AOhh6Bg5QmFIXdViHbMc2tLDsBIRxdkIaIddPslJF9Z5De3APBScuqGP2uThXnIpqFrgoxMNC6km7uXNIMLHXA==}
+    peerDependencies:
+      bare-abort-controller: '*'
+    peerDependenciesMeta:
+      bare-abort-controller:
+        optional: true
 
-  bare-fs@4.4.5:
-    resolution: {integrity: sha512-TCtu93KGLu6/aiGWzMr12TmSRS6nKdfhAnzTQRbXoSWxkbb9eRd53jQ51jG7g1gYjjtto3hbBrrhzg6djcgiKg==}
+  bare-fs@4.4.10:
+    resolution: {integrity: sha512-arqVF+xX/rJHwrONZaSPhlzleT2gXwVs9rsAe1p1mIVwWZI2A76/raio+KwwxfWMO8oV9Wo90EaUkS2QwVmy4w==}
     engines: {bare: '>=1.16.0'}
     peerDependencies:
       bare-buffer: '*'
@@ -2643,13 +2651,18 @@ packages:
   pkg-types@1.3.1:
     resolution: {integrity: sha512-/Jm5M4RvtBFVkKWRu2BLUTNP8/M2a+UwuAX+ae4770q1qVGtfjG+WTCupoZixokjmHiry8uI+dlY8KXYV5HVVQ==}
 
-  playwright-chromium@1.55.1:
-    resolution: {integrity: sha512-eq2L3TRfYX5CGBUTk2ey8jrxFZsL1cQ13LRnWfyM3708IFUSql8Db8Pddeh7jFXMKWou0KySCSv53GhdyXI2EQ==}
+  playwright-chromium@1.56.0:
+    resolution: {integrity: sha512-Zgph8yT2/QzhozuY8PXKV7PXSg3f0YLyI3mE9ljaqh37RtckmZJBfiqeasJVhsCgYe3P63HbdDhUQkUMNT+nog==}
     engines: {node: '>=18'}
     hasBin: true
 
   playwright-core@1.55.1:
     resolution: {integrity: sha512-Z6Mh9mkwX+zxSlHqdr5AOcJnfp+xUWLCt9uKV18fhzA8eyxUd8NUWzAjxUh55RZKSYwDGX0cfaySdhZJGMoJ+w==}
+    engines: {node: '>=18'}
+    hasBin: true
+
+  playwright-core@1.56.0:
+    resolution: {integrity: sha512-1SXl7pMfemAMSDn5rkPeZljxOCYAmQnYLBTExuh6E8USHXGSX3dx6lYZN/xPpTz1vimXmPA9CDnILvmJaB8aSQ==}
     engines: {node: '>=18'}
     hasBin: true
 
@@ -2818,6 +2831,11 @@ packages:
 
   semver@7.7.2:
     resolution: {integrity: sha512-RF0Fw+rO5AMf9MAyaRXI4AV0Ulj5lMHqVxxdSgiVbixSCXoEmmX/jk0CuJw4+3SqroYO9VoUh+HcuJivvtJemA==}
+    engines: {node: '>=10'}
+    hasBin: true
+
+  semver@7.7.3:
+    resolution: {integrity: sha512-SdsKMrI9TdgjdweUSR9MweHA4EJ8YxHn8DFaDisvhVlUOe4BF1tLD7GAj0lIqWVl+dPb/rExr0Btby5loQm20Q==}
     engines: {node: '>=10'}
     hasBin: true
 
@@ -4155,16 +4173,17 @@ snapshots:
       spacetrim: 0.11.59
     optional: true
 
-  '@puppeteer/browsers@2.10.10':
+  '@puppeteer/browsers@2.10.11':
     dependencies:
       debug: 4.4.3
       extract-zip: 2.0.1
       progress: 2.0.3
       proxy-agent: 6.5.0
-      semver: 7.7.2
+      semver: 7.7.3
       tar-fs: 3.1.1
       yargs: 17.7.2
     transitivePeerDependencies:
+      - bare-abort-controller
       - bare-buffer
       - react-native-b4a
       - supports-color
@@ -4346,7 +4365,7 @@ snapshots:
     dependencies:
       '@types/node': 24.7.0
 
-  '@types/node@20.19.19':
+  '@types/node@20.19.21':
     dependencies:
       undici-types: 6.21.0
     optional: true
@@ -4354,6 +4373,11 @@ snapshots:
   '@types/node@24.7.0':
     dependencies:
       undici-types: 7.14.0
+
+  '@types/node@24.7.2':
+    dependencies:
+      undici-types: 7.14.0
+    optional: true
 
   '@types/sinonjs__fake-timers@8.1.5':
     optional: true
@@ -4369,12 +4393,12 @@ snapshots:
 
   '@types/ws@8.18.1':
     dependencies:
-      '@types/node': 24.7.0
+      '@types/node': 24.7.2
     optional: true
 
   '@types/yauzl@2.10.3':
     dependencies:
-      '@types/node': 24.7.0
+      '@types/node': 24.7.2
     optional: true
 
   '@typescript-eslint/eslint-plugin@8.44.1(@typescript-eslint/parser@8.46.0(eslint@9.37.0)(typescript@5.9.3))(eslint@9.37.0)(typescript@5.9.3)':
@@ -4654,6 +4678,7 @@ snapshots:
       glob: 10.4.5
       import-meta-resolve: 4.2.0
     transitivePeerDependencies:
+      - bare-abort-controller
       - bare-buffer
       - react-native-b4a
       - supports-color
@@ -4672,17 +4697,17 @@ snapshots:
 
   '@wdio/repl@9.4.4':
     dependencies:
-      '@types/node': 20.19.19
+      '@types/node': 20.19.21
     optional: true
 
   '@wdio/types@9.10.1':
     dependencies:
-      '@types/node': 20.19.19
+      '@types/node': 20.19.21
     optional: true
 
   '@wdio/utils@9.11.0':
     dependencies:
-      '@puppeteer/browsers': 2.10.10
+      '@puppeteer/browsers': 2.10.11
       '@wdio/logger': 9.4.4
       '@wdio/types': 9.10.1
       decamelize: 6.0.1
@@ -4696,6 +4721,7 @@ snapshots:
       split2: 4.2.0
       wait-port: 1.1.0
     transitivePeerDependencies:
+      - bare-abort-controller
       - bare-buffer
       - react-native-b4a
       - supports-color
@@ -4764,6 +4790,7 @@ snapshots:
       tar-stream: 3.1.7
       zip-stream: 6.0.1
     transitivePeerDependencies:
+      - bare-abort-controller
       - react-native-b4a
     optional: true
 
@@ -4795,17 +4822,18 @@ snapshots:
 
   balanced-match@1.0.2: {}
 
-  bare-events@2.7.0:
+  bare-events@2.8.0:
     optional: true
 
-  bare-fs@4.4.5:
+  bare-fs@4.4.10:
     dependencies:
-      bare-events: 2.7.0
+      bare-events: 2.8.0
       bare-path: 3.0.0
-      bare-stream: 2.7.0(bare-events@2.7.0)
+      bare-stream: 2.7.0(bare-events@2.8.0)
       bare-url: 2.2.2
       fast-fifo: 1.3.2
     transitivePeerDependencies:
+      - bare-abort-controller
       - react-native-b4a
     optional: true
 
@@ -4817,12 +4845,13 @@ snapshots:
       bare-os: 3.6.2
     optional: true
 
-  bare-stream@2.7.0(bare-events@2.7.0):
+  bare-stream@2.7.0(bare-events@2.8.0):
     dependencies:
       streamx: 2.23.0
     optionalDependencies:
-      bare-events: 2.7.0
+      bare-events: 2.8.0
     transitivePeerDependencies:
+      - bare-abort-controller
       - react-native-b4a
     optional: true
 
@@ -5325,7 +5354,9 @@ snapshots:
 
   events-universal@1.0.1:
     dependencies:
-      bare-events: 2.7.0
+      bare-events: 2.8.0
+    transitivePeerDependencies:
+      - bare-abort-controller
     optional: true
 
   events@3.3.0:
@@ -5461,6 +5492,7 @@ snapshots:
       tar-fs: 3.1.1
       which: 5.0.0
     transitivePeerDependencies:
+      - bare-abort-controller
       - bare-buffer
       - react-native-b4a
       - supports-color
@@ -6019,11 +6051,13 @@ snapshots:
       mlly: 1.7.4
       pathe: 2.0.3
 
-  playwright-chromium@1.55.1:
+  playwright-chromium@1.56.0:
     dependencies:
-      playwright-core: 1.55.1
+      playwright-core: 1.56.0
 
   playwright-core@1.55.1: {}
+
+  playwright-core@1.56.0: {}
 
   playwright@1.55.1:
     dependencies:
@@ -6239,6 +6273,9 @@ snapshots:
 
   semver@7.7.2: {}
 
+  semver@7.7.3:
+    optional: true
+
   serialize-error@11.0.3:
     dependencies:
       type-fest: 2.19.0
@@ -6351,6 +6388,7 @@ snapshots:
       fast-fifo: 1.3.2
       text-decoder: 1.2.3
     transitivePeerDependencies:
+      - bare-abort-controller
       - react-native-b4a
     optional: true
 
@@ -6417,9 +6455,10 @@ snapshots:
       pump: 3.0.3
       tar-stream: 3.1.7
     optionalDependencies:
-      bare-fs: 4.4.5
+      bare-fs: 4.4.10
       bare-path: 3.0.0
     transitivePeerDependencies:
+      - bare-abort-controller
       - bare-buffer
       - react-native-b4a
     optional: true
@@ -6430,6 +6469,7 @@ snapshots:
       fast-fifo: 1.3.2
       streamx: 2.23.0
     transitivePeerDependencies:
+      - bare-abort-controller
       - react-native-b4a
     optional: true
 
@@ -6727,7 +6767,7 @@ snapshots:
 
   webdriver@9.11.0:
     dependencies:
-      '@types/node': 20.19.19
+      '@types/node': 20.19.21
       '@types/ws': 8.18.1
       '@wdio/config': 9.11.0
       '@wdio/logger': 9.4.4
@@ -6738,6 +6778,7 @@ snapshots:
       undici: 6.22.0
       ws: 8.18.3
     transitivePeerDependencies:
+      - bare-abort-controller
       - bare-buffer
       - bufferutil
       - react-native-b4a
@@ -6747,7 +6788,7 @@ snapshots:
 
   webdriverio@9.12.0:
     dependencies:
-      '@types/node': 20.19.19
+      '@types/node': 20.19.21
       '@types/sinonjs__fake-timers': 8.1.5
       '@wdio/config': 9.11.0
       '@wdio/logger': 9.4.4
@@ -6773,6 +6814,7 @@ snapshots:
       urlpattern-polyfill: 10.1.0
       webdriver: 9.11.0
     transitivePeerDependencies:
+      - bare-abort-controller
       - bare-buffer
       - bufferutil
       - react-native-b4a
