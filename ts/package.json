@@ -115,11 +115,9 @@
     "ignoredBuiltDependencies": [
       "edgedriver",
       "geckodriver",
-      "msw",
-      "sharp"
+      "msw"
     ],
     "onlyBuiltDependencies": [
-      "deno",
       "esbuild",
       "playwright-chromium",
       "workerd"
