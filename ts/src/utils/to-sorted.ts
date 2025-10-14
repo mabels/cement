@@ -1,4 +1,6 @@
-function toSortedRecursive<T>(arrayOrObject: T, touchFn?: (value: unknown) => void, cycleReferences = new Set<T>()): T {
+export type TouchFn = (value: string | boolean | number) => void;
+
+function toSortedRecursive<T>(arrayOrObject: T, touchFn?: TouchFn, cycleReferences = new Set<T>()): T {
   function ref(): T {
     if (cycleReferences.has(arrayOrObject)) {
       return undefined;
@@ -11,14 +13,14 @@ function toSortedRecursive<T>(arrayOrObject: T, touchFn?: (value: unknown) => vo
       return arrayOrObject;
 
     case arrayOrObject instanceof Date: {
-      const val = arrayOrObject.toISOString() as unknown as T;
+      const val = arrayOrObject.toISOString();
       touchFn?.(val);
-      return val;
+      return val as unknown as T;
     }
     case typeof arrayOrObject === "symbol": {
-      const val = arrayOrObject.toString() as unknown as T;
+      const val = arrayOrObject.toString();
       touchFn?.(val);
-      return val;
+      return val as unknown as T;
     }
 
     case Array.isArray(arrayOrObject):
@@ -41,11 +43,11 @@ function toSortedRecursive<T>(arrayOrObject: T, touchFn?: (value: unknown) => vo
       );
 
     default:
-      touchFn?.(arrayOrObject);
+      touchFn?.(arrayOrObject as string | boolean | number);
       return arrayOrObject;
   }
 }
 
-export function toSorted<T>(arrayOrObject: T, touchFn?: (value: unknown) => void): T {
+export function toSorted<T>(arrayOrObject: T, touchFn?: TouchFn): T {
   return toSortedRecursive(arrayOrObject, touchFn, new Set<T>());
 }
