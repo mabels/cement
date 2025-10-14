@@ -242,12 +242,19 @@ describe("toSorted", () => {
       a: [{ b: 4, c: 3 }],
       b: [{ a: 2, z: 1 }],
     });
-    expect(touchFn).toHaveBeenCalledTimes(10);
-    expect(touchFn).toHaveBeenCalledWith("b");
-    expect(touchFn).toHaveBeenCalledWith("z");
-    expect(touchFn).toHaveBeenCalledWith("a");
-    expect(touchFn).toHaveBeenCalledWith("a");
-    expect(touchFn).toHaveBeenCalledWith("c");
-    expect(touchFn).toHaveBeenCalledWith("b");
+    expect(touchFn.mock.calls).toEqual([
+      ["a", "Key"],
+      [[{ b: 4, c: 3 }], "Array"],
+      ["b", "Key"],
+      [4, "Number"],
+      ["c", "Key"],
+      [3, "Number"],
+      ["b", "Key"],
+      [[{ a: 2, z: 1 }], "Array"],
+      ["a", "Key"],
+      [2, "Number"],
+      ["z", "Key"],
+      [1, "Number"],
+    ]);
   });
 });
