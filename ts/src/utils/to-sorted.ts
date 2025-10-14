@@ -3,7 +3,7 @@ export type TouchFn = (value: string | boolean | number) => void;
 function toSortedRecursive<T>(arrayOrObject: T, touchFn?: TouchFn, cycleReferences = new Set<T>()): T {
   function ref(): T {
     if (cycleReferences.has(arrayOrObject)) {
-      return undefined;
+      return undefined as T;
     }
     cycleReferences.add(arrayOrObject);
     return true as T;
@@ -27,7 +27,7 @@ function toSortedRecursive<T>(arrayOrObject: T, touchFn?: TouchFn, cycleReferenc
       return ref() && (arrayOrObject.map((i) => toSortedRecursive<unknown>(i, touchFn, cycleReferences)) as T);
 
     case typeof arrayOrObject === "function":
-      return undefined;
+      return undefined as T;
 
     case typeof arrayOrObject === "object":
       return (
