@@ -4,10 +4,10 @@
 name: Deno Publish - @adviser/cement
 
 on:
-  workflow_dispatch:  # Enables manual triggering
-    inputs:  # Optional: define inputs
+  workflow_dispatch: # Enables manual triggering
+    inputs: # Optional: define inputs
       version:
-        description: 'tag'
+        description: "tag"
         required: true
         type: string
 env:
@@ -47,10 +47,9 @@ jobs:
           version: 10
 
       - name: Publish runified JSR
-        env: 
+        env:
           GITHUB_REF: "a/b/${{ input.tag }}"
         run: |
           cd ts
-    	  pnpm run pubdir
+          pnpm run pubdir
           cd pubdir && deno publish --allow-dirty --unstable-sloppy-imports"
-
