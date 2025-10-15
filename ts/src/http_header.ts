@@ -75,7 +75,14 @@ export class HeadersImpl implements Headers {
   }
 }
 
-export type CoercedHeadersInit = HeadersInit | Headers | HttpHeader;
+export interface HeaderForeach {
+  forEach(callbackfn: (value: string | string[], key: string, parent: this) => void): void;
+}
+export type CoercedHeadersInit = HeadersInit | HeaderForeach | HttpHeader;
+
+function hasForEach(unk: unknown): unk is HeaderForeach {
+  return typeof (unk as Headers).forEach == "function";
+}
 
 export class HttpHeader {
   readonly _headers: Map<string, Set<string>> = new Map<string, Set<string>>();
@@ -86,28 +93,32 @@ export class HttpHeader {
     }
     const h = new HttpHeader();
     if (headers) {
-      if (Array.isArray(headers)) {
-        for (const [k, v] of headers) {
-          if (v) {
-            h.Add(k, v);
+      switch (true) {
+        case Array.isArray(headers):
+          for (const [k, v] of headers) {
+            if (v) {
+              h.Add(k, v);
+            }
           }
-        }
-      } else if (headers instanceof Headers) {
-        headers.forEach((v, k) => {
-          if (v) {
-            h.Add(
-              k,
-              v.split(",").map((v) => v.trim()),
-            );
-          }
-        });
-      } else {
-        for (const k in headers) {
-          const v = (headers as Record<string, string | string[]>)[k];
-          (Array.isArray(v) ? v : [v]).forEach((v) => {
-            h.Add(k, v);
+          break;
+        case hasForEach(headers):
+          headers.forEach((v, k) => {
+            if (v) {
+              const arrayV = (typeof v === "string" ? [v] : v)
+                .map((vv) => vv.split(",").map((v) => v.trim()))
+                .flat()
+                .filter((v) => !!v);
+              h.Add(k, arrayV);
+            }
           });
-        }
+          break;
+        default:
+          for (const k in headers) {
+            const v = (headers as Record<string, string | string[]>)[k];
+            (Array.isArray(v) ? v : [v]).forEach((v) => {
+              h.Add(k, v);
+            });
+          }
       }
     }
     return h;

@@ -1,6 +1,24 @@
 import { HttpHeader } from "./http_header.js";
 import { describe, it, expect } from "vitest";
 
+class OnlyForEach {
+  readonly _my: Record<string, string | string[]>;
+  constructor(init: Record<string, string | string[]> = {}) {
+    this._my = { ...init };
+  }
+  forEach<This = unknown>(callback: (this: This, value: string, key: string, parent: OnlyForEach) => void, thisArg?: This): void {
+    for (const [k, v] of Object.entries(this._my)) {
+      if (Array.isArray(v)) {
+        for (const vv of v) {
+          callback.call(thisArg, vv, k, this);
+        }
+      } else {
+        callback.call(thisArg, v, k, this);
+      }
+    }
+  }
+}
+
 describe("HttpHeader", () => {
   it("Add should join different case headings to case insensitive ", () => {
     const h = HttpHeader.from({
@@ -120,5 +138,22 @@ describe("HttpHeader", () => {
       CORS,
     ).AsRecordStringString();
     expect(headers).toEqual(Object.fromEntries(Object.entries(CORS).map(([k, v]) => [k.toLowerCase(), v])));
+  });
+
+  it("OnlyForEach Headers", () => {
+    const h = HttpHeader.from(
+      new OnlyForEach({
+        "Content-Type": "application/json",
+        Array: ["a", "b"],
+        String: "string,with,commas",
+        ArrayWithCommas: ["string,with,commas", "and,more,,commas", ""],
+      }),
+    );
+    expect(h.Items()).toEqual([
+      ["content-type", ["application/json"]],
+      ["array", ["a", "b"]],
+      ["string", ["string", "with", "commas"]],
+      ["arraywithcommas", ["string", "with", "commas", "and", "more"]],
+    ]);
   });
 });
