@@ -28,7 +28,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ input.tag }}
+          ref: ${{ inputs.tag }}
 
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
@@ -48,7 +48,7 @@ jobs:
 
       - name: Publish runified JSR
         env:
-          GITHUB_REF: "a/b/${{ input.tag }}"
+          GITHUB_REF: "a/b/${{ inputs.tag }}"
         run: |
           cd ts
           pnpm run pubdir
