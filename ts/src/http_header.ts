@@ -1,16 +1,11 @@
 export class HeadersImpl implements Headers {
-  // readonly _headers: Map<string, string>;
   readonly impl: Headers = new Headers();
 
   constructor(init: Map<string, string | string[]>) {
-    // super();
     for (const [k, v] of init) {
       this.append(k, v);
     }
   }
-  // toKey(key: string): string {
-  //   return key.toLowerCase();
-  // }
 
   forEach(callbackfn: (value: string, key: string, parent: this) => void): void {
     this.impl.forEach((v, k) => {
@@ -80,44 +75,45 @@ export class HeadersImpl implements Headers {
   }
 }
 
+export type CoercedHeadersInit = HeadersInit | Headers | HttpHeader;
+
 export class HttpHeader {
   readonly _headers: Map<string, Set<string>> = new Map<string, Set<string>>();
 
-  static from(...headersArgs: (HeadersInit | Headers | HttpHeader)[]): HttpHeader {
-    return headersArgs
-      .map((headers) => {
-        const h = new HttpHeader();
-        if (headers instanceof HttpHeader) {
-          return headers.Clone();
-        }
-        if (headers) {
-          if (Array.isArray(headers)) {
-            for (const [k, v] of headers) {
-              if (v) {
-                h.Add(k, v);
-              }
-            }
-          } else if (headers instanceof Headers) {
-            headers.forEach((v, k) => {
-              if (v) {
-                h.Add(
-                  k,
-                  v.split(",").map((v) => v.trim()),
-                );
-              }
-            });
-          } else {
-            for (const k in headers) {
-              const v = (headers as Record<string, string | string[]>)[k];
-              (Array.isArray(v) ? v : [v]).forEach((v) => {
-                h.Add(k, v);
-              });
-            }
+  static coerce(headers: CoercedHeadersInit): HttpHeader {
+    if (headers instanceof HttpHeader) {
+      return headers;
+    }
+    const h = new HttpHeader();
+    if (headers) {
+      if (Array.isArray(headers)) {
+        for (const [k, v] of headers) {
+          if (v) {
+            h.Add(k, v);
           }
         }
-        return h;
-      })
-      .reduce((acc, cur) => acc.Merge(cur), new HttpHeader());
+      } else if (headers instanceof Headers) {
+        headers.forEach((v, k) => {
+          if (v) {
+            h.Add(
+              k,
+              v.split(",").map((v) => v.trim()),
+            );
+          }
+        });
+      } else {
+        for (const k in headers) {
+          const v = (headers as Record<string, string | string[]>)[k];
+          (Array.isArray(v) ? v : [v]).forEach((v) => {
+            h.Add(k, v);
+          });
+        }
+      }
+    }
+    return h;
+  }
+  static from(...headersArgs: CoercedHeadersInit[]): HttpHeader {
+    return headersArgs.map((headers) => HttpHeader.coerce(headers)).reduce((acc, cur) => acc.MergeInplace(cur), new HttpHeader());
   }
 
   _asStringString(): Map<string, string> {
@@ -216,13 +212,15 @@ export class HttpHeader {
   AsHeaders(): HeadersImpl {
     return new HeadersImpl(this._asStringString());
   }
-  Merge(other?: HttpHeader): HttpHeader {
-    const ret = this.Clone();
-    if (other) {
-      for (const [key, values] of other.Items()) {
-        ret.Add(key, values);
+  MergeInplace(...other: CoercedHeadersInit[]): HttpHeader {
+    for (const h of other.map((h) => HttpHeader.coerce(h))) {
+      for (const [key, values] of h.Items()) {
+        this.Add(key, values);
       }
     }
-    return ret;
+    return this;
+  }
+  Merge(...other: CoercedHeadersInit[]): HttpHeader {
+    return this.Clone().MergeInplace(...other);
   }
 }
