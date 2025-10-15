@@ -200,14 +200,14 @@ export class HttpHeader {
   }
   // Need for CF own HeadersInit type
   AsHeaderInit<H extends HeadersInit>(): H {
-    const obj = {} as H;
+    const obj = {};
     for (const [key, values] of this._headers.entries()) {
       const vs = values.values().next();
       if (vs.value) {
         obj[key] = vs.value as string;
       }
     }
-    return obj;
+    return obj as H;
   }
   AsHeaders(): HeadersImpl {
     return new HeadersImpl(this._asStringString());
