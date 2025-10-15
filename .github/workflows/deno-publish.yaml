@@ -51,5 +51,6 @@ jobs:
           GITHUB_REF: "a/b/${{ inputs.tag }}"
         run: |
           cd ts
+          pnpm install
           pnpm run pubdir
           cd pubdir && deno publish --allow-dirty --unstable-sloppy-imports"
