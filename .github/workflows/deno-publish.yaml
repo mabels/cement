@@ -1,0 +1,56 @@
+# This workflow will do a clean install of node dependencies, build the source code and run tests across different versions of node
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-nodejs-with-github-actions
+
+name: Deno Publish - @adviser/cement
+
+on:
+  workflow_dispatch:  # Enables manual triggering
+    inputs:  # Optional: define inputs
+      version:
+        description: 'tag'
+        required: true
+        type: string
+env:
+  IN_CI: "in_ci"
+
+jobs:
+  build:
+    permissions:
+      contents: read
+      id-token: write
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [22.x]
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ input.tag }}
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          cache: true
+
+      - uses: pnpm/action-setup@v4
+        name: Install pnpm
+        with:
+          run_install: false
+          version: 10
+
+      - name: Publish runified JSR
+        env: 
+          GITHUB_REF: "a/b/${{ input.tag }}"
+        run: |
+          cd ts
+    	  pnpm run pubdir
+          cd pubdir && deno publish --allow-dirty --unstable-sloppy-imports"
+
