@@ -81,45 +81,49 @@ export class HeadersImpl implements Headers {
 }
 
 export class HttpHeader {
-  readonly _headers: Map<string, string[]> = new Map<string, string[]>();
+  readonly _headers: Map<string, Set<string>> = new Map<string, Set<string>>();
 
-  static from(headers?: HeadersInit | Headers | HttpHeader): HttpHeader {
-    if (headers instanceof HttpHeader) {
-      return headers.Clone();
-    }
-    const h = new HttpHeader();
-    if (headers) {
-      if (Array.isArray(headers)) {
-        for (const [k, v] of headers) {
-          if (v) {
-            h.Add(k, v);
+  static from(...headersArgs: (HeadersInit | Headers | HttpHeader)[]): HttpHeader {
+    return headersArgs
+      .map((headers) => {
+        const h = new HttpHeader();
+        if (headers instanceof HttpHeader) {
+          return headers.Clone();
+        }
+        if (headers) {
+          if (Array.isArray(headers)) {
+            for (const [k, v] of headers) {
+              if (v) {
+                h.Add(k, v);
+              }
+            }
+          } else if (headers instanceof Headers) {
+            headers.forEach((v, k) => {
+              if (v) {
+                h.Add(
+                  k,
+                  v.split(",").map((v) => v.trim()),
+                );
+              }
+            });
+          } else {
+            for (const k in headers) {
+              const v = (headers as Record<string, string | string[]>)[k];
+              (Array.isArray(v) ? v : [v]).forEach((v) => {
+                h.Add(k, v);
+              });
+            }
           }
         }
-      } else if (headers instanceof Headers) {
-        headers.forEach((v, k) => {
-          if (v) {
-            h.Add(
-              k,
-              v.split(",").map((v) => v.trim()),
-            );
-          }
-        });
-      } else {
-        for (const k in headers) {
-          const v = (headers as Record<string, string | string[]>)[k];
-          (Array.isArray(v) ? v : [v]).forEach((v) => {
-            h.Add(k, v);
-          });
-        }
-      }
-    }
-    return h;
+        return h;
+      })
+      .reduce((acc, cur) => acc.Merge(cur), new HttpHeader());
   }
 
   _asStringString(): Map<string, string> {
     const ret = new Map<string, string>();
     for (const [key, values] of this._headers) {
-      ret.set(key, values.join(", "));
+      ret.set(key, Array.from(values).join(", "));
     }
     return ret;
   }
@@ -129,31 +133,40 @@ export class HttpHeader {
   }
   Values(key: string): string[] {
     const values = this._headers.get(this._key(key));
-    return values || [];
+    return values ? Array.from(values) : [];
   }
   Get(key: string): string | undefined {
     const values = this._headers.get(this._key(key));
-    if (values === undefined || values.length === 0) {
+    if (values === undefined || values.size === 0) {
       return undefined;
     }
-    return values[0];
+    return values.values().next().value as string;
   }
   Set(key: string, valueOr: string | string[]): HttpHeader {
-    const value = Array.isArray(valueOr) ? valueOr : [valueOr];
-    this._headers.set(this._key(key), value);
+    const value = new Set((Array.isArray(valueOr) ? valueOr : [valueOr]).map((v) => v.trim()).filter((v) => v !== ""));
+    if (value.size > 0) {
+      this._headers.set(this._key(key), value);
+    } else {
+      this._headers.delete(this._key(key));
+    }
     return this;
   }
   Add(key: string, value: string | string[] | undefined): HttpHeader {
     if (typeof value === "undefined") {
       return this;
     }
-    const vs = Array.isArray(value) ? value : [value];
-    const values = this._headers.get(this._key(key));
-    if (values === undefined) {
-      this._headers.set(this._key(key), vs);
-    } else {
-      values.push(...vs);
+    let values = this._headers.get(this._key(key));
+    if (!values) {
+      values = new Set<string>();
+      this._headers.set(this._key(key), values);
     }
+    (Array.isArray(value) ? value : [value])
+      .map((v) => v.trim())
+      .filter((v) => v !== "")
+      .reduce((acc, v) => {
+        acc.add(v);
+        return acc;
+      }, values);
     return this;
   }
   Del(ey: string): HttpHeader {
@@ -161,7 +174,9 @@ export class HttpHeader {
     return this;
   }
   Items(): [string, string[]][] {
-    return Array.from(this._headers).filter(([_, vs]) => vs.length > 0);
+    return Array.from(this._headers)
+      .filter(([_, vs]) => vs.size > 0)
+      .map(([k, vs]) => [k, Array.from(vs)]);
   }
   SortItems(): [string, string[]][] {
     return this.Items().sort(([[a]], [[b]]) => a.localeCompare(b));
@@ -169,7 +184,7 @@ export class HttpHeader {
   Clone(): HttpHeader {
     const clone = new HttpHeader();
     for (const [key, values] of this._headers.entries()) {
-      clone._headers.set(key, values.slice());
+      clone._headers.set(key, new Set(values));
     }
     return clone;
   }
@@ -183,14 +198,18 @@ export class HttpHeader {
   AsRecordStringString(): Record<string, string> {
     const obj: Record<string, string> = {};
     for (const [key, values] of this._headers.entries()) {
-      obj[key] = values.join(", ");
+      obj[key] = Array.from(values).join(", ");
     }
     return obj;
   }
-  AsHeaderInit(): HeadersInit {
-    const obj: HeadersInit = {};
+  // Need for CF own HeadersInit type
+  AsHeaderInit<H extends HeadersInit>(): H {
+    const obj = {} as H;
     for (const [key, values] of this._headers.entries()) {
-      obj[key] = values[0];
+      const vs = values.values().next();
+      if (vs.value) {
+        obj[key] = vs.value as string;
+      }
     }
     return obj;
   }

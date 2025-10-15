@@ -103,4 +103,22 @@ describe("HttpHeader", () => {
     expect(h).not.toBe(sh);
     expect(h.Items()).toEqual([["content-type", ["application/json"]]]);
   });
+
+  it("Merge two HttpHeaders", () => {
+    const CORS = {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET,POST,OPTIONS,PUT,DELETE",
+      "Access-Control-Allow-Headers": "Origin, Content-Type, Accept",
+      "Access-Control-Max-Age": "86400",
+    };
+    const headers = HttpHeader.from(
+      Object.fromEntries(
+        Object.entries({
+          ...CORS,
+        }).map(([k, v]) => [k.toUpperCase(), v]),
+      ),
+      CORS,
+    ).AsRecordStringString();
+    expect(headers).toEqual(Object.fromEntries(Object.entries(CORS).map(([k, v]) => [k.toLowerCase(), v])));
+  });
 });
