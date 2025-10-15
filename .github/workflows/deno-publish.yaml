@@ -52,5 +52,6 @@ jobs:
         run: |
           cd ts
           pnpm install
+          pnpm run build
           pnpm run pubdir
           cd pubdir && deno publish --allow-dirty --unstable-sloppy-imports"
