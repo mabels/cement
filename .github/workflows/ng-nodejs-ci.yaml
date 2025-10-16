@@ -36,27 +36,21 @@ jobs:
           run_install: false
           version: 10
 
-#      - name: Patch Version ${{ env.GITHUB_REF }}
-#        run: |
-#          cd ts ; node ../.github/workflows/patch-package.json.js "origin/head/0.0.0-smoke"
-#          git diff
-#
-#      - name: Patch Version ${{ env.GITHUB_REF }}
-#        if: startsWith(github.ref, 'refs/tags/v')
-#        run: |
-#          cd ts ; node ../.github/workflows/patch-package.json.js "$GITHUB_REF"
-#          git diff
-
       - name: Build JS @adviser/cement
         run: |
           cd ts
           pnpm install
-          pnpm exec playwright install chromium --with-deps
           pnpm run prettier --check
           pnpm run lint
           pnpm run build
-          pnpm run test
-          # pnpm run test:deno || true
+          # pnpm exec playwright install chromium --with-deps
+          PLAYWRIGHT_VERSION=$(pnpm why playwright --json | jq -r '.[0].devDependencies.playwright.version // empty'
+          docker run --rm \
+            -v $(pwd):/work \
+            -w /work \
+            mcr.microsoft.com/playwright:v${PLAYWRIGHT_VERSION}-noble \
+            bash -c "ls -l ; npm run test:js"
+          pnpm run test:deno 
           pnpm run smoke
 
       - uses: mabels/neckless@main
