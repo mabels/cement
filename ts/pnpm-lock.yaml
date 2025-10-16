@@ -51,9 +51,6 @@ importers:
       deno:
         specifier: ^2.5.1
         version: 2.5.4
-      esbuild-plugin-resolve:
-        specifier: ^2.0.0
-        version: 2.0.0
       eslint:
         specifier: ^9.35.0
         version: 9.37.0
@@ -1909,9 +1906,6 @@ packages:
 
   es-module-lexer@1.7.0:
     resolution: {integrity: sha512-jEQoCwk8hyb2AZziIOLhDqpm5+2ww5uIE6lkO/6jcOCusfk6LhMHpXXfBLXTZ7Ydyt0j4VoUQv6uGNYbdW+kBA==}
-
-  esbuild-plugin-resolve@2.0.0:
-    resolution: {integrity: sha512-eJy9B8yDW5X/J48eWtR1uVmv+DKfHvYYnrrcqQoe/nUkVHVOTZlJnSevkYyGOz6hI90t036Y5QIPDrGzmppxfg==}
 
   esbuild@0.25.10:
     resolution: {integrity: sha512-9RiGKvCwaqxO2owP61uQ4BgNborAQskMR6QusfWzQqv7AZOg5oGehdY2pRJMTKuwxd1IDBP4rSbI5lHzU7SMsQ==}
@@ -5184,8 +5178,6 @@ snapshots:
   error-stack-parser-es@1.0.5: {}
 
   es-module-lexer@1.7.0: {}
-
-  esbuild-plugin-resolve@2.0.0: {}
 
   esbuild@0.25.10:
     optionalDependencies:
