@@ -51,7 +51,7 @@ jobs:
             -v $(pwd):/work \
             -w /work \
             mcr.microsoft.com/playwright:v${PLAYWRIGHT_VERSION}-noble \
-            bash -c "ls -l ; npm run test:js"
+            bash -c "npm run test:js"
           pnpm run test:deno 
           pnpm run smoke
 
