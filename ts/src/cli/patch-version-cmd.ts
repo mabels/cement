@@ -194,6 +194,14 @@ export function setUpDenoJsonCmd(): ReturnType<typeof command> {
   }) as ReturnType<typeof command>;
 }
 
+function disableVerbose(fn: () => Promise<void>): Promise<void> {
+  const verbose = $.verbose;
+  $.verbose = false;
+  return fn().finally(() => {
+    $.verbose = verbose;
+  });
+}
+
 export async function preparePubdir(pubdir: string, version: string, baseDir: string, srcDir: string): Promise<void> {
   // Set shell options equivalent to 'set -ex'
   $.verbose = true;
@@ -222,22 +230,25 @@ export async function preparePubdir(pubdir: string, version: string, baseDir: st
 
   // Rename .js files to .cjs in pubdir/cjs
   const jsFiles = await glob(`${pubdir}/cjs/**/*.js`);
-  for (const file of jsFiles) {
-    const newFile = file.replace(/\.js$/, ".cjs");
-    await $`mv ${file} ${newFile}`;
-  }
 
-  // Rename .js.map files to .cjs.map in pubdir/cjs
-  const mapFiles = await glob(`${pubdir}/cjs/**/*.js.map`);
-  for (const file of mapFiles) {
-    const newFile = file.replace(/\.js\.map$/, ".cjs.map");
-    await $`mv ${file} ${newFile}`;
-  }
+  await disableVerbose(async () => {
+    for (const file of jsFiles) {
+      const newFile = file.replace(/\.js$/, ".cjs");
+      await $`mv ${file} ${newFile}`;
+    }
+
+    // Rename .js.map files to .cjs.map in pubdir/cjs
+    const mapFiles = await glob(`${pubdir}/cjs/**/*.js.map`);
+    for (const file of mapFiles) {
+      const newFile = file.replace(/\.js\.map$/, ".cjs.map");
+      await $`mv ${file} ${newFile}`;
+    }
+  });
 
   // Run jscodeshift on .cjs files
   const cjsFiles = await glob(`${pubdir}/cjs/**/*.cjs`);
   if (cjsFiles.length > 0) {
-    await $`pnpm exec jscodeshift --parser=babel -t=./to-cjs.js ${cjsFiles}`;
+    await $`pnpm exec jscodeshift -s --parser=babel -t=./to-cjs.js ${cjsFiles}`;
   }
 
   // Copy package.json
@@ -257,10 +268,15 @@ export async function preparePubdir(pubdir: string, version: string, baseDir: st
   }
 
   // Remove test files
-  const testFiles = await glob(`${pubdir}/${srcDir}/**/*.test.ts`);
-  for (const file of testFiles) {
-    await $`rm -f ${file}`;
-  }
+  await disableVerbose(async () => {
+    const testFiles = await glob(`${pubdir}/${srcDir}/**/*.test.ts`);
+    for (const file of testFiles) {
+      await $`rm -f ${file}`;
+    }
+  });
+
+  // Copy tsconfig.json
+  await $`cp ./tsconfig.json ./${pubdir}/`;
 
   // Copy deno.json
   await $`cp ./deno.json ./${pubdir}/`;
@@ -275,8 +291,11 @@ export async function preparePubdir(pubdir: string, version: string, baseDir: st
 
   // Pack and publish
   cd("pubdir");
-  await $`pnpm pack`;
-  await $`deno publish --dry-run --unstable-sloppy-imports --allow-dirty`;
+  await $`pnpm pack 2>&1 | head -10 && echo "..."`;
+  await $`deno publish --dry-run --unstable-sloppy-imports --allow-dirty --quiet`;
+
+  // eslint-disable-next-line no-console
+  console.log(`Prepared ${pubdir} for version ${version}`);
 }
 
 export function preparePubdirCmd(): ReturnType<typeof command> {
