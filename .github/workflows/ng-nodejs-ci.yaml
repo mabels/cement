@@ -36,6 +36,7 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'pnpm'
+          cache-dependency-path: 'ts/pnpm-lock.yaml'
 
       - name: Build JS @adviser/cement
         run: |
