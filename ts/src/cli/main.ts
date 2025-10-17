@@ -1,5 +1,9 @@
 import { run, subcommands } from "cmd-ts";
-import { patchVersionCmd, generateVersionTsCmd, setUpDenoJsonCmd, preparePubdirCmd } from "./patch-version-cmd.js";
+import { patchVersionCmd } from "./patch-version-cmd.js";
+import { generateVersionTsCmd } from "./generate-version-ts-cmd.js";
+import { setUpDenoJsonCmd } from "./setup-deno-json-cmd.js";
+import { preparePubdirCmd } from "./prepare-pubdir-cmd.js";
+import { publishTagsCmd } from "./publish-tags-cmd.js";
 
 (async (): Promise<void> => {
   const cmd = subcommands({
@@ -11,6 +15,7 @@ import { patchVersionCmd, generateVersionTsCmd, setUpDenoJsonCmd, preparePubdirC
       generateVersionTs: generateVersionTsCmd(),
       setUpDenoJson: setUpDenoJsonCmd(),
       preparePubdir: preparePubdirCmd(),
+      publishTags: publishTagsCmd(),
     },
   });
 

@@ -74,6 +74,10 @@
   "bugs": {
     "url": "https://github.com/mabels/cement/issues"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mabels/cement"
+  },
   "homepage": "https://github.com/mabels/cement#readme",
   "dependencies": {
     "ts-essentials": "^10.0.2",
@@ -85,6 +89,7 @@
     "@types/deno": "^2.3.0",
     "@types/fs-extra": "^11.0.4",
     "@types/node": "^24.4.0",
+    "@types/semver": "^7.7.1",
     "@typescript-eslint/eslint-plugin": "^8.7.0",
     "@typescript-eslint/parser": "^8.7.0",
     "@typescript/native-preview": "7.0.0-dev.20251006.1",
@@ -97,6 +102,7 @@
     "playwright": "^1.54.1",
     "playwright-chromium": "^1.54.1",
     "prettier": "^3.6.2",
+    "semver": "^7.7.3",
     "tsup": "^8.3.0",
     "tsx": "^4.19.1",
     "typescript": "^5.9.2",
