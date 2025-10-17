@@ -61,8 +61,9 @@ jobs:
         run: |
           cd ts
           cd pubdir
-          pnpm install -g npm@11
+          npm install -g npm@11
           npm --version
+          find $HOME -name npm -ls
           npm publish --access public --no-git-checks
 
       - name: Publish cement JSR
