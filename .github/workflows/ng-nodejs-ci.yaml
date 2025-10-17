@@ -55,27 +55,29 @@ jobs:
           pnpm run test:deno 
           pnpm run smoke
 
-      - uses: mabels/neckless@main
-        if: startsWith(github.ref, 'refs/tags/v')
-        with:
-          version: v0.1.16
+#      - uses: mabels/neckless@main
+#        if: startsWith(github.ref, 'refs/tags/v')
+#        with:
+#          version: v0.1.16
 
       - name: Publish runified NPM
         if: startsWith(github.ref, 'refs/tags/v')
-        env:
-          NECKLESS_PRIVKEY: ${{ secrets.NECKLESS_PRIVKEY }}
+#        env:
+#          NECKLESS_PRIVKEY: ${{ secrets.NECKLESS_PRIVKEY }}
         run: |
-          eval $(neckless kv ls --shKeyValue --ghAddMask NPM_PASS  NPM_USER "NPM_TOTP@Totp()")
+#          eval $(neckless kv ls --shKeyValue --ghAddMask NPM_PASS  NPM_USER "NPM_TOTP@Totp()")
           # env | sort | grep NPM
-          token=$(curl -H "npm-otp: $NPM_TOTP" \
-               -X PUT \
-               -H 'content-type: application/json' \
-               -d "{\"name\":\"$NPM_USER\", \"password\": \"$NPM_PASS\"}" \
-               https://registry.npmjs.org/-/user/org.couchdb.user:$NPM_USER | jq -r .token)
-          echo "//registry.npmjs.org/:_authToken=$token" > $HOME/.npmrc
+#          token=$(curl -H "npm-otp: $NPM_TOTP" \
+#               -X PUT \
+#               -H 'content-type: application/json' \
+#               -d "{\"name\":\"$NPM_USER\", \"password\": \"$NPM_PASS\"}" \
+#               https://registry.npmjs.org/-/user/org.couchdb.user:$NPM_USER | jq -r .token)
+#          echo "//registry.npmjs.org/:_authToken=$token" > $HOME/.npmrc
           cd ts
           cd pubdir
-          pnpm publish --otp=$(neckless kv ls --onlyValue "NPM_TOTP@Totp()") --access public --no-git-checks
+          pnpm install -g npm@11
+#          pnpm publish --otp=$(neckless kv ls --onlyValue "NPM_TOTP@Totp()") --access public --no-git-checks
+          pnpm publish kv ls --access public --no-git-checks
 
       - name: Publish runified JSR
         if: startsWith(github.ref, 'refs/tags/v')
