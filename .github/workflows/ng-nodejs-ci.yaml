@@ -55,7 +55,7 @@ jobs:
           pnpm run test:deno 
           pnpm run smoke
 
-      - name: Publish runified NPM
+      - name: Publish cement NPM
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
           cd ts
@@ -63,7 +63,7 @@ jobs:
           pnpm install -g npm@11
           pnpm publish kv ls --access public --no-git-checks
 
-      - name: Publish runified JSR
+      - name: Publish cement JSR
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
           cd ts
