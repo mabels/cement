@@ -63,8 +63,7 @@ jobs:
           cd pubdir
           npm install -g npm@11
           npm --version
-          find $HOME -name npm -ls
-          npm publish --access public --no-git-checks
+          npm publish --access public --no-git-checks --tag dev
 
       - name: Publish cement JSR
         if: startsWith(github.ref, 'refs/tags/v')
