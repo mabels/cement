@@ -61,7 +61,7 @@ jobs:
           cd ts
           cd pubdir
           pnpm install -g npm@11
-          pnpm publish kv ls --access public --no-git-checks
+          pnpm publish --access public --no-git-checks
 
       - name: Publish cement JSR
         if: startsWith(github.ref, 'refs/tags/v')
