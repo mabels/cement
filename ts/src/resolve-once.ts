@@ -81,7 +81,7 @@ type ResolveState = "initial" | "processed" | "waiting" | "processing";
 // export type VoidEqualUndefined<T> = T extends undefined ? void : T
 export type ResultOnce<R> = R extends Promise<infer T> ? Promise<T> : R;
 
-interface ResolveOnceIf<R, CTX = void> {
+export interface ResolveOnceIf<R, CTX = void> {
   get ready(): boolean;
   get value(): UnPromisify<R> | undefined;
   get error(): Error | undefined;
@@ -398,7 +398,7 @@ export interface KeyedParam<K, V> {
   readonly lru: Partial<LRUParam<V, K>>;
 }
 
-type AddKeyedParam<K, V, CTX extends NonNullable<object>> = KeyedParam<K, V> & { readonly ctx: CTX };
+export type AddKeyedParam<K, V, CTX extends NonNullable<object>> = KeyedParam<K, V> & { readonly ctx: CTX };
 
 export class Keyed<T extends { reset: () => void }, K = string, CTX extends NonNullable<object> = object> {
   protected readonly _map: LRUMap<K, T>;
@@ -468,7 +468,7 @@ export class Keyed<T extends { reset: () => void }, K = string, CTX extends NonN
   }
 }
 
-interface KeyItem<K, V> {
+export interface KeyItem<K, V> {
   readonly key: K;
   readonly value: Result<V>;
 }
@@ -505,7 +505,7 @@ export class KeyedResolvOnce<T, K = string, CTX extends NonNullable<object> = ob
   }
 }
 
-type AddKey<X extends NonNullable<object>, K> = X & { key: K };
+export type AddKey<X extends NonNullable<object>, K> = X & { key: K };
 type WithCTX<K, T, CTX extends NonNullable<object>> = KeyedParam<K, ResolveSeq<T, AddKey<CTX, K>>> & { readonly ctx: CTX };
 
 export class KeyedResolvSeq<T extends NonNullable<unknown>, K = string, CTX extends NonNullable<object> = object> extends Keyed<

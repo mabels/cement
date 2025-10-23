@@ -1,4 +1,4 @@
-export class Future<T> {
+export class Future<T, CTX = void> {
   // readonly id = Math.random();
   readonly #promise: Promise<T>;
   #resolveFn: (value: T) => void = () => {
@@ -8,7 +8,9 @@ export class Future<T> {
     throw new Error("This Promise is not working as expected.");
   };
 
-  constructor() {
+  readonly ctx: CTX;
+  constructor(ctx?: CTX) {
+    this.ctx = ctx;
     this.#promise = new Promise<T>((resolve, reject) => {
       this.#resolveFn = resolve;
       this.#rejectFn = reject;

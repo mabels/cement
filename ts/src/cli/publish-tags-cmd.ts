@@ -12,12 +12,10 @@ const reEndVersion = /.*\/([^/]+)$/;
 function getEnvVersion(version?: string, xenv = process.env): string {
   let wversion = version || xenv.GITHUB_REF || versionFromPackageJson();
   if (reEndVersion.test(wversion)) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     wversion = wversion.match(reEndVersion)[1];
   }
   const calculatedVersion = wversion.replace(reScopedVersion, "$1").replace(reVersionAlphaStart, "$1");
   try {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     new SemVer(calculatedVersion);
     return calculatedVersion;
   } catch (e) {
