@@ -35,10 +35,10 @@ importers:
         version: 7.7.1
       '@typescript-eslint/eslint-plugin':
         specifier: ^8.7.0
-        version: 8.44.1(@typescript-eslint/parser@8.46.1(eslint@9.38.0)(typescript@5.9.3))(eslint@9.38.0)(typescript@5.9.3)
+        version: 8.44.1(@typescript-eslint/parser@8.46.2(eslint@9.38.0)(typescript@5.9.3))(eslint@9.38.0)(typescript@5.9.3)
       '@typescript-eslint/parser':
         specifier: ^8.7.0
-        version: 8.46.1(eslint@9.38.0)(typescript@5.9.3)
+        version: 8.46.2(eslint@9.38.0)(typescript@5.9.3)
       '@typescript/native-preview':
         specifier: 7.0.0-dev.20251019.1
         version: 7.0.0-dev.20251019.1
@@ -1378,6 +1378,9 @@ packages:
 
   '@types/node@20.19.23':
     resolution: {integrity: sha512-yIdlVVVHXpmqRhtyovZAcSy0MiPcYWGkoO4CGe/+jpP0hmNuihm4XhHbADpK++MsiLHP5MVlv+bcgdF99kSiFQ==}
+
+  '@types/node@24.9.1':
+    resolution: {integrity: sha512-QoiaXANRkSXK6p0Duvt56W208du4P9Uye9hWLWgGMDTEoKPhuenzNcC4vGUmrNkiOKTlIrBoyNQYNpSwfEZXSg==}
 
   '@types/node@24.9.1':
     resolution: {integrity: sha512-QoiaXANRkSXK6p0Duvt56W208du4P9Uye9hWLWgGMDTEoKPhuenzNcC4vGUmrNkiOKTlIrBoyNQYNpSwfEZXSg==}
@@ -3331,6 +3334,9 @@ packages:
   undici-types@7.16.0:
     resolution: {integrity: sha512-Zz+aZWSj8LE6zoxD+xrjh4VfkIG8Ya6LvYkZqtUQGJPZjYl53ypCaUwWqo7eI0x66KBGeRo+mlBEkMSeSZ38Nw==}
 
+  undici-types@7.16.0:
+    resolution: {integrity: sha512-Zz+aZWSj8LE6zoxD+xrjh4VfkIG8Ya6LvYkZqtUQGJPZjYl53ypCaUwWqo7eI0x66KBGeRo+mlBEkMSeSZ38Nw==}
+
   undici@6.22.0:
     resolution: {integrity: sha512-hU/10obOIu62MGYjdskASR3CUAiYaFTtC9Pa6vHyf//mAipSvSQg6od2CnJswq7fvzNS3zJhxoRkgNVaHurWKw==}
     engines: {node: '>=18.17'}
@@ -4650,6 +4656,11 @@ snapshots:
       undici-types: 7.16.0
     optional: true
 
+  '@types/node@24.9.1':
+    dependencies:
+      undici-types: 7.16.0
+    optional: true
+
   '@types/semver@7.7.1': {}
 
   '@types/sinonjs__fake-timers@8.1.5':
@@ -4674,10 +4685,10 @@ snapshots:
       '@types/node': 24.9.1
     optional: true
 
-  '@typescript-eslint/eslint-plugin@8.44.1(@typescript-eslint/parser@8.46.1(eslint@9.38.0)(typescript@5.9.3))(eslint@9.38.0)(typescript@5.9.3)':
+  '@typescript-eslint/eslint-plugin@8.44.1(@typescript-eslint/parser@8.46.2(eslint@9.38.0)(typescript@5.9.3))(eslint@9.38.0)(typescript@5.9.3)':
     dependencies:
       '@eslint-community/regexpp': 4.12.1
-      '@typescript-eslint/parser': 8.46.1(eslint@9.38.0)(typescript@5.9.3)
+      '@typescript-eslint/parser': 8.46.2(eslint@9.38.0)(typescript@5.9.3)
       '@typescript-eslint/scope-manager': 8.44.1
       '@typescript-eslint/type-utils': 8.44.1(eslint@9.38.0)(typescript@5.9.3)
       '@typescript-eslint/utils': 8.44.1(eslint@9.38.0)(typescript@5.9.3)
@@ -6957,6 +6968,9 @@ snapshots:
     optional: true
 
   undici-types@7.16.0: {}
+
+  undici-types@7.16.0:
+    optional: true
 
   undici-types@7.16.0:
     optional: true
