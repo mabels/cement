@@ -149,8 +149,15 @@ function logValueInternal(val: LogValueArg, ctx: LogValueStateInternal): LogValu
         return new LogValue(() => "...");
       }
       ctx.state?.add(val);
-      if (typeof val.toJSON === "function") {
-        return new LogValue(() => val.toJSON());
+      try {
+        if (typeof val.toJSON === "function") {
+          return new LogValue(() => val.toJSON());
+        }
+      } catch (e) {
+        /* chrome is a strange beast
+           Failed to read a named property 'toJSON' from 'Window':
+           Blocked a frame with origin "http://localhost:3001" from accessing a cross-origin frame.
+         */
       }
 
       const res: Record<string, LogValue> = {};
