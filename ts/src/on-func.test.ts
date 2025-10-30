@@ -27,9 +27,9 @@ it("OnFunctionTest", async () => {
     expect(fn.mock.calls).toEqual([[[1, "23"]]]);
     fn.mock.calls.length = 0;
   }
-  const start = Date.now();
+  const start = performance.now();
   await test.onFunAction.invokeAsync(2, "34");
-  const duration = Date.now() - start;
+  const duration = performance.now() - start;
   expect(duration).toBeGreaterThanOrEqual(10);
   for (const fn of [...asyncFns, ...fns]) {
     expect(fn.mock.calls).toEqual([[[2, "34"]]]);

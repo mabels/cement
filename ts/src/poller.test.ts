@@ -19,11 +19,11 @@ it("polls until success", async () => {
       throw new Error("should not be called");
     });
 
-  const start = Date.now();
+  const start = performance.now();
   const result = await poller(seq, {
     intervalMs: 10,
   });
-  const duration = Date.now() - start;
+  const duration = performance.now() - start;
   expect(duration).toBeGreaterThanOrEqual(80);
   expect(result).toEqual({
     state: "success",
@@ -45,11 +45,11 @@ it("polls action throws error", async () => {
     .mockImplementationOnce(() => {
       throw new Error("should not be called");
     });
-  const start = Date.now();
+  const start = performance.now();
   const result = await poller(seq, {
     intervalMs: 10,
   });
-  const duration = Date.now() - start;
+  const duration = performance.now() - start;
   expect(duration).toBeGreaterThanOrEqual(80);
   expect(result).toEqual({
     state: "error",
@@ -74,11 +74,11 @@ it("polls until error", async () => {
     .mockImplementationOnce((): Promise<PollErrorActionResult> => {
       throw new Error("should not be called");
     });
-  const start = Date.now();
+  const start = performance.now();
   const result = await poller(seq, {
     intervalMs: 10,
   });
-  const duration = Date.now() - start;
+  const duration = performance.now() - start;
   expect(duration).toBeGreaterThanOrEqual(80);
 
   expect(result).toEqual({
