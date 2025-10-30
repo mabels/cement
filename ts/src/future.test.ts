@@ -37,5 +37,5 @@ it("Create Future Sad", async () => {
 
 it("Create Future with Context", () => {
   const future = new Future<{ name: string }, { id: number }>({ id: 42 });
-  expect(future.ctx.id).toBe(42);
+  expect(future.ctx?.id).toBe(42);
 });

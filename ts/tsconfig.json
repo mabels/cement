@@ -13,6 +13,7 @@
     },
     "types": ["vitest/globals"],
     "allowImportingTsExtensions": false,
+    "strict": true,
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,

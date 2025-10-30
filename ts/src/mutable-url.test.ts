@@ -1,4 +1,5 @@
 import { ReadonlyURL, WritableURL, URLSearchParamsEntries } from "./mutable-url.js";
+import { describe, it, expect, beforeEach } from "vitest";
 
 describe("URLSearchParamsEntries", () => {
   it("should iterate over URLSearchParams entries", () => {
@@ -212,8 +213,8 @@ describe("ReadonlyURL", () => {
 
     it("should return string for custom inspect", () => {
       const customInspectSymbol = Symbol.for("nodejs.util.inspect.custom");
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-      expect(url[customInspectSymbol]()).toBe(url.toString());
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+      expect((url as any)[customInspectSymbol]()).toBe(url.toString());
     });
 
     it("should clone and return same instance", () => {
@@ -494,8 +495,8 @@ describe("WritableURL", () => {
 
     it("should return string for custom inspect", () => {
       const customInspectSymbol = Symbol.for("nodejs.util.inspect.custom");
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-      expect(url[customInspectSymbol]()).toBe(url.toString());
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+      expect((url as any)[customInspectSymbol]()).toBe(url.toString());
     });
   });
 });

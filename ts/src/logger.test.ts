@@ -1767,12 +1767,18 @@ describe("TestLogger", () => {
     ]);
   });
 
-  function splitDateGetTime(date: string): number {
+  function splitDateGetTime(date?: string): number {
+    if (!date) {
+      return 0;
+    }
     const parts = date.split(" - ");
     return new Date(parts[0]).getTime();
   }
 
-  function splitMs(date: string): number {
+  function splitMs(date?: string): number {
+    if (!date) {
+      return -1;
+    }
     const parts = date.split(" - ")[1].replace("ms", "").trim();
     return parseFloat(parts);
   }

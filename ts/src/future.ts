@@ -8,7 +8,7 @@ export class Future<T, CTX = void> {
     throw new Error("This Promise is not working as expected.");
   };
 
-  readonly ctx: CTX;
+  readonly ctx?: CTX;
   constructor(ctx?: CTX) {
     this.ctx = ctx;
     this.#promise = new Promise<T>((resolve, reject) => {

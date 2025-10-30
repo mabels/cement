@@ -723,7 +723,7 @@ describe("Reset does not remove pending futures", () => {
     );
 
     const newValue = new Future<void>();
-    let newWaiting: Promise<number[]>;
+    let newWaiting: Promise<number[]> | undefined = undefined;
     const never = vi.fn();
     const resetResult = once.reset(async () => {
       newWaiting = Promise.all(
@@ -746,6 +746,11 @@ describe("Reset does not remove pending futures", () => {
     const resWaiting = await waiting;
     expect(resWaiting).toEqual(Array(cnt).fill(24));
 
+    // eslint-disable-next-line @typescript-eslint/no-misused-promises
+    if (!newWaiting) {
+      assert.fail("newWaiting is undefined");
+      return;
+    }
     const newWaitingResult = await newWaiting;
     expect(newWaitingResult).toEqual(Array(cnt).fill(24));
 

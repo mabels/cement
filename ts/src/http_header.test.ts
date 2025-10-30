@@ -10,10 +10,10 @@ class OnlyForEach {
     for (const [k, v] of Object.entries(this._my)) {
       if (Array.isArray(v)) {
         for (const vv of v) {
-          callback.call(thisArg, vv, k, this);
+          callback.call((thisArg ?? this) as This, vv, k, this);
         }
       } else {
-        callback.call(thisArg, v, k, this);
+        callback.call((thisArg ?? this) as This, v, k, this);
       }
     }
   }

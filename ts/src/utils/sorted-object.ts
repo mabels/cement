@@ -11,7 +11,7 @@ export function toSortedArray<T>(set?: T, touchFn?: TouchFn): [string, unknown][
   //set).sort(([a], [b]) => a.localeCompare(b));
 }
 
-export function toSortedObject<S, T extends NonNullable<S>>(set?: T, touchFn?: TouchFn): T | undefined {
+export function toSortedObject<T extends NonNullable<S>, S>(set?: T, touchFn?: TouchFn): T | undefined {
   if (!set) return set; // as T;
   return Object.fromEntries(toSortedArray(set, touchFn)) as T;
   // return toSortedArray(set).reduce((acc, cur) => {

@@ -15,7 +15,7 @@ it("should sort object array", () => {
 
 it("should sort object", () => {
   const set = { b: 2, a: 1 };
-  expect(Array.from(Object.entries(toSortedObject(set)))).toEqual([
+  expect(Array.from(Object.entries(toSortedObject(set) ?? {}))).toEqual([
     ["a", 1],
     ["b", 2],
   ]);

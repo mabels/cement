@@ -12,7 +12,10 @@ const reEndVersion = /.*\/([^/]+)$/;
 function getEnvVersion(version?: string, xenv = process.env): string {
   let wversion = version || xenv.GITHUB_REF || versionFromPackageJson();
   if (reEndVersion.test(wversion)) {
-    wversion = wversion.match(reEndVersion)[1];
+    const match = wversion.match(reEndVersion);
+    if (match && match[1]) {
+      wversion = match[1];
+    }
   }
   const calculatedVersion = wversion.replace(reScopedVersion, "$1").replace(reVersionAlphaStart, "$1");
   try {
@@ -33,7 +36,7 @@ export function publishTagsCmd(): ReturnType<typeof command> {
       releaseVersion: option({
         long: "release-version",
         short: "r",
-        defaultValue: () => undefined,
+        defaultValue: () => "", // "" is falsy
         defaultValueIsSerializable: true,
         type: string,
         description: "Version string to analyze, defaults to GITHUB_REF or package.json version.",
