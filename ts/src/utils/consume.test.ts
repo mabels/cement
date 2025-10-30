@@ -3,7 +3,7 @@ import { consumeStream, consumeIterator } from "./consume.js";
 
 describe("consumeStream", () => {
   it("should consume an empty stream", async () => {
-    const stream = new ReadableStream({
+    const stream = new ReadableStream<number>({
       start(controller): void {
         controller.close();
       },
@@ -14,7 +14,7 @@ describe("consumeStream", () => {
   });
 
   it("should consume a stream with single element", async () => {
-    const stream = new ReadableStream({
+    const stream = new ReadableStream<number>({
       start(controller): void {
         controller.enqueue(5);
         controller.close();
@@ -26,7 +26,7 @@ describe("consumeStream", () => {
   });
 
   it("should consume a stream with multiple elements", async () => {
-    const stream = new ReadableStream({
+    const stream = new ReadableStream<number>({
       start(controller): void {
         controller.enqueue(1);
         controller.enqueue(2);
@@ -40,7 +40,7 @@ describe("consumeStream", () => {
   });
 
   it("should handle callback that returns promises", async () => {
-    const stream = new ReadableStream({
+    const stream = new ReadableStream<number>({
       start(controller): void {
         controller.enqueue(1);
         controller.enqueue(2);
@@ -56,7 +56,7 @@ describe("consumeStream", () => {
   });
 
   it("should handle callback that transforms types", async () => {
-    const stream = new ReadableStream({
+    const stream = new ReadableStream<number>({
       start(controller): void {
         controller.enqueue(1);
         controller.enqueue(2);
@@ -70,7 +70,7 @@ describe("consumeStream", () => {
   });
 
   it("should handle string stream", async () => {
-    const stream = new ReadableStream({
+    const stream = new ReadableStream<string>({
       start(controller): void {
         controller.enqueue("hello");
         controller.enqueue("world");
@@ -83,7 +83,7 @@ describe("consumeStream", () => {
   });
 
   it("should handle callback errors gracefully", async () => {
-    const stream = new ReadableStream({
+    const stream = new ReadableStream<number>({
       start(controller): void {
         controller.enqueue(1);
         controller.enqueue(2);

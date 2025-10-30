@@ -141,7 +141,7 @@ export class TraceNode {
     delete cleanCtx.time;
     delete cleanCtx.logger;
     delete cleanCtx.metrics;
-    const spanRefs = this.metrics.toJSON.call({ map: this.metrics.spanRefs }) as Record<string, unknown>;
+    const spanRefs = this.metrics.toJSON.call({ map: this.metrics.spanRefs });
     const metricsRefs = Object.keys(spanRefs).length > 0 ? { metricRefs: spanRefs } : {};
     return {
       ctx: cleanCtx,

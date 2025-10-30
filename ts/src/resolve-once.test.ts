@@ -1,4 +1,5 @@
 import { Result, KeyedResolvOnce, ResolveOnce, ResolveSeq, Lazy, Future, KeyedResolvSeq } from "@adviser/cement";
+import { isPromise } from "./is-promise.js";
 
 describe("resolve-once", () => {
   it("sequence", async () => {
@@ -746,12 +747,11 @@ describe("Reset does not remove pending futures", () => {
     const resWaiting = await waiting;
     expect(resWaiting).toEqual(Array(cnt).fill(24));
 
-    // eslint-disable-next-line @typescript-eslint/no-misused-promises
-    if (!newWaiting) {
+    if (!isPromise(newWaiting)) {
       assert.fail("newWaiting is undefined");
       return;
     }
-    const newWaitingResult = await newWaiting;
+    const newWaitingResult = await Promise.resolve(newWaiting);
     expect(newWaitingResult).toEqual(Array(cnt).fill(24));
 
     expect(never).not.toHaveBeenCalled();

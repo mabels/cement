@@ -131,7 +131,6 @@ export class SyncResolveOnce<T, CTX = void> {
     if (this.#error) {
       throw this.#error;
     }
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
     return this.#value as T;
   }
 

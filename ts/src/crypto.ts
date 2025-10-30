@@ -127,7 +127,6 @@ export function toCryptoRuntime(cryptoOpts: Partial<CryptoRuntime> = {}): Crypto
   let crypto: typeof globalThis.crypto;
   if (!globalThis.crypto || !globalThis.crypto.subtle) {
     crypto = {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       getRandomValues: globalThis.crypto.getRandomValues.bind(globalThis.crypto),
       subtle: {
         importKey: (): Promise<CTCryptoKey> => {

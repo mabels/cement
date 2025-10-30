@@ -7,8 +7,8 @@ export type Promisable<T> = T | Promise<T>;
 
 export type NonPromise<T> = T extends Promise<never> ? never : T;
 
-export function isPromise<T>(a: T): a is T extends Promise<unknown> ? T : never {
-  const mayBe = a as unknown as { then: () => void; catch: () => void; finally: () => void };
+export function isPromise<R extends Promise<T>, T>(a: unknown): a is R {
+  const mayBe = a as { then: () => void; catch: () => void; finally: () => void };
   return (
     mayBe instanceof Promise ||
     !!(

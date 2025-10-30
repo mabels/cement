@@ -215,7 +215,7 @@ export class HttpHeader {
     for (const [key, values] of this._headers.entries()) {
       const vs = values.values().next();
       if (vs.value) {
-        obj[key] = vs.value as string;
+        obj[key] = vs.value;
       }
     }
     return obj as H;

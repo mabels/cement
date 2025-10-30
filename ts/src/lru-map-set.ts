@@ -124,7 +124,6 @@ export class LRUMap<K, V> {
     if (!this._map.has(key)) {
       throw new Error(`key not found in cache: ${key as unknown as string}`);
     }
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
     const value = this._map.get(key) as LRUItem<V>;
     this._map.delete(key);
     this._map.set(key, value);
@@ -207,7 +206,7 @@ export class LRUMap<K, V> {
       // this.cache.delete(key) or
       const k = this._map.keys().next();
       if (!k.done) {
-        this._map.delete(k.value as K);
+        this._map.delete(k.value);
       }
     }
     this._map.set(key, item);
@@ -226,7 +225,6 @@ export class LRUMap<K, V> {
 
   delete(key: K): void {
     if (this._map.has(key)) {
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
       const item = this._map.get(key) as LRUItem<V>;
       this._onDeleteFns.forEach((fn) => fn(key, item?.value, this.buildItemCtx(item, true)));
       this._map.delete(key);

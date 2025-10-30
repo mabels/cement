@@ -67,8 +67,12 @@ it("OnFunctionTest", async () => {
   }
 
   test.onFunAction.invoke(1, "23");
+  test.onFunAction.invoke(3, "26");
   for (const fn of [...asyncFns, ...fns]) {
-    expect(fn.mock.calls).toEqual([[[1, "23"]]]);
+    expect(fn.mock.calls).toEqual([
+      [1, "23"],
+      [3, "26"],
+    ]);
     fn.mock.calls.length = 0;
   }
   const start = performance.now();
@@ -76,7 +80,7 @@ it("OnFunctionTest", async () => {
   const duration = performance.now() - start;
   expect(duration).toBeGreaterThanOrEqual(10);
   for (const fn of [...asyncFns, ...fns]) {
-    expect(fn.mock.calls).toEqual([[[2, "34"]]]);
+    expect(fn.mock.calls).toEqual([[2, "34"]]);
     fn.mock.calls.length = 0;
   }
   for (const unreg of unregs) {
