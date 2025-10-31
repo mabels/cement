@@ -1,4 +1,4 @@
-import { poller, PollerResult, PollErrorActionResult } from "./poller.js";
+import { FOREVER, PollActionResult, poller, PollerResult, PollErrorActionResult } from "./poller.js";
 import { sleep } from "./utils/promise-sleep.js";
 
 it("polls until success", async () => {
@@ -95,4 +95,33 @@ it("pass result type", async () => {
     });
   });
   expectTypeOf(result).toEqualTypeOf<PollerResult<{ foo: string }>>();
+});
+
+it("has infinite polling", async () => {
+  const called = vi.fn();
+  const abortController = new AbortController();
+  const awaitResult = poller(
+    (): Promise<PollActionResult<{ foo: string }>> => {
+      called();
+      return Promise.resolve({
+        state: "waiting",
+      });
+    },
+    {
+      intervalMs: 10,
+      exponentialBackoff: true,
+      timeoutMs: FOREVER,
+      abortSignal: abortController.signal,
+    },
+  );
+  await sleep(200);
+  expect(called.mock.calls.length).toBe(4);
+  abortController.abort();
+  const result = await awaitResult;
+  expect(result).toEqual({
+    state: "error",
+    error: new Error("sleep aborted"),
+  });
+  await sleep(200);
+  expect(called.mock.calls.length).toBe(4);
 });
