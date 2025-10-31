@@ -12,7 +12,7 @@ describe("resolve-once", () => {
         }, 100);
       });
     });
-    const start = Date.now();
+    const start = performance.now();
     const fn = (): Promise<number> => once.once(async () => reallyOnce());
     expect(reallyOnce).toHaveBeenCalledTimes(0);
     expect(await fn()).toBe(42);
@@ -21,7 +21,7 @@ describe("resolve-once", () => {
     expect(reallyOnce).toHaveBeenCalledTimes(1);
     expect(await fn()).toBe(42);
     expect(reallyOnce).toHaveBeenCalledTimes(1);
-    const diff = Date.now() - start;
+    const diff = performance.now() - start;
     expect(diff).toBeGreaterThanOrEqual(90);
     expect(diff).toBeLessThan(150);
   });
@@ -35,7 +35,7 @@ describe("resolve-once", () => {
       });
     });
     const fn = (): Promise<number> => once.once(async () => reallyOnce());
-    const start = Date.now();
+    const start = performance.now();
     expect(
       await Promise.all(
         Array(100)
@@ -44,7 +44,7 @@ describe("resolve-once", () => {
       ),
     ).toEqual(Array(100).fill(42));
     expect(reallyOnce).toHaveBeenCalledTimes(1);
-    const diff = Date.now() - start;
+    const diff = performance.now() - start;
     expect(diff).toBeGreaterThanOrEqual(99);
     expect(diff).toBeLessThan(150);
   });
@@ -63,7 +63,7 @@ describe("resolve-once", () => {
       once.once(() => {
         return reallyOnce();
       });
-    const start = Date.now();
+    const start = performance.now();
     expect(
       await Promise.all(
         Array(cnt)
@@ -72,7 +72,7 @@ describe("resolve-once", () => {
       ),
     ).toEqual(Array(cnt).fill(undefined));
     expect(reallyOnce).toHaveBeenCalledTimes(1);
-    const diff = Date.now() - start;
+    const diff = performance.now() - start;
     expect(diff).toBeGreaterThanOrEqual(95);
     expect(diff).toBeLessThan(150);
   });
@@ -97,7 +97,7 @@ describe("resolve-once", () => {
       });
     });
     const fn = (): Promise<number> => once.once(async () => reallyOnce());
-    const start = Date.now();
+    const start = performance.now();
     await new Promise((rs) => {
       for (let i = 0; i < 100; i++) {
         fn()
@@ -113,7 +113,7 @@ describe("resolve-once", () => {
           });
       }
     });
-    const diff = Date.now() - start;
+    const diff = performance.now() - start;
     expect(diff).toBeGreaterThanOrEqual(99);
     expect(diff).toBeLessThan(250);
   });
@@ -133,7 +133,7 @@ describe("resolve-once", () => {
       const ret = await once.once(async () => reallyOnce());
       return `${o}:${ret}`;
     };
-    const start = Date.now();
+    const start = performance.now();
     expect(
       await Promise.all(
         Array(100)
@@ -146,7 +146,7 @@ describe("resolve-once", () => {
         .map((_, i) => `${i}:42`),
     );
     expect(reallyOnce).toHaveBeenCalledTimes(1);
-    const diff = Date.now() - start;
+    const diff = performance.now() - start;
     expect(diff).toBeGreaterThanOrEqual(99);
     expect(diff).toBeLessThan(150);
   });
@@ -160,7 +160,7 @@ describe("resolve-once", () => {
         }, 100);
       });
     });
-    const start = Date.now();
+    const start = performance.now();
     const orderFn = vi.fn();
     const fns = Array(100)
       .fill(0)
@@ -179,7 +179,7 @@ describe("resolve-once", () => {
         .map((_, i) => `${i}:42`),
     );
     expect(reallyOnce).toHaveBeenCalledTimes(1);
-    const diff = Date.now() - start;
+    const diff = performance.now() - start;
     expect(diff).toBeGreaterThanOrEqual(99);
     expect(diff).toBeLessThan(150);
     expect(orderFn).toHaveBeenCalledTimes(100);

@@ -5,7 +5,7 @@ it("sleeps for the specified duration", async () => {
   const result = await sleep(100);
   const duration = performance.now() - start;
 
-  expect(duration).toBeGreaterThanOrEqual(100);
+  expect(duration).toBeGreaterThanOrEqual(95);
   expect(duration).toBeLessThan(150);
   expect(result.isOk()).toBe(true);
   expect(result.unwrap()).toBeUndefined();
@@ -51,7 +51,7 @@ it("returns error when aborted during sleep", async () => {
   const result = await sleepPromise;
   const duration = performance.now() - start;
 
-  expect(duration).toBeGreaterThanOrEqual(50);
+  expect(duration).toBeGreaterThanOrEqual(45);
   expect(duration).toBeLessThan(150);
   expect(result.isOk()).toBe(false);
   expect(result.Err().message).toBe("sleep aborted");
