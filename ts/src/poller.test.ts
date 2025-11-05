@@ -28,6 +28,11 @@ it("polls until success", async () => {
   expect(result).toEqual({
     state: "success",
     result: "final result",
+    stats: {
+      attempts: expect.any(Number) as number,
+      lastIntervalMs: expect.any(Number) as number,
+      totalElapsedMs: expect.any(Number) as number,
+    },
   });
 });
 
@@ -54,6 +59,11 @@ it("polls action throws error", async () => {
   expect(result).toEqual({
     state: "error",
     error: new Error("action error"),
+    stats: {
+      attempts: expect.any(Number) as number,
+      lastIntervalMs: expect.any(Number) as number,
+      totalElapsedMs: expect.any(Number) as number,
+    },
   });
 });
 
@@ -84,17 +94,50 @@ it("polls until error", async () => {
   expect(result).toEqual({
     state: "error",
     error: new Error("final error"),
+    stats: {
+      attempts: expect.any(Number) as number,
+      lastIntervalMs: expect.any(Number) as number,
+      totalElapsedMs: expect.any(Number) as number,
+    },
   });
 });
 
 it("pass result type", async () => {
-  const result = await poller((): Promise<PollerResult<{ foo: string }>> => {
+  const result = await poller((): Promise<PollActionResult<{ foo: string }>> => {
     return Promise.resolve({
       state: "success",
       result: { foo: "bar" },
     });
   });
   expectTypeOf(result).toEqualTypeOf<PollerResult<{ foo: string }>>();
+});
+
+it("times out", async () => {
+  const called = vi.fn();
+  const start = performance.now();
+  const result = await poller(
+    (): Promise<PollActionResult<{ foo: string }>> => {
+      called();
+      return Promise.resolve({
+        state: "waiting",
+      });
+    },
+    {
+      intervalMs: 10,
+      timeoutMs: 50,
+    },
+  );
+  const duration = performance.now() - start;
+  expect(duration).toBeGreaterThanOrEqual(48);
+  expect(result).toEqual({
+    state: "timeout",
+    stats: {
+      attempts: called.mock.calls.length,
+      lastIntervalMs: expect.any(Number) as number,
+      totalElapsedMs: expect.any(Number) as number,
+    },
+  });
+  expect(called.mock.calls.length).toBeGreaterThanOrEqual(5);
 });
 
 it("has infinite polling", async () => {
@@ -121,6 +164,11 @@ it("has infinite polling", async () => {
   expect(result).toEqual({
     state: "error",
     error: new Error("sleep aborted"),
+    stats: {
+      attempts: called.mock.calls.length,
+      lastIntervalMs: expect.any(Number) as number,
+      totalElapsedMs: expect.any(Number) as number,
+    },
   });
   await sleep(200);
   expect(called.mock.calls.length).toBe(4);

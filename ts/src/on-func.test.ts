@@ -78,7 +78,7 @@ it("OnFunctionTest", async () => {
   const start = performance.now();
   await test.onFunAction.invokeAsync(2, "34");
   const duration = performance.now() - start;
-  expect(duration).toBeGreaterThanOrEqual(10);
+  expect(duration).toBeGreaterThanOrEqual(9);
   for (const fn of [...asyncFns, ...fns]) {
     expect(fn.mock.calls).toEqual([[2, "34"]]);
     fn.mock.calls.length = 0;

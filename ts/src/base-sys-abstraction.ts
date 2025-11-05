@@ -7,7 +7,7 @@ import {
   SystemService,
   VoidFunc,
   BasicSysAbstraction,
-  BasicRuntimeService,
+  type BasicRuntimeService,
 } from "./sys-abstraction.js";
 import { Time } from "./time.js";
 import { TxtEnDecoder } from "./txt-en-decoder.js";
