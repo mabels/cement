@@ -1,4 +1,4 @@
-import { sleep } from "./promise-sleep.js";
+import { sleep, SleepAbort } from "./promise-sleep.js";
 
 it("sleeps for the specified duration", async () => {
   const start = performance.now();
@@ -7,8 +7,7 @@ it("sleeps for the specified duration", async () => {
 
   expect(duration).toBeGreaterThanOrEqual(95);
   expect(duration).toBeLessThan(150);
-  expect(result.isOk()).toBe(true);
-  expect(result.unwrap()).toBeUndefined();
+  expect(result.isOk).toBe(true);
 });
 
 it("returns immediately for zero milliseconds", async () => {
@@ -17,7 +16,7 @@ it("returns immediately for zero milliseconds", async () => {
   const duration = performance.now() - start;
 
   expect(duration).toBeLessThan(10);
-  expect(result.isOk()).toBe(true);
+  expect(result.isOk).toBe(true);
 });
 
 it("returns immediately for negative milliseconds", async () => {
@@ -26,17 +25,18 @@ it("returns immediately for negative milliseconds", async () => {
   const duration = performance.now() - start;
 
   expect(duration).toBeLessThan(10);
-  expect(result.isOk()).toBe(true);
+  expect(result.isOk).toBe(true);
 });
 
 it("returns error when aborted before sleep starts", async () => {
   const controller = new AbortController();
   controller.abort();
 
-  const result = await sleep(100, controller.signal);
+  const result = (await sleep(100, controller.signal)) as SleepAbort;
 
-  expect(result.isOk()).toBe(false);
-  expect(result.Err().message).toBe("sleep aborted");
+  expect(result.isOk).toBe(false);
+  expect(result.isAborted).toBe(true);
+  expect(result.reason.message).toBe("sleep aborted");
 });
 
 it("returns error when aborted during sleep", async () => {
@@ -48,13 +48,13 @@ it("returns error when aborted during sleep", async () => {
   // Abort after 50ms
   setTimeout(() => controller.abort(), 50);
 
-  const result = await sleepPromise;
+  const result = (await sleepPromise) as SleepAbort;
   const duration = performance.now() - start;
 
   expect(duration).toBeGreaterThanOrEqual(45);
   expect(duration).toBeLessThan(150);
-  expect(result.isOk()).toBe(false);
-  expect(result.Err().message).toBe("sleep aborted");
+  expect(result.isOk).toBe(false);
+  expect(result.reason.message).toBe("sleep aborted");
 });
 
 it("completes successfully if not aborted", async () => {
@@ -62,7 +62,7 @@ it("completes successfully if not aborted", async () => {
 
   const result = await sleep(50, controller.signal);
 
-  expect(result.isOk()).toBe(true);
+  expect(result.isOk).toBe(true);
 });
 
 it("cleans up timeout and event listener on abort", async () => {
@@ -76,7 +76,7 @@ it("cleans up timeout and event listener on abort", async () => {
   const result = await sleepPromise;
 
   // The promise should resolve quickly with an error
-  expect(result.isOk()).toBe(false);
+  expect(result.isOk).toBe(false);
 
   // If cleanup works properly, this test won't leak event listeners or timers
 });
@@ -86,7 +86,7 @@ it("cleans up timeout and event listener on success", async () => {
 
   const result = await sleep(50, controller.signal);
 
-  expect(result.isOk()).toBe(true);
+  expect(result.isOk).toBe(true);
 
   // If cleanup works properly, aborting after completion shouldn't affect anything
   controller.abort();

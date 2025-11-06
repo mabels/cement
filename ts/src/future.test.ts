@@ -39,3 +39,9 @@ it("Create Future with Context", () => {
   const future = new Future<{ name: string }, { id: number }>({ id: 42 });
   expect(future.ctx?.id).toBe(42);
 });
+
+it("Future create a unique id per instance could be used as transaction id", () => {
+  const future1 = new Future();
+  const future2 = new Future();
+  expect(future1.id()).not.toBe(future2.id());
+});

@@ -1,3 +1,5 @@
+import { Lazy } from "./resolve-once.js";
+
 export class Future<T, CTX = void> {
   // readonly id = Math.random();
   readonly #promise: Promise<T>;
@@ -16,6 +18,9 @@ export class Future<T, CTX = void> {
       this.#rejectFn = reject;
     });
   }
+
+  // the id is not cryptographically secure, but good enough for transaction id
+  readonly id: () => string = Lazy(() => Math.random().toString(36).substring(2) + Date.now().toString(36));
 
   asPromise(): Promise<T> {
     return this.#promise;

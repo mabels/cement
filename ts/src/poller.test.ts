@@ -162,8 +162,8 @@ it("has infinite polling", async () => {
   abortController.abort();
   const result = await awaitResult;
   expect(result).toEqual({
-    state: "error",
-    error: new Error("sleep aborted"),
+    state: "aborted",
+    reason: new Error("sleep aborted"),
     stats: {
       attempts: called.mock.calls.length,
       lastIntervalMs: expect.any(Number) as number,
