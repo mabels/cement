@@ -176,10 +176,6 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 Apache License 2.0 - See [LICENSE](LICENSE) for details.
 
-## Author
-
-Meno Abels
-
 ## Repository
 
 - **GitHub**: [https://github.com/mabels/cement](https://github.com/mabels/cement)
