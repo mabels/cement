@@ -8,7 +8,7 @@
   "excludePrivate": false,
   "excludeProtected": false,
   "includeVersion": true,
-  "readme": "none",
+  "readme": "../README.md",
   "plugin": [],
   "categorizeByGroup": true,
   "defaultCategory": "Other",
