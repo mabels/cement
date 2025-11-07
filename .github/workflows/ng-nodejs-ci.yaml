@@ -15,6 +15,7 @@ jobs:
     permissions:
       contents: read
       id-token: write
+      pages: write
 
     runs-on: ubuntu-latest
 
@@ -56,6 +57,26 @@ jobs:
           pnpm run test:deno 
           pnpm run smoke
 
+      - name: Build documentation
+        run: |
+          cd ts
+          pnpm run docs
+
+      - name: Setup Pages
+        if: startsWith(github.ref, 'refs/tags/v') || startsWith(github.ref, 'refs/tags/docs')
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        if: startsWith(github.ref, 'refs/tags/v') || startsWith(github.ref, 'refs/tags/docs')
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: 'ts/dist/docs'
+
+      - name: Deploy to GitHub Pages
+        if: startsWith(github.ref, 'refs/tags/v') || startsWith(github.ref, 'refs/tags/docs')
+        id: deployment
+        uses: actions/deploy-pages@v4
+
       - name: Publish cement NPM
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
@@ -71,4 +92,5 @@ jobs:
         run: |
           cd ts
           pnpm run deno:publish
+
 

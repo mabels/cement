@@ -1,0 +1,31 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["./src/index.ts"],
+  "entryPointStrategy": "expand",
+  "out": "dist/docs",
+  "exclude": ["**/*.test.ts", "**/*.spec.ts", "**/test/**", "**/node_modules/**"],
+  "excludeExternals": true,
+  "excludePrivate": false,
+  "excludeProtected": false,
+  "includeVersion": true,
+  "readme": "none",
+  "plugin": [],
+  "categorizeByGroup": true,
+  "defaultCategory": "Other",
+  "categoryOrder": ["Core", "Utilities", "Logger", "HTTP", "File System", "*"],
+  "sort": ["source-order"],
+  "visibilityFilters": {
+    "protected": false,
+    "private": false,
+    "inherited": true,
+    "external": false
+  },
+  "searchInComments": true,
+  "cleanOutputDir": true,
+  "treatWarningsAsErrors": false,
+  "validation": {
+    "notExported": true,
+    "invalidLink": true,
+    "notDocumented": false
+  }
+}

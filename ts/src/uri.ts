@@ -16,9 +16,6 @@ export interface IsURIResult {
   readonly uri?: URI;
 }
 
-/** @xdeprecated use param from get-params-result */
-// export const key = param;
-
 /*
   if KeyParam is a Object
      if the right side is a string, it is the default value
