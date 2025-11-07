@@ -1,4 +1,4 @@
-import { Lazy, ResolveOnce } from "./resolve-once.js";
+import { Lazy } from "./resolve-once.js";
 import { Result } from "./result.js";
 import { coerceIntoUint8, ToUInt8 } from "./utils/coerce-uint8.js";
 
