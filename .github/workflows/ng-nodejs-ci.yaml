@@ -57,22 +57,6 @@ jobs:
           pnpm run test:deno 
           pnpm run smoke
 
-      - name: Publish cement NPM
-        if: startsWith(github.ref, 'refs/tags/v')
-        run: |
-          cd ts
-          cd pubdir
-          npm install -g npm@11
-          npm --version
-          bash ./src/cli/run.sh publishTags
-          npm publish --access public --no-git-checks $(bash ./src/cli/run.sh publishTags)
-
-      - name: Publish cement JSR
-        if: startsWith(github.ref, 'refs/tags/v')
-        run: |
-          cd ts
-          pnpm run deno:publish
-
       - name: Build documentation
         run: |
           cd ts
@@ -92,4 +76,21 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v')
         id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Publish cement NPM
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          cd ts
+          cd pubdir
+          npm install -g npm@11
+          npm --version
+          bash ./src/cli/run.sh publishTags
+          npm publish --access public --no-git-checks $(bash ./src/cli/run.sh publishTags)
+
+      - name: Publish cement JSR
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          cd ts
+          pnpm run deno:publish
+
 
