@@ -1,4 +1,4 @@
-import { Future } from "../future.js";
+import { Future } from "./future.js";
 
 export interface SleepBase {
   readonly state: "sleeped" | "error" | "aborted";

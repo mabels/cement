@@ -1,6 +1,6 @@
 import { Future } from "./future.js";
 import { isPromise } from "./is-promise.js";
-import { sleep } from "./utils/promise-sleep.js";
+import { sleep } from "./promise-sleep.js";
 
 export interface PurTimeoutResultSuccess<T> {
   readonly state: "success";

@@ -1,5 +1,5 @@
 import { OnFunc } from "./on-func.js";
-import { sleep } from "./utils/promise-sleep.js";
+import { sleep } from "./promise-sleep.js";
 
 // Base message interface
 export interface FPCCMsgBase {

@@ -1,5 +1,5 @@
 import { FOREVER, PollActionResult, poller, PollerResult, PollErrorActionResult } from "./poller.js";
-import { sleep } from "./utils/promise-sleep.js";
+import { sleep } from "./promise-sleep.js";
 
 it("polls until success", async () => {
   const seq = vi

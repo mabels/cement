@@ -1,5 +1,5 @@
 import { Future } from "./future.js";
-import { sleep } from "./utils/promise-sleep.js";
+import { sleep } from "./promise-sleep.js";
 import { Writable } from "ts-essentials";
 
 export interface PollerStats {
