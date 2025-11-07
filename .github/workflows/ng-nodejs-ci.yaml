@@ -86,7 +86,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v')
         uses: actions/upload-pages-artifact@v3
         with:
-          path: 'ts/docs'
+          path: 'ts/dist/docs'
 
       - name: Deploy to GitHub Pages
         if: startsWith(github.ref, 'refs/tags/v')
