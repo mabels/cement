@@ -79,6 +79,40 @@ function toSortedRecursive<T>(arrayOrObject: T, touchFn?: TouchFn, cycleReferenc
   }
 }
 
+/**
+ * Recursively sorts object keys and normalizes values for deterministic serialization.
+ *
+ * Deep sorts all object keys alphabetically, converts Dates to ISO strings,
+ * symbols to strings, and recursively processes nested structures. Handles
+ * circular references by returning undefined for cycles. Optional callback
+ * tracks all values encountered during traversal.
+ *
+ * @template T - The input value type
+ * @param arrayOrObject - Value to sort (object, array, or primitive)
+ * @param touchFn - Optional callback invoked for each value with its type
+ * @returns Sorted/normalized copy of the input
+ *
+ * @example
+ * ```typescript
+ * const obj = {
+ *   z: { nested: true, another: false },
+ *   a: [3, 1, 2],
+ *   date: new Date('2024-01-01')
+ * };
+ *
+ * const sorted = toSorted(obj);
+ * // {
+ * //   a: [3, 1, 2],
+ * //   date: '2024-01-01T00:00:00.000Z',
+ * //   z: { another: false, nested: true }
+ * // }
+ *
+ * // Track value types
+ * const types: string[] = [];
+ * toSorted(obj, (value, type) => types.push(type));
+ * // types: ['Key', 'Array', 'Number', ..., 'Date', ...]
+ * ```
+ */
 export function toSorted<T>(arrayOrObject: T, touchFn?: TouchFn): T {
   return toSortedRecursive(arrayOrObject, touchFn, new Set<T>());
 }

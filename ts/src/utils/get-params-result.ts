@@ -4,6 +4,43 @@ import { param } from "../types.js";
 export type MsgFn = (...keys: string[]) => string;
 export type KeysParam = (string | MsgFn | Record<string, param | number | string | boolean | undefined | null>)[];
 
+/**
+ * Retrieves multiple parameters with type-safe Result handling and defaults.
+ *
+ * Extracts multiple parameters from an object with getParam method (like URI),
+ * supporting required params, optional params, and default values. Returns
+ * Result.Err if any required parameters are missing.
+ *
+ * @param keys - Array of parameter specifications:
+ *   - string: Required parameter
+ *   - { key: "defaultValue" }: Parameter with default
+ *   - { key: param.OPTIONAL }: Optional parameter
+ *   - Function: Custom error message generator
+ * @param getParam - Object with getParam method (e.g., URI instance)
+ * @returns Result.Ok with all parameters or Result.Err with missing params message
+ *
+ * @example
+ * ```typescript
+ * const uri = URI.from('https://api.com?user=alice&page=1');
+ *
+ * // Required and optional params with defaults
+ * const result = getParamsResult(
+ *   ['user', { page: '1' }, { limit: param.OPTIONAL }],
+ *   uri
+ * );
+ *
+ * if (result.isOk()) {
+ *   const { user, page, limit } = result.unwrap();
+ *   // user: 'alice', page: '1', limit: undefined
+ * }
+ *
+ * // Custom error message
+ * const result2 = getParamsResult(
+ *   ['apiKey', 'secret', (...missing) => `Auth failed: missing ${missing.join(', ')}`],
+ *   uri
+ * );
+ * ```
+ */
 export function getParamsResult(
   keys: KeysParam,
   getParam: { getParam: (key: string) => string | undefined },

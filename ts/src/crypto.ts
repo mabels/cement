@@ -123,6 +123,41 @@ function digestSHA256(crypto: typeof globalThis.crypto): (data: Uint8Array) => P
   };
 }
 
+/**
+ * Creates a CryptoRuntime abstraction with optional custom implementations.
+ *
+ * Provides a unified crypto interface that works across different JavaScript
+ * runtimes (browsers, Node.js, Deno, CF Workers). Automatically uses the global
+ * Web Crypto API when available, with fallback implementations that throw errors
+ * for unavailable operations. Allows overriding any method for testing or
+ * custom implementations.
+ *
+ * @param cryptoOpts - Optional custom implementations for crypto operations
+ * @returns CryptoRuntime instance with crypto operations
+ *
+ * @example
+ * ```typescript
+ * // Use default global crypto
+ * const crypto = toCryptoRuntime();
+ * const hash = await crypto.digestSHA256(new Uint8Array([1, 2, 3]));
+ * const randomData = crypto.randomBytes(16);
+ *
+ * // Override for testing
+ * const mockCrypto = toCryptoRuntime({
+ *   randomBytes: (size) => new Uint8Array(size).fill(42),
+ *   digestSHA256: async (data) => new ArrayBuffer(32)
+ * });
+ *
+ * // Encrypt/decrypt with AES-GCM
+ * const key = await crypto.importKey(
+ *   'raw',
+ *   new Uint8Array(32),
+ *   { name: 'AES-GCM' },
+ *   false,
+ *   ['encrypt', 'decrypt']
+ * );
+ * ```
+ */
 export function toCryptoRuntime(cryptoOpts: Partial<CryptoRuntime> = {}): CryptoRuntime {
   let crypto: typeof globalThis.crypto;
   if (!globalThis.crypto || !globalThis.crypto.subtle) {

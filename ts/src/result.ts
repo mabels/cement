@@ -1,5 +1,32 @@
 import { isPromise } from "./is-promise.js";
 
+/**
+ * Result type for representing success (Ok) or failure (Err) values.
+ *
+ * Result is a type-safe way to handle operations that can fail, similar to Rust's
+ * Result type. It forces explicit handling of both success and error cases without
+ * throwing exceptions.
+ *
+ * @template T - The type of the success value
+ * @template E - The type of the error (default: Error)
+ *
+ * @example
+ * ```typescript
+ * function divide(a: number, b: number): Result<number> {
+ *   if (b === 0) {
+ *     return Result.Err('Division by zero');
+ *   }
+ *   return Result.Ok(a / b);
+ * }
+ *
+ * const result = divide(10, 2);
+ * if (result.isOk()) {
+ *   console.log('Result:', result.unwrap());
+ * } else {
+ *   console.error('Error:', result.unwrap_err());
+ * }
+ * ```
+ */
 export abstract class Result<T, E = Error> {
   static Ok<T = void>(...args: T[]): Result<T, Error> {
     return args.length >= 1 ? new ResultOK<T>(args[0]) : new ResultOK<T>(undefined as unknown as T);
@@ -95,6 +122,29 @@ export type WithoutResult<T> = T extends Result<infer U> ? U : T;
 // type WithoutPromise<T> = T extends Promise<infer U> ? U : T;
 type WithResult<T> = T extends Promise<infer U> ? Promise<Result<U>> : Result<T>;
 
+/**
+ * Wraps a function to convert thrown exceptions into Result.Err values.
+ *
+ * Executes the provided function and returns Result.Ok on success or Result.Err
+ * on thrown exceptions. Supports both synchronous and asynchronous functions.
+ *
+ * @template FN - Function type that returns T or Promise<T>
+ * @template T - The return type of the function
+ * @param fn - Function to execute with exception handling
+ * @returns Result<T> for sync functions, Promise<Result<T>> for async functions
+ *
+ * @example
+ * ```typescript
+ * const result = exception2Result(() => {
+ *   return JSON.parse('invalid json');
+ * });
+ * // result is Result.Err with parse error
+ *
+ * const asyncResult = await exception2Result(async () => {
+ *   return await fetch('/api/data');
+ * });
+ * ```
+ */
 export function exception2Result<FN extends () => Promise<T> | T, T>(fn: FN): WithResult<ReturnType<FN>> {
   try {
     const res = fn();

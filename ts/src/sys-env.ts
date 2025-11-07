@@ -49,6 +49,26 @@ const envActions: { id: string; fn: EnvFactoryFn }[] = [
   { id: "browser", fn: (opts: Partial<EnvFactoryOpts>): EnvActions => BrowserEnvActions.new(opts) },
 ];
 
+/**
+ * Registers a custom environment action factory.
+ *
+ * Allows registration of platform-specific environment implementations.
+ * The factory is added to the beginning of the search list and will be
+ * tried first when creating new Env instances.
+ *
+ * @param fn - Factory function that creates EnvActions for a platform
+ * @returns Unregister function to remove the factory
+ *
+ * @example
+ * ```typescript
+ * const unregister = registerEnvAction((opts) => {
+ *   return new CustomEnvActions(opts);
+ * });
+ *
+ * // Later, remove the factory
+ * unregister();
+ * ```
+ */
 export function registerEnvAction(fn: EnvFactoryFn): () => void {
   const id = `id-${Math.random()}`;
   envActions.unshift({ id, fn });
@@ -63,6 +83,43 @@ export function registerEnvAction(fn: EnvFactoryFn): () => void {
 }
 
 const _envFactories = new KeyedResolvOnce<Env>();
+
+/**
+ * Creates a platform-appropriate environment variable interface.
+ *
+ * Automatically detects the runtime environment (Node.js, Deno, browser,
+ * Cloudflare Workers) and returns an Env instance with platform-specific
+ * implementations. Supports preset values, change notifications, and
+ * type-safe multi-key retrieval.
+ *
+ * @param opts - Optional configuration:
+ *   - symbol: Key for browser environment storage (default: "CP_ENV")
+ *   - presetEnv: Map of preset environment variables
+ *   - testPatchImportMetaEnv: Test values to patch into import.meta.env
+ *   - id: Identifier for caching/reinitialization
+ *
+ * @returns Env instance for the detected platform
+ * @throws Error if no compatible environment is detected
+ *
+ * @example
+ * ```typescript
+ * const env = envFactory();
+ *
+ * // Get single value
+ * const apiKey = env.get('API_KEY');
+ *
+ * // Get multiple values with Result
+ * const config = env.gets('DB_HOST', 'DB_PORT', 'DB_NAME');
+ * if (config.isOk()) {
+ *   const { DB_HOST, DB_PORT, DB_NAME } = config.unwrap();
+ * }
+ *
+ * // Listen for changes
+ * env.onSet((key, value) => {
+ *   console.log(`${key} changed to ${value}`);
+ * }, 'API_KEY'); // Optional: filter by specific keys
+ * ```
+ */
 export function envFactory(opts: Partial<EnvFactoryOpts> = {}): Env {
   const found = envActions.find((fi) => fi.fn(opts).active());
   if (!found) {

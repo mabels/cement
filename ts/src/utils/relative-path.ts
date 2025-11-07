@@ -1,3 +1,12 @@
+/**
+ * Path component type constants for representing special path elements.
+ *
+ * Uses bit flags to identify different path components:
+ * - Slash: Path separator (/)
+ * - Root: Absolute path root (/)
+ * - Up: Parent directory (..)
+ * - Noop: Current directory (.)
+ */
 export const PartType = {
   Slash: 0x1,
   Root: 0x3,
@@ -10,12 +19,29 @@ export type PartType = (typeof PartType)[keyof typeof PartType];
 
 export type PathItem = string | PartType;
 
+/**
+ * Path builder for constructing and manipulating filesystem paths.
+ *
+ * Represents a path as an array of parts (strings and special PartType tokens).
+ * Provides methods for adding path components and converting to string representation.
+ */
 export class Path {
   readonly parts: PathItem[];
   constructor(parts: PathItem[] = []) {
     this.parts = parts;
   }
 
+  /**
+   * Converts the path parts to a string representation.
+   *
+   * @returns Path as a string with proper separators
+   *
+   * @example
+   * ```typescript
+   * const path = new Path([PartType.Root, 'home', PartType.Slash, 'user']);
+   * path.toString(); // '/home/user'
+   * ```
+   */
   toString(): string {
     return this.parts
       .map((part) => {
@@ -36,6 +62,23 @@ export class Path {
       .join("");
   }
 
+  /**
+   * Adds a path component to the path.
+   *
+   * Handles special cases like duplicate slashes, "." and ".." segments.
+   *
+   * @param part - Path component to add (string or PartType)
+   * @throws Error if adding absolute part to absolute path
+   *
+   * @example
+   * ```typescript
+   * const path = new Path();
+   * path.add(PartType.Root);
+   * path.add('home');
+   * path.add(PartType.Slash);
+   * path.add('..');
+   * ```
+   */
   add(part: PathItem): void {
     if (this.parts.includes(PartType.Root) && part === PartType.Root) {
       throw new Error("Cannot add absolute part to absolute path");
@@ -66,6 +109,24 @@ export class Path {
   }
 }
 
+/**
+ * Parses a path string into a Path object with structured parts.
+ *
+ * Splits the path into components, identifying root, slashes, and segments.
+ * Consecutive slashes are collapsed into single separators.
+ *
+ * @param path - Path string to parse
+ * @returns Path object with structured components
+ *
+ * @example
+ * ```typescript
+ * const path = splitPath('/home/user/docs');
+ * // Path with parts: [Root, 'home', Slash, 'user', Slash, 'docs']
+ *
+ * const relative = splitPath('../config/app.json');
+ * // Path with parts: [Up, Slash, 'config', Slash, 'app.json']
+ * ```
+ */
 export function splitPath(path: string): Path {
   const p = new Path();
   if (path === "") {
@@ -89,6 +150,27 @@ export function splitPath(path: string): Path {
   return p;
 }
 
+/**
+ * Joins multiple path segments into a single path string.
+ *
+ * Intelligently handles slashes between segments, avoiding duplicates while
+ * ensuring proper separation. Empty segments are skipped.
+ *
+ * @param paths - Path segments to join
+ * @returns Joined path string
+ *
+ * @example
+ * ```typescript
+ * pathJoin('/home', 'user', 'docs');
+ * // '/home/user/docs'
+ *
+ * pathJoin('/api/', '/users/', 'profile');
+ * // '/api//users/profile'
+ *
+ * pathJoin('src', 'utils', 'path.ts');
+ * // 'src/utils/path.ts'
+ * ```
+ */
 export function pathJoin(...paths: string[]): string {
   let prev = "";
   const res: string[] = [];
@@ -112,6 +194,32 @@ export function pathJoin(...paths: string[]): string {
   return res.join("");
 }
 
+/**
+ * Resolves a relative path against a base path and normalizes the result.
+ *
+ * If the relative path is absolute, returns it directly. Otherwise, joins
+ * the base and relative paths, then normalizes by resolving ".." (parent)
+ * and "." (current) directory references.
+ *
+ * @param path - Base path to resolve against
+ * @param relative - Relative path to resolve (or absolute path)
+ * @returns Normalized resolved path
+ *
+ * @example
+ * ```typescript
+ * relativePath('/home/user', 'docs/file.txt');
+ * // '/home/user/docs/file.txt'
+ *
+ * relativePath('/home/user/project', '../config.json');
+ * // '/home/user/config.json'
+ *
+ * relativePath('/home/user', '/etc/hosts');
+ * // '/etc/hosts' (absolute path takes precedence)
+ *
+ * relativePath('/a/b/c', '../../d');
+ * // '/a/d'
+ * ```
+ */
 export function relativePath(path: string, relative: string): string {
   const relativeParts = splitPath(relative);
   let result: string;

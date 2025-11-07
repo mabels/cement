@@ -1,5 +1,39 @@
 export type StripCommand = string | RegExp;
 
+/**
+ * Recursively removes properties from objects based on key patterns.
+ *
+ * Strips properties whose keys or paths match the provided string/regex patterns.
+ * Supports both shallow key matching and deep path matching (e.g., "user.password").
+ * Handles arrays and nested objects, preventing circular reference issues.
+ *
+ * @template T - Input type (object or array)
+ * @template S - Element type for arrays
+ * @param strip - String, RegExp, or array thereof specifying keys/paths to remove
+ * @param obj - Object or array to strip properties from
+ * @returns New object/array with matching properties removed
+ *
+ * @example
+ * ```typescript
+ * const data = {
+ *   name: 'Alice',
+ *   password: 'secret',
+ *   nested: { apiKey: '123', value: 42 }
+ * };
+ *
+ * // Remove by key name
+ * const safe1 = stripper('password', data);
+ * // { name: 'Alice', nested: { apiKey: '123', value: 42 } }
+ *
+ * // Remove by path
+ * const safe2 = stripper('nested.apiKey', data);
+ * // { name: 'Alice', password: 'secret', nested: { value: 42 } }
+ *
+ * // Remove multiple with regex
+ * const safe3 = stripper([/password/, /apiKey/], data);
+ * // { name: 'Alice', nested: { value: 42 } }
+ * ```
+ */
 export function stripper<T extends ArrayLike<S> | S, S>(
   strip: StripCommand | StripCommand[],
   obj: T,

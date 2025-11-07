@@ -172,6 +172,24 @@ function ensureURLWithDefaultProto<T>(
   }
 }
 
+/**
+ * Type guard to check if a value is a URL object.
+ *
+ * Checks both for instanceof URL and for objects with URL-like properties
+ * (searchParams object with sort method, hash string), allowing it to work
+ * with URL objects from different execution contexts.
+ *
+ * @param value - The value to check
+ * @returns True if the value is a URL or URL-like object
+ *
+ * @example
+ * ```typescript
+ * const value: unknown = new URL('https://example.com');
+ * if (isURL(value)) {
+ *   console.log(value.hostname); // "example.com"
+ * }
+ * ```
+ */
 export function isURL(value: unknown): value is URL {
   return (
     value instanceof URL ||
@@ -263,6 +281,31 @@ function setParams(
   return out.toString();
 }
 
+/**
+ * Mutable builder for constructing and manipulating URIs.
+ *
+ * BuildURI provides a fluent API for constructing URIs by chaining method calls.
+ * Unlike URI, BuildURI is mutable and allows modification of all URI components
+ * (protocol, hostname, port, pathname, search params, hash).
+ *
+ * @example
+ * ```typescript
+ * const uri = BuildURI.from('https://example.com')
+ *   .pathname('/api/users')
+ *   .setParam('page', '1')
+ *   .setParam('limit', '10')
+ *   .toString();
+ * // Result: "https://example.com/api/users?limit=10&page=1"
+ *
+ * // Building from scratch
+ * const uri2 = BuildURI.from()
+ *   .protocol('https')
+ *   .hostname('api.example.com')
+ *   .port('8080')
+ *   .pathname('/v1/data')
+ *   .URI(); // Convert to immutable URI
+ * ```
+ */
 export class BuildURI implements URIInterface<BuildURI> {
   _url: WritableURL; // pathname needs this
   private constructor(url: WritableURL) {
@@ -493,7 +536,39 @@ export const hasHostPartProtocols: Set<string> = new Set<string>(["http", "https
 const uriInstances = new KeyedResolvOnce<URI>({
   lru: { maxEntries: 1000 },
 });
-// non mutable URL Implementation
+
+/**
+ * Immutable URI representation with type-safe parameter handling.
+ *
+ * URI provides a read-only view of a URL with convenient methods for accessing
+ * components and query parameters. All URI instances are cached for performance.
+ * Use BuildURI for mutable construction and URI for immutable references.
+ *
+ * @example
+ * ```typescript
+ * const uri = URI.from('https://example.com/path?key=value&foo=bar');
+ *
+ * // Access components
+ * console.log(uri.protocol);  // "https:"
+ * console.log(uri.hostname);  // "example.com"
+ * console.log(uri.pathname);  // "/path"
+ *
+ * // Query parameters
+ * const key = uri.getParam('key');  // "value"
+ * const missing = uri.getParam('missing', 'default');  // "default"
+ *
+ * // Type-safe parameter extraction with Result
+ * const result = uri.getParamsResult('key', 'foo');
+ * if (result.isOk()) {
+ *   const { key, foo } = result.unwrap();
+ * }
+ *
+ * // Build a modified version
+ * const modified = uri.build()
+ *   .setParam('new', 'param')
+ *   .URI();
+ * ```
+ */
 export class URI implements URIInterface<URI> {
   static protocolHasHostpart(protocol: string): () => void {
     protocol = protocol.replace(/:$/, "");

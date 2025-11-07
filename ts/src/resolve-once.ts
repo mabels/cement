@@ -308,6 +308,30 @@ export class AsyncResolveOnce<T, CTX = void> {
   }
 }
 
+/**
+ * Ensures a function is executed only once, caching and returning the result for subsequent calls.
+ *
+ * ResolveOnce automatically detects whether the function returns a synchronous value or a Promise,
+ * and handles both cases appropriately. All subsequent calls will receive the same cached result.
+ * Supports optional context parameter and can be reset to allow re-execution.
+ *
+ * @template T - The return type of the function (can be synchronous or Promise)
+ * @template CTX - Optional context type passed to the function
+ *
+ * @example
+ * ```typescript
+ * const expensiveOp = new ResolveOnce<number>();
+ *
+ * // First call executes the function
+ * const result1 = expensiveOp.once(() => computeExpensiveValue());
+ *
+ * // Subsequent calls return cached result
+ * const result2 = expensiveOp.once(() => computeExpensiveValue()); // Not executed
+ *
+ * // Reset to allow re-execution
+ * expensiveOp.reset();
+ * ```
+ */
 export class ResolveOnce<T, CTX = void> implements ResolveOnceIf<T, CTX> {
   #state: ResolveState = "initial";
 
@@ -526,8 +550,29 @@ class LazyContainer<T> {
   }
 }
 
-// T extends (...args: infer P) => any
-// export function Lazy<R extends (...args: infer P) => infer X >(fn: R): (...args: P) =>infer
+/**
+ * Creates a lazy-evaluated version of a function that executes only once and caches the result.
+ *
+ * The returned function will execute the original function on first call and return
+ * the cached result for all subsequent calls, regardless of arguments. This is useful
+ * for expensive computations or resource initialization.
+ *
+ * @template Args - The argument types of the function
+ * @template Return - The return type of the function
+ * @param fn - The function to make lazy
+ * @returns A wrapped function that executes once and caches the result
+ *
+ * @example
+ * ```typescript
+ * const getConfig = Lazy(() => {
+ *   console.log('Loading config...');
+ *   return { apiKey: 'secret' };
+ * });
+ *
+ * getConfig(); // Logs "Loading config..." and returns config
+ * getConfig(); // Returns cached config without logging
+ * ```
+ */
 export function Lazy<Args extends readonly unknown[], Return>(fn: (...args: Args) => Return): (...args: Args) => Return {
   const lazy = new LazyContainer<Return>();
   return lazy.call(fn);

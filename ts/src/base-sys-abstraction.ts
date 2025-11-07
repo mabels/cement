@@ -17,6 +17,11 @@ import { CFBasicSysAbstraction } from "./cf/cf-basic-sys-abstraction.js";
 import { DenoBasicSysAbstraction } from "./deno/deno-basic-sys-abstraction.js";
 import { NodeBasicSysAbstraction } from "./node/node-basic-sys-abstraction.js";
 
+/**
+ * Real-time implementation using system clock.
+ *
+ * Provides actual current time and real delays. Use for production code.
+ */
 export class SysTime extends Time {
   Now(): Date {
     return new Date();
@@ -30,6 +35,12 @@ export class SysTime extends Time {
   }
 }
 
+/**
+ * Constant time implementation for deterministic testing.
+ *
+ * Always returns the same fixed date (2021-02-01). Sleep operations
+ * complete immediately without delay. Useful for reproducible tests.
+ */
 export class ConstTime extends Time {
   Now(): Date {
     return new Date(2021, 1, 1, 0, 0, 0, 0);
@@ -40,6 +51,12 @@ export class ConstTime extends Time {
   }
 }
 
+/**
+ * Stepped time implementation for controlled testing.
+ *
+ * Advances time in 1-second increments on each Now() call. Sleep operations
+ * advance time without delay. Useful for testing time-dependent behavior.
+ */
 export class StepTime extends Time {
   _step: Date;
   readonly _start: Date;
@@ -68,6 +85,24 @@ export class StepTime extends Time {
   }
 }
 
+/**
+ * Creates a Time implementation based on the specified mode.
+ *
+ * @param timeMode - Time behavior mode (REAL, CONST, or STEP)
+ * @returns Time implementation matching the mode
+ *
+ * @example
+ * ```typescript
+ * // Production: uses real system time
+ * const realTime = TimeFactory(TimeMode.REAL);
+ *
+ * // Testing: constant time
+ * const constTime = TimeFactory(TimeMode.CONST);
+ *
+ * // Testing: stepped time
+ * const stepTime = TimeFactory(TimeMode.STEP);
+ * ```
+ */
 export function TimeFactory(timeMode: TimeMode): Time {
   switch (timeMode) {
     case TimeMode.REAL:
@@ -80,12 +115,42 @@ export function TimeFactory(timeMode: TimeMode): Time {
   return new SysTime();
 }
 
+/**
+ * Random number generator with deterministic modes for testing.
+ *
+ * Provides random number generation that can operate in different modes:
+ * - RANDOM: Uses Math.random() for real random values
+ * - CONST: Always returns a constant value (0.5 * max) for reproducible tests
+ * - STEP: Returns incrementing values for predictable test sequences
+ *
+ * @example
+ * ```typescript
+ * // Production: real randomness
+ * const random = new RandomService(RandomMode.RANDOM);
+ * const value = random.Random0ToValue(100); // 0-100
+ *
+ * // Testing: constant value
+ * const constRandom = new RandomService(RandomMode.CONST);
+ * const value = constRandom.Random0ToValue(100); // Always 50
+ *
+ * // Testing: stepped sequence
+ * const stepRandom = new RandomService(RandomMode.STEP);
+ * const v1 = stepRandom.Random0ToValue(100); // 0.01
+ * const v2 = stepRandom.Random0ToValue(100); // 0.02
+ * ```
+ */
 export class RandomService {
   readonly _mode: RandomMode;
   _step = 0;
   constructor(mode: RandomMode) {
     this._mode = mode;
   }
+  /**
+   * Generates a random number between 0 and the specified value.
+   *
+   * @param value - Maximum value (exclusive upper bound)
+   * @returns Random number in range [0, value)
+   */
   Random0ToValue(value: number): number {
     switch (this._mode) {
       case RandomMode.CONST:
@@ -101,6 +166,31 @@ export class RandomService {
   }
 }
 
+/**
+ * ID generator with deterministic modes for testing.
+ *
+ * Generates unique identifiers with support for different modes:
+ * - UUID: Uses crypto.randomUUID() for real UUIDs (default)
+ * - CONST: Always returns the same constant ID for reproducible tests
+ * - STEP: Returns incrementing IDs (STEPId-0, STEPId-1, etc.) for predictable sequences
+ *
+ * @example
+ * ```typescript
+ * // Production: real UUIDs
+ * const idService = new IdService(IDMode.UUID);
+ * const id = idService.NextId(); // "550e8400-e29b-41d4-a716-446655440000"
+ *
+ * // Testing: constant ID
+ * const constId = new IdService(IDMode.CONST);
+ * const id1 = constId.NextId(); // "VeryUniqueID"
+ * const id2 = constId.NextId(); // "VeryUniqueID"
+ *
+ * // Testing: stepped sequence
+ * const stepId = new IdService(IDMode.STEP);
+ * const id1 = stepId.NextId(); // "STEPId-0"
+ * const id2 = stepId.NextId(); // "STEPId-1"
+ * ```
+ */
 export class IdService {
   readonly _mode: IDMode;
   _step = 0;
@@ -110,6 +200,11 @@ export class IdService {
     }
     this._mode = mode;
   }
+  /**
+   * Generates the next unique identifier.
+   *
+   * @returns Unique ID string based on the configured mode
+   */
   NextId(): string {
     switch (this._mode) {
       case IDMode.UUID:
@@ -145,6 +240,29 @@ export interface ExitService {
 
 // some black magic to make it work with CF workers
 
+/**
+ * Base system abstraction for platform-independent services.
+ *
+ * Provides core services that work across all JavaScript runtimes:
+ * - Time: Real system time implementation
+ * - ID Generation: UUID-based unique identifiers
+ * - Random Numbers: Math.random()-based generation
+ * - Text Encoding/Decoding: UTF-8 conversion utilities
+ *
+ * This is the foundation for both basic and full system abstractions,
+ * containing services that don't require filesystem or system access.
+ *
+ * @example
+ * ```typescript
+ * const base = new BaseBasicSysAbstraction({
+ *   TxtEnDecoder: new TxtEnDecoder()
+ * });
+ *
+ * const now = base._time.Now();
+ * const id = base._idService.NextId();
+ * const random = base._randomService.Random0ToValue(100);
+ * ```
+ */
 export class BaseBasicSysAbstraction {
   readonly _time: SysTime = new SysTime();
 
@@ -158,6 +276,31 @@ export class BaseBasicSysAbstraction {
   }
 }
 
+/**
+ * Full system abstraction with filesystem and system service access.
+ *
+ * Extends BaseBasicSysAbstraction with platform-specific services:
+ * - FileSystem: File I/O operations
+ * - SystemService: Process, environment, and system-level operations
+ *
+ * Used in Node.js and Deno environments where full system access is available.
+ * Not suitable for browser or Cloudflare Workers environments.
+ *
+ * @example
+ * ```typescript
+ * const sys = new BaseSysAbstraction({
+ *   TxtEnDecoder: new TxtEnDecoder(),
+ *   FileSystem: new NodeFileService(),
+ *   SystemService: new NodeSystemService()
+ * });
+ *
+ * // Access filesystem
+ * const content = await sys._fileSystem.readFile('/path/to/file');
+ *
+ * // Access environment
+ * const env = sys._systemService.getEnv();
+ * ```
+ */
 export class BaseSysAbstraction extends BaseBasicSysAbstraction {
   // system related services
   readonly _fileSystem: FileService;
@@ -182,6 +325,36 @@ export interface BasicSysAbstractionParams {
 
 export type WrapperBasicSysAbstractionParams = Partial<BasicRuntimeService & BasicSysAbstractionParams>;
 
+/**
+ * Creates a BasicSysAbstraction instance for the current runtime environment.
+ *
+ * Automatically detects the JavaScript runtime (Browser, Node.js, Deno, or
+ * Cloudflare Workers) and returns the appropriate system abstraction implementation.
+ * Supports optional configuration for time, ID, and random number generation modes,
+ * useful for testing with deterministic behavior.
+ *
+ * @param params - Optional configuration for time, ID, and random modes
+ * @returns BasicSysAbstraction instance for the current runtime
+ * @throws Error if the runtime cannot be detected
+ *
+ * @example
+ * ```typescript
+ * // Production: auto-detect runtime with defaults
+ * const sys = BasicSysAbstractionFactory();
+ * const now = sys.Time().Now();
+ * const id = sys.NextId();
+ *
+ * // Testing: deterministic behavior
+ * const testSys = BasicSysAbstractionFactory({
+ *   TimeMode: TimeMode.CONST,
+ *   IdMode: IDMode.STEP,
+ *   RandomMode: RandomMode.CONST
+ * });
+ * const constTime = testSys.Time().Now(); // Always 2021-02-01
+ * const id1 = testSys.NextId(); // "STEPId-0"
+ * const id2 = testSys.NextId(); // "STEPId-1"
+ * ```
+ */
 export function BasicSysAbstractionFactory(params?: WrapperBasicSysAbstractionParams): BasicSysAbstraction {
   const fn = runtimeFn();
   switch (true) {
@@ -198,6 +371,44 @@ export function BasicSysAbstractionFactory(params?: WrapperBasicSysAbstractionPa
   }
 }
 
+/**
+ * BasicSysAbstraction implementation with configurable service modes.
+ *
+ * Wraps a base system abstraction and allows overriding time, ID, and random
+ * number generation modes. This is the primary implementation returned by
+ * BasicSysAbstractionFactory and provides the unified interface for all
+ * platform-independent system services.
+ *
+ * Delegates runtime-specific operations (Stdout, Stderr, Env, Args) to the
+ * underlying runtime service while providing configurable implementations for
+ * testable services (Time, ID, Random).
+ *
+ * @example
+ * ```typescript
+ * // Created via factory
+ * const sys = BasicSysAbstractionFactory({
+ *   TimeMode: TimeMode.STEP,
+ *   IdMode: IDMode.UUID,
+ *   RandomMode: RandomMode.RANDOM
+ * });
+ *
+ * // Use time service
+ * const time = sys.Time();
+ * const now = time.Now();
+ * await time.Sleep(1000);
+ *
+ * // Use ID service
+ * const id = sys.NextId();
+ *
+ * // Use random service
+ * const random = sys.Random0ToValue(100);
+ *
+ * // Access runtime services
+ * const stdout = sys.Stdout();
+ * const env = sys.Env();
+ * const args = sys.Args();
+ * ```
+ */
 export class WrapperBasicSysAbstraction implements BasicSysAbstraction {
   readonly _time: Time;
   readonly _idService: IdService;
@@ -253,6 +464,39 @@ export class WrapperBasicSysAbstraction implements BasicSysAbstraction {
 }
 // export const BaseSysAbstraction = new BaseSysAbstractionImpl()
 
+/**
+ * Full system abstraction with filesystem and system service access.
+ *
+ * Extends WrapperBasicSysAbstraction with filesystem and system services,
+ * providing the complete system abstraction interface. Used in environments
+ * with full system access (Node.js, Deno) where filesystem operations,
+ * process management, and environment access are available.
+ *
+ * Inherits all configurable services from WrapperBasicSysAbstraction (Time,
+ * ID, Random) and adds FileSystem and SystemService access.
+ *
+ * @example
+ * ```typescript
+ * // Created via runtime-specific factory
+ * const sys = NodeSysAbstraction({
+ *   TimeMode: TimeMode.REAL,
+ *   IdMode: IDMode.UUID
+ * });
+ *
+ * // Use basic services
+ * const time = sys.Time();
+ * const id = sys.NextId();
+ *
+ * // Use filesystem
+ * const fs = sys.FileSystem();
+ * const content = await fs.readFile('/path/to/file');
+ *
+ * // Use system services
+ * const system = sys.System();
+ * const env = system.getEnv();
+ * system.exit(0);
+ * ```
+ */
 export class WrapperRuntimeSysAbstraction extends WrapperBasicSysAbstraction {
   readonly _systemService: SystemService;
   readonly _fileSystem: FileService;

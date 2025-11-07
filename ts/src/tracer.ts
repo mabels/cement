@@ -24,6 +24,24 @@ export type TraceCtxParam = {
 }> &
   Record<string, unknown>;
 
+/**
+ * Represents a single metric value that can be tracked and accumulated.
+ *
+ * Metrics can store any type of value and support addition operations
+ * for numbers and arrays. Used within the tracing system to collect
+ * performance data and custom measurements.
+ *
+ * @template T - The type of the metric value
+ *
+ * @example
+ * ```typescript
+ * const counter = new Metric<number>('/api/requests');
+ * counter.set(0);
+ * counter.add(1);
+ * counter.add(5);
+ * console.log(counter.value); // 6
+ * ```
+ */
 export class Metric<T> {
   value?: T;
   readonly path: string;
@@ -55,6 +73,29 @@ export class Metric<T> {
 
 export type MetricMap = Map<string, Metric<unknown>>;
 
+/**
+ * Container for managing multiple metrics within a trace span.
+ *
+ * Metrics provides hierarchical metric management with path-based access.
+ * Metrics can be defined at absolute paths (starting with /) or relative
+ * to the current trace span. Supports JSON serialization of all metrics.
+ *
+ * @example
+ * ```typescript
+ * const metrics = new Metrics(traceNode);
+ *
+ * // Absolute path
+ * const totalRequests = metrics.get<number>('/api/total_requests');
+ * totalRequests.set(100);
+ *
+ * // Relative path (uses trace node's root path)
+ * const spanRequests = metrics.get<number>('requests');
+ * spanRequests.add(1);
+ *
+ * // Export as JSON
+ * const data = metrics.toJSON();
+ * ```
+ */
 export class Metrics {
   readonly tracenode: TraceNode;
   private readonly map: MetricMap;

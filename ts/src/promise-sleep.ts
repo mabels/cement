@@ -33,12 +33,40 @@ export interface SleepAbort extends SleepBase {
 export type SleepResult = SleepOk | SleepErr | SleepAbort;
 
 /**
- * Pause execution for the given number of milliseconds.
+ * Pauses execution for a specified duration with optional abort support.
  *
- * Example:
- *   await sleep(500);
+ * Returns a SleepResult discriminated union indicating success, error, or abort.
+ * Unlike a plain setTimeout promise, this provides detailed state information
+ * through the result object. Negative durations resolve immediately as success.
+ * When aborted via AbortSignal, cleans up the timer and returns abort state.
  *
- * Optionally accepts an AbortSignal to cancel the sleep (will resolve with Result.Err on abort).
+ * @param ms - Duration to sleep in milliseconds (negative values resolve immediately)
+ * @param signal - Optional AbortSignal to cancel the sleep early
+ * @returns Promise resolving to SleepResult with state information
+ *
+ * @example
+ * ```typescript
+ * // Basic sleep
+ * const result = await sleep(500);
+ * if (result.isOk) {
+ *   console.log('Slept for 500ms');
+ * }
+ *
+ * // With abort signal
+ * const controller = new AbortController();
+ * setTimeout(() => controller.abort(), 100);
+ *
+ * const result = await sleep(1000, controller.signal);
+ * if (result.isAborted) {
+ *   console.log('Sleep was aborted:', result.reason);
+ * }
+ *
+ * // Check if already aborted
+ * const aborted = new AbortController();
+ * aborted.abort();
+ * const result = await sleep(1000, aborted.signal);
+ * // Immediately returns with isAborted: true
+ * ```
  */
 export async function sleep(ms: number, signal?: AbortSignal): Promise<SleepResult> {
   if (ms < 0) {

@@ -11,6 +11,25 @@ interface MutableLRUParam<T, K> {
 
 export type LRUParam<T = string, K = string> = Readonly<MutableLRUParam<T, K>>;
 
+/**
+ * A Set implementation with Least Recently Used (LRU) eviction policy.
+ *
+ * LRUSet maintains a set of values with automatic eviction of least recently
+ * accessed items when capacity limits are reached. Items are moved to the end
+ * of the access order when accessed.
+ *
+ * @template T - The type of values in the set
+ *
+ * @example
+ * ```typescript
+ * const cache = new LRUSet<string>({ maxEntries: 3 });
+ * cache.add('a');
+ * cache.add('b');
+ * cache.add('c');
+ * cache.add('d'); // 'a' is evicted
+ * console.log(cache.has('a')); // false
+ * ```
+ */
 export class LRUSet<T> {
   readonly #lruMap: LRUMap<T, T>;
 
@@ -84,6 +103,33 @@ function defaultRefresh<V, K>(param: LRUParam<V, K>, map: LRUMap<K, V>): void {
   }
 }
 
+/**
+ * A Map implementation with Least Recently Used (LRU) eviction policy.
+ *
+ * LRUMap maintains key-value pairs with automatic eviction of least recently
+ * accessed items when capacity limits are reached. Provides configurable
+ * eviction and refresh strategies, event callbacks, and access statistics.
+ *
+ * @template K - The type of keys in the map
+ * @template V - The type of values in the map
+ *
+ * @example
+ * ```typescript
+ * const cache = new LRUMap<string, number>({ maxEntries: 100 });
+ *
+ * // Add items
+ * cache.set('key1', 42);
+ * cache.set('key2', 100);
+ *
+ * // Get items (updates access order)
+ * const value = cache.get('key1');
+ *
+ * // Listen for evictions
+ * const unregister = cache.onDelete((key, value) => {
+ *   console.log(`Evicted: ${key} = ${value}`);
+ * });
+ * ```
+ */
 export class LRUMap<K, V> {
   private _map: Map<K, LRUItem<V>> = new Map<K, LRUItem<V>>();
   private param: MutableLRUParam<V, K>;

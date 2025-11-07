@@ -52,15 +52,23 @@ export type PollActionResult<T> =
   | PurPollAbortActionResult;
 
 export const FOREVER = 2147483647; // Maximum setTimeout delay
-export interface PollerOptions {
+export interface PollerOptions<CTX> {
   readonly intervalMs: number;
   readonly actionTimeoutMs: number; // not -1 it means if a timeout occures the action is retried in the next interval
   readonly timeoutMs: number;
   readonly exponentialBackoff: boolean;
   readonly abortSignal?: AbortSignal;
+  readonly ctx: CTX;
 }
 
 export type PollerResult<T> = PollSuccessActionResult<T> | PollErrorActionResult | PollTimeoutActionResult | PollAbortActionResult;
+export interface PollerCtx<CTX> {
+  readonly ctx: CTX;
+  readonly stats: PollerStats;
+  readonly abortSignal: AbortSignal;
+}
+
+export type PollerFunc<T, CTX> = (state: PollerCtx<CTX>) => Promise<PollActionResult<T>>;
 
 function doneStats(stats: Writable<PollerStats> & { startTime: number }): PollerStats {
   stats.totalElapsedMs = Date.now() - stats.startTime;
@@ -71,12 +79,12 @@ function doneStats(stats: Writable<PollerStats> & { startTime: number }): Poller
   };
 }
 
-async function interPoller<T>(
-  fn: (abortSignal?: AbortSignal) => Promise<PollActionResult<T>>,
-  options: Writable<Omit<PollerOptions, "abortSignal">>,
+async function interPoller<R, CTX>(
+  fn: PollerFunc<R, CTX>,
+  options: Writable<Omit<PollerOptions<CTX>, "abortSignal">>,
   stats: Writable<PollerStats> & { readonly startTime: number },
   abortController: AbortController,
-): Promise<PollerResult<T>> {
+): Promise<PollerResult<R>> {
   do {
     // let result: PollActionResult<T>;
     try {
@@ -92,19 +100,23 @@ async function interPoller<T>(
       const fnAbortController = new AbortController();
       fnAbortController.signal.addEventListener("abort", onAbort, { once: true });
 
-      const races = [
-        fn(fnAbortController.signal).finally(() => {
+      const races: Promise<PollActionResult<R>>[] = [
+        fn({
+          ctx: options.ctx,
+          stats,
+          abortSignal: fnAbortController.signal,
+        }).finally(() => {
           // abort all other waits
-          fnAbortController.abort();
+          fnAbortController.abort("action: kill other waits");
         }),
         abortCheck.asPromise().finally(() => {
           // abort all other waits
-          fnAbortController.abort();
+          fnAbortController.abort("abortcheck: kill other waits");
         }),
       ];
       if (options.actionTimeoutMs > 0) {
         races.push(
-          sleep(options.actionTimeoutMs, fnAbortController.signal).then((res): PollActionResult<T> => {
+          sleep(options.actionTimeoutMs, fnAbortController.signal).then((res): PollActionResult<R> => {
             // abort all other waits
             fnAbortController.abort(new Error("poller action timeout"));
             switch (res.state) {
@@ -120,7 +132,7 @@ async function interPoller<T>(
           }),
         );
       }
-      const result = await Promise.race<PollActionResult<T>>(races).finally(() => {
+      const result = await Promise.race<PollActionResult<R>>(races).finally(() => {
         fnAbortController.signal.removeEventListener("abort", onAbort);
       });
       switch (result.state) {
@@ -173,14 +185,50 @@ async function interPoller<T>(
   } while (true);
 }
 
-export async function poller<T>(
-  fn: () => Promise<PollActionResult<T>>,
-  ioptions: Partial<PollerOptions> = {},
-): Promise<PollerResult<T>> {
-  const options = {
+/**
+ * Repeatedly polls an asynchronous function until a terminal state is reached.
+ *
+ * The poller executes the provided function at regular intervals and supports:
+ * - Exponential backoff for retry intervals
+ * - Timeouts for individual actions and overall polling
+ * - Abort signal for cancellation
+ * - Detailed statistics tracking (attempts, intervals, elapsed time)
+ *
+ * @template R - The type of the successful result value
+ * @param fn - Function to poll that returns a PollActionResult indicating whether to continue waiting, succeed, error, timeout, or abort
+ * @param ioptions - Optional configuration:
+ *   - intervalMs: Time between poll attempts in milliseconds (default: 1000)
+ *   - timeoutMs: Total timeout in milliseconds, -1 for forever (default: 30000)
+ *   - actionTimeoutMs: Timeout for each individual action attempt, -1 for forever (default: -1)
+ *   - exponentialBackoff: Whether to double the interval after each attempt (default: auto-enabled if timeoutMs is FOREVER)
+ *   - abortSignal: Optional AbortSignal to cancel polling
+ *
+ * @returns Promise resolving to a PollerResult with state, statistics, and result/error/reason depending on the outcome
+ *
+ * @example
+ * ```typescript
+ * const result = await poller(async () => {
+ *   const status = await checkStatus();
+ *   if (status.ready) {
+ *     return { state: 'success', result: status.data };
+ *   }
+ *   return { state: 'waiting' };
+ * }, { intervalMs: 2000, timeoutMs: 60000 });
+ *
+ * if (result.state === 'success') {
+ *   console.log('Got result:', result.result);
+ * }
+ * ```
+ */
+export async function poller<R, CTX = void>(
+  fn: PollerFunc<R, CTX>,
+  ioptions: Partial<PollerOptions<CTX>> = {},
+): Promise<PollerResult<R>> {
+  const options: PollerOptions<CTX> = {
     intervalMs: 1000,
     timeoutMs: 30000, // -1 means forever
     actionTimeoutMs: -1, // forever
+    ctx: undefined as unknown as CTX,
     ...ioptions,
     exponentialBackoff:
       typeof ioptions.exponentialBackoff === "boolean" ? ioptions.exponentialBackoff : ioptions.timeoutMs === FOREVER,
@@ -206,7 +254,7 @@ export async function poller<T>(
       options.abortSignal.addEventListener("abort", dispatchAbort, { once: true });
     }
   }
-  const races = [interPoller(fn, options, stats, abortController)];
+  const races = [interPoller<R, CTX>(fn, options, stats, abortController)];
   if (options.timeoutMs > 0) {
     races.push(
       sleep(options.timeoutMs, abortController.signal)

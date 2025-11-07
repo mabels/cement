@@ -1,4 +1,4 @@
-import { ResolveOnce } from "./resolve-once.js";
+import { Lazy, ResolveOnce } from "./resolve-once.js";
 import { Result } from "./result.js";
 import { coerceIntoUint8, ToUInt8 } from "./utils/coerce-uint8.js";
 
@@ -50,7 +50,4 @@ class TxtOps implements TxtEnDecoder {
   }
 }
 
-const txtEnDecoder = new ResolveOnce<TxtEnDecoder>();
-export function TxtEnDecoderSingleton(): TxtEnDecoder {
-  return txtEnDecoder.once(() => new TxtOps());
-}
+export const TxtEnDecoderSingleton = Lazy((): TxtEnDecoder => new TxtOps());

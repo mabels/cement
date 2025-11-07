@@ -61,22 +61,58 @@ export interface TimeoutActionOptions<CTX> {
 // TYPE GUARDS
 // ============================================================================
 
+/**
+ * Type guard to check if a TimeoutResult represents a successful completion.
+ *
+ * @template T - The type of the result value
+ * @param result - The TimeoutResult to check
+ * @returns True if the result state is "success"
+ */
 export function isSuccess<T>(result: TimeoutResult<T>): result is TimeoutResultSuccess<T> {
   return result.state === "success";
 }
 
+/**
+ * Type guard to check if a TimeoutResult represents a timeout.
+ *
+ * @template T - The type of the result value
+ * @param result - The TimeoutResult to check
+ * @returns True if the result state is "timeout"
+ */
 export function isTimeout<T>(result: TimeoutResult<T>): result is TimeoutResultTimeout<T> {
   return result.state === "timeout";
 }
 
+/**
+ * Type guard to check if a TimeoutResult was aborted via AbortSignal.
+ *
+ * @template T - The type of the result value
+ * @param result - The TimeoutResult to check
+ * @returns True if the result state is "aborted"
+ */
 export function isAborted<T>(result: TimeoutResult<T>): result is TimeoutResultAborted<T> {
   return result.state === "aborted";
 }
 
+/**
+ * Type guard to check if a TimeoutResult represents an error during execution.
+ *
+ * @template T - The type of the result value
+ * @param result - The TimeoutResult to check
+ * @returns True if the result state is "error"
+ */
 export function isError<T>(result: TimeoutResult<T>): result is TimeoutResultError<T> {
   return result.state === "error";
 }
 
+/**
+ * Extracts the value from a successful TimeoutResult or throws an error.
+ *
+ * @template T - The type of the result value
+ * @param result - The TimeoutResult to unwrap
+ * @returns The success value
+ * @throws Error if the result is not in success state
+ */
 export function unwrap<T>(result: TimeoutResult<T>): T {
   if (isSuccess(result)) {
     return result.value;
@@ -84,10 +120,66 @@ export function unwrap<T>(result: TimeoutResult<T>): T {
   throw new Error(`TimeoutResult is not success: ${result.state}`);
 }
 
+/**
+ * Extracts the value from a successful TimeoutResult or returns a default value.
+ *
+ * @template T - The type of the result value
+ * @param result - The TimeoutResult to unwrap
+ * @param defaultValue - The value to return if result is not successful
+ * @returns The success value or the default value
+ */
 export function unwrapOr<T>(result: TimeoutResult<T>, defaultValue: T): T {
   return isSuccess(result) ? result.value : defaultValue;
 }
 
+/**
+ * Executes an action with comprehensive timeout and abort handling.
+ *
+ * Wraps a promise or async function with timeout, abort signal, and error handling capabilities.
+ * The action can be controlled via AbortController and will properly clean up resources.
+ *
+ * @template T - The type of the action's result value
+ * @template CTX - Optional context type passed through to callbacks
+ * @param action - Either a Promise or a function that receives an AbortController and returns a Promise
+ * @param options - Optional configuration:
+ *   - timeout: Timeout duration in milliseconds (default: 30000). Set to 0 or negative to disable.
+ *   - signal: External AbortSignal to link for cancellation
+ *   - controller: External AbortController to use instead of creating a new one
+ *   - ctx: Context object passed through in the result
+ *   - onTimeout: Callback invoked when timeout occurs
+ *   - onAbort: Callback invoked when aborted (with abort reason)
+ *   - onError: Callback invoked when action throws an error
+ *   - onAbortAction: Callback for cleanup when action needs to be aborted
+ *
+ * @returns Promise resolving to a TimeoutResult containing:
+ *   - state: "success" | "timeout" | "aborted" | "error"
+ *   - value (if success), error (if error), or reason (if aborted)
+ *   - duration: Elapsed time in milliseconds
+ *   - ctx: The context object if provided
+ *
+ * @example
+ * ```typescript
+ * // With a function that can be aborted
+ * const result = await timeouted(
+ *   async (controller) => {
+ *     return fetch(url, { signal: controller.signal });
+ *   },
+ *   { timeout: 5000 }
+ * );
+ *
+ * if (isSuccess(result)) {
+ *   console.log('Request completed:', result.value);
+ * } else if (isTimeout(result)) {
+ *   console.log('Request timed out after', result.duration, 'ms');
+ * }
+ *
+ * // With a direct promise
+ * const result2 = await timeouted(
+ *   fetch(url),
+ *   { timeout: 3000 }
+ * );
+ * ```
+ */
 export async function timeouted<T, CTX = void>(
   action: TimeoutAction<T>,
   options: Partial<TimeoutActionOptions<CTX>> = {},

@@ -1,5 +1,11 @@
 import { TxtEnDecoderSingleton } from "../txt-en-decoder.js";
 
+/**
+ * WritableStreamDefaultWriter that writes to console with automatic JSON parsing.
+ *
+ * Decodes Uint8Array chunks to strings, attempts JSON parsing to extract log levels,
+ * and routes output to appropriate console methods (log, warn, error).
+ */
 export class ConsoleWriterStreamDefaultWriter implements WritableStreamDefaultWriter<Uint8Array> {
   readonly desiredSize: number | null = null;
   // readonly decoder: TextDecoder = new TextDecoder();
@@ -57,6 +63,34 @@ export interface ConsoleWriterStreamParams {
   warn(...args: unknown[]): void;
 }
 
+/**
+ * WritableStream that outputs to console with JSON log-level parsing.
+ *
+ * Decodes stream chunks and attempts to parse as JSON to extract log levels.
+ * Routes messages to console.log/warn/error based on parsed level field.
+ * Falls back to console.log for non-JSON content. Useful for structured logging.
+ *
+ * @example
+ * ```typescript
+ * const consoleStream = new ConsoleWriterStream();
+ * const writer = consoleStream.getWriter();
+ *
+ * // JSON with level field
+ * await writer.write(
+ *   new TextEncoder().encode('{"level":"error","msg":"Failed"}')
+ * ); // Outputs to console.error
+ *
+ * // Plain text
+ * await writer.write(
+ *   new TextEncoder().encode('Hello')
+ * ); // Outputs to console.log
+ *
+ * // Custom console methods
+ * const custom = new ConsoleWriterStream({
+ *   error: (msg) => saveToFile('error.log', msg)
+ * });
+ * ```
+ */
 export class ConsoleWriterStream implements WritableStream<Uint8Array> {
   locked = false;
   _writer?: WritableStreamDefaultWriter<Uint8Array>;
