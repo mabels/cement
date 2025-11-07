@@ -50,4 +50,4 @@ class TxtOps implements TxtEnDecoder {
   }
 }
 
-export const TxtEnDecoderSingleton = Lazy((): TxtEnDecoder => new TxtOps());
+export const TxtEnDecoderSingleton: () => TxtEnDecoder = Lazy((): TxtEnDecoder => new TxtOps());
