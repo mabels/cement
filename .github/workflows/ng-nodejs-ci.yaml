@@ -63,17 +63,17 @@ jobs:
           pnpm run docs
 
       - name: Setup Pages
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: startsWith(github.ref, 'refs/tags/v') || startsWith(github.ref, 'refs/tags/docs')
         uses: actions/configure-pages@v5
 
       - name: Upload artifact
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: startsWith(github.ref, 'refs/tags/v') || startsWith(github.ref, 'refs/tags/docs')
         uses: actions/upload-pages-artifact@v3
         with:
           path: 'ts/dist/docs'
 
       - name: Deploy to GitHub Pages
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: startsWith(github.ref, 'refs/tags/v') || startsWith(github.ref, 'refs/tags/docs')
         id: deployment
         uses: actions/deploy-pages@v4
 
