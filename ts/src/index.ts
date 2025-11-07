@@ -30,6 +30,7 @@ export * from "./load-asset.js";
 export * from "./mutable-url.js";
 export * from "./poller.js";
 export * from "./on-func.js";
+export * from "./timeouted.js";
 
 // ugly
 export * as utils from "./utils/index.js";
