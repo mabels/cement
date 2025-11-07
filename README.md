@@ -178,7 +178,7 @@ Apache License 2.0 - See [LICENSE](LICENSE) for details.
 
 ## Author
 
-Meno Abels <meno.abels@adviser.com>
+Meno Abels
 
 ## Repository
 
