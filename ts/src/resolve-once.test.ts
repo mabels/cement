@@ -1,4 +1,4 @@
-import { Result, KeyedResolvOnce, ResolveOnce, ResolveSeq, Lazy, Future, KeyedResolvSeq } from "@adviser/cement";
+import { Result, KeyedResolvOnce, ResolveOnce, ResolveSeq, Lazy, Future, KeyedResolvSeq, KeyedNgItem } from "@adviser/cement";
 import { isPromise } from "./is-promise.js";
 
 describe("resolve-once", () => {
@@ -232,32 +232,42 @@ describe("resolve-once", () => {
       keyed.get(() => "b").once(b_orderFn),
     ]);
     expect(a_orderFn).toHaveBeenCalledTimes(1);
-    expect(a_orderFn).toHaveBeenCalledWith({ key: "a" });
+    expect(a_orderFn).toHaveBeenCalledWith({
+      refKey: "a",
+      givenKey: "a",
+      value: undefined,
+      ctx: {},
+    });
     expect(b_orderFn).toHaveBeenCalledTimes(1);
-    expect(b_orderFn).toHaveBeenCalledWith({ key: "b" });
+    expect(b_orderFn).toHaveBeenCalledWith({
+      refKey: "b",
+      givenKey: "b",
+      value: undefined,
+      ctx: {},
+    });
   });
 
   it("keyedResolvOnce with pass ctx & {key: K}", () => {
     const my = new KeyedResolvOnce<{ hello: string }, number, { wurst: string }>({ ctx: { wurst: "world" } });
-    my.get(1).once((ctx) => {
-      assertType<{ key: number }>(ctx);
-      assertType<{ wurst: string }>(ctx);
-      assertType<number>(ctx.key);
-      assertType<string>(ctx.wurst);
-      expect(ctx.key).toBe(1);
-      expect(ctx.wurst).toBe("world");
+    my.get(1).once((item) => {
+      assertType<{ givenKey: number }>(item);
+      assertType<{ ctx: { wurst: string } }>(item);
+      assertType<number>(item.givenKey);
+      assertType<string>(item.ctx.wurst);
+      expect(item.givenKey).toBe(1);
+      expect(item.ctx.wurst).toBe("world");
       return { hello: "world" };
     });
   });
   it("keyedResolvSeq with pass ctx & {key: K}", () => {
     const my = new KeyedResolvSeq<{ hello: string }, number, { wurst: string }>({ ctx: { wurst: "world" } });
-    my.get(1).add((ctx) => {
-      assertType<{ key: number }>(ctx);
-      assertType<{ wurst: string }>(ctx);
-      assertType<number>(ctx.key);
-      assertType<string>(ctx.wurst);
-      expect(ctx.wurst).toBe("world");
-      expect(ctx.key).toBe(1);
+    my.get(1).add((item) => {
+      assertType<{ givenKey: number }>(item);
+      assertType<{ ctx: { wurst: string } }>(item);
+      assertType<number>(item.givenKey);
+      assertType<string>(item.ctx.wurst);
+      expect(item.ctx.wurst).toBe("world");
+      expect(item.givenKey).toBe(1);
       return { hello: "world" };
     });
   });
@@ -274,22 +284,22 @@ describe("resolve-once", () => {
 
   it("keyedResolvOnce with pass decompose", () => {
     const my = new KeyedResolvOnce<{ hello: string }>();
-    my.get("1").once(({ key }) => {
-      assertType<string>(key);
+    my.get("1").once(({ refKey }) => {
+      assertType<string>(refKey);
       return { hello: "world" };
     });
     my.get("2").once(() => {
       return { hello: "world" };
     });
     my.get("3").once((ctx) => {
-      assertType<{ key: string }>(ctx);
+      assertType<{ refKey: string }>(ctx);
       return { hello: "world" };
     });
   });
 
   it("keyedResolvOnce with pass decompose", () => {
     const my = new KeyedResolvSeq<{ hello: string }>();
-    my.get("1").add(({ key }) => {
+    my.get("1").add(({ refKey: key }) => {
       assertType<string>(key);
       return { hello: "world" };
     });
@@ -314,9 +324,19 @@ describe("resolve-once", () => {
         .then((resolveOnce) => resolveOnce.once(b_orderFn)),
     ]);
     expect(a_orderFn).toHaveBeenCalledTimes(1);
-    expect(a_orderFn).toHaveBeenCalledWith({ key: "a" });
+    expect(a_orderFn).toHaveBeenCalledWith({
+      ctx: {},
+      givenKey: "a",
+      refKey: "a",
+      value: undefined,
+    });
     expect(b_orderFn).toHaveBeenCalledTimes(1);
-    expect(b_orderFn).toHaveBeenCalledWith({ key: "b" });
+    expect(b_orderFn).toHaveBeenCalledWith({
+      ctx: {},
+      givenKey: "b",
+      refKey: "b",
+      value: undefined,
+    });
   });
 
   function shuffle<T>(array: T[]): T[] {
@@ -476,11 +496,20 @@ describe("resolve-once", () => {
     const a = keyed.get("a");
     expect(keyed.values()).toEqual([]);
     a.once(() => 42);
-    expect(keyed.values()).toEqual([{ key: "a", value: Result.Ok(42) }]);
+    expect(keyed.values()).toEqual([
+      {
+        key: "a",
+        value: Result.Ok(42),
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        item: expect.objectContaining({ givenKey: "a", refKey: "a" }),
+      },
+    ]);
     keyed.get("b").once(() => 43);
     expect(keyed.values()).toEqual([
-      { key: "a", value: Result.Ok(42) },
-      { key: "b", value: Result.Ok(43) },
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      { key: "a", value: Result.Ok(42), item: expect.objectContaining({ givenKey: "a", refKey: "a" }) },
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      { key: "b", value: Result.Ok(43), item: expect.objectContaining({ givenKey: "b", refKey: "b" }) },
     ]);
     try {
       keyed.get("c").once(() => {
@@ -490,13 +519,19 @@ describe("resolve-once", () => {
       expect(e).toEqual(new Error("nope"));
     }
     expect(keyed.values()).toEqual([
-      { key: "a", value: Result.Ok(42) },
-      { key: "b", value: Result.Ok(43) },
-      { key: "c", value: Result.Err(new Error("nope")) },
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      { key: "a", value: Result.Ok(42), item: expect.objectContaining({ givenKey: "a", refKey: "a" }) },
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      { key: "b", value: Result.Ok(43), item: expect.objectContaining({ givenKey: "b", refKey: "b" }) },
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      { key: "c", value: Result.Err(new Error("nope")), item: expect.objectContaining({ givenKey: "c", refKey: "c" }) },
     ]);
     keyed.unget("a");
     keyed.unget("c");
-    expect(keyed.values()).toEqual([{ key: "b", value: Result.Ok(43) }]);
+    expect(keyed.values()).toEqual([
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      { key: "b", value: Result.Ok(43), item: expect.objectContaining({ givenKey: "b", refKey: "b" }) },
+    ]);
   });
 
   it("KeyedResolvOnce entries", () => {
@@ -534,8 +569,10 @@ describe("resolve-once", () => {
       keyed.get(i.toString()).once(() => i);
     }
     expect(keyed.values()).toEqual([
-      { key: "8", value: Result.Ok(8) },
-      { key: "9", value: Result.Ok(9) },
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      { key: "8", value: Result.Ok(8), item: expect.objectContaining({ givenKey: "8", refKey: "8" }) },
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      { key: "9", value: Result.Ok(9), item: expect.objectContaining({ givenKey: "9", refKey: "9" }) },
     ]);
   });
 
@@ -826,5 +863,76 @@ describe("Lazy Initialization", () => {
     expect(await my.action()).toEqual({ sync: 43, async: 44, asyncPass: 46, passIn: 42 });
     expect(await my.action()).toEqual({ sync: 43, async: 44, asyncPass: 46, passIn: 42 });
     expect(await my.action()).toEqual({ sync: 43, async: 44, asyncPass: 46, passIn: 42 });
+  });
+});
+
+interface Key2Hash {
+  id: number;
+  name: string;
+}
+
+interface Key2Value {
+  item: KeyedNgItem<Key2Hash, { value: Key2Hash }, { ctx: string }>;
+}
+
+describe("KeyToHash", () => {
+  it("KeyedResolvSeq could use default KeyToHash", async () => {
+    const keyed = new KeyedResolvSeq<Key2Value, Key2Hash>({
+      key2string: (key: Key2Hash): string => `${key.id}:${key.name}`,
+      ctx: { ctx: "test" },
+    });
+
+    const addFn = vi
+      .fn()
+      .mockImplementation((item: KeyedNgItem<Key2Hash, { value: Key2Hash }, { ctx: string }>): Promise<Key2Value> => {
+        return Promise.resolve({ item });
+      });
+    await keyed.get({ id: 1, name: "test" }).add(addFn);
+    await keyed.get({ id: 1, name: "test" }).add(addFn);
+    await keyed.get({ id: 2, name: "test" }).add(addFn);
+    expect(addFn).toHaveBeenCalledTimes(3);
+    expect(addFn).toHaveBeenNthCalledWith(1, {
+      refKey: "1:test",
+      givenKey: { id: 1, name: "test" },
+      value: undefined,
+      ctx: { ctx: "test" },
+    });
+    expect(addFn).toHaveBeenNthCalledWith(2, {
+      refKey: "1:test",
+      givenKey: { id: 1, name: "test" },
+      value: undefined,
+      ctx: { ctx: "test" },
+    });
+    expect(addFn).toHaveBeenNthCalledWith(3, {
+      refKey: "2:test",
+      givenKey: { id: 2, name: "test" },
+      value: undefined,
+      ctx: { ctx: "test" },
+    });
+  });
+  it("KeyedResolvOnce could use custom KeyToHash", async () => {
+    const keyed = new KeyedResolvOnce<Key2Value, Key2Hash, { ctx: string }>({
+      key2string: (key: Key2Hash): string => `${key.id}:${key.name}`,
+      ctx: { ctx: "test" },
+    });
+    const onceFn = vi.fn().mockImplementation((item: KeyedNgItem<Key2Hash, { value: Key2Hash }, { ctx: string }>) => {
+      return {
+        id: item.givenKey.id,
+        name: item.givenKey.name,
+      };
+    });
+    for (let i = 0; i < 3; i++) {
+      const res = await keyed.get({ id: 1, name: "test" }).once((item): Promise<Key2Value> => {
+        return Promise.resolve(onceFn(item) as Key2Value);
+      });
+      expect(res).toEqual({ id: 1, name: "test" });
+    }
+    expect(onceFn).toHaveBeenCalledTimes(1);
+    expect(onceFn).toHaveBeenCalledWith({
+      refKey: "1:test",
+      givenKey: { id: 1, name: "test" },
+      value: undefined,
+      ctx: { ctx: "test" },
+    });
   });
 });

@@ -49,7 +49,7 @@
   },
   "scripts": {
     "clean": "rm -rf dist node_modules",
-    "build": "pnpm run build:tsgo; pnpm run build:js; pnpm run build:deno",
+    "build": "pnpm run build:tsgo && pnpm run build:js && pnpm run build:deno",
     "build:tsc": "rm -rf ./dist/ts ; pnpm run /^build:tsc:/",
     "build:tsgo": "rm -rf ./dist/ts ; pnpm run /^build:tsgo:/",
     "build:tsgo:global": "tsgo --noEmit",

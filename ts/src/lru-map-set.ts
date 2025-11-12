@@ -70,6 +70,8 @@ export class LRUSet<T> {
   }
 }
 
+export type LRUWithIdx<T> = T & { readonly idx: number };
+
 export interface LRUCtx<T, K> {
   readonly update: boolean;
   readonly ref: LRUMap<K, T>;
@@ -287,9 +289,11 @@ export class LRUMap<K, V> {
     this._map.clear();
   }
 
-  forEach(fn: (value: V, key: K, ctx: LRUCtx<V, K>) => void): void {
+  forEach(fn: (value: V, key: K, ctx: LRUWithIdx<LRUCtx<V, K>>) => void): void {
+    let idx = 0;
     this._map.forEach((v, k) => {
-      fn(v.value, k, this.buildItemCtx(v, false));
+      // not really efficient but ok for now
+      fn(v.value, k, { ...this.buildItemCtx(v, false), idx: idx++ });
     });
   }
 

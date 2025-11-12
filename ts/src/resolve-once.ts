@@ -17,9 +17,10 @@
 import { Future } from "./future.js";
 import { UnPromisify } from "./is-promise.js";
 import { isPromise } from "./is-promise.js";
-import { LRUMap, LRUParam, UnregFn } from "./lru-map-set.js";
+import { UnregFn } from "./lru-map-set.js";
 import { Result } from "./result.js";
 import { Option } from "./option.js";
+import { KeyedIf, KeyedNg, KeyedNgItem, KeyedNgItemWithoutValue, KeyedNgOptions } from "./keyed-ng.js";
 
 /**
  * Internal item representing a queued function in a ResolveSeq sequence.
@@ -562,6 +563,11 @@ export class ResolveOnce<T, CTX = void> implements ResolveOnceIf<T, CTX> {
 
   reset<R>(fn?: (c: CTX) => R): ResultOnce<R> {
     if (this.#state === "initial") {
+      if (!fn) {
+        // eslint-disable-next-line no-console
+        console.warn("ResolveOnce.reset called but not yet resolved and no fn given");
+        return undefined as ResultOnce<R>;
+      }
       return this.once(fn as (c: CTX) => R);
     }
     if (this.#state === "processing") {
@@ -573,300 +579,14 @@ export class ResolveOnce<T, CTX = void> implements ResolveOnceIf<T, CTX> {
   }
 }
 
-/**
- * Configuration parameters for Keyed instances.
- * @template K - The key type
- * @template V - The value type
- */
-export interface KeyedParam<K, V> {
-  readonly lru: Partial<LRUParam<V, K>>;
-}
-
-/**
- * Extended configuration that includes context.
- * @template K - The key type
- * @template V - The value type
- * @template CTX - The context type
- */
-export type AddKeyedParam<K, V, CTX extends NonNullable<object>> = KeyedParam<K, V> & { readonly ctx: CTX };
-
-export interface KeyedIf<T extends { reset: () => void }, K = string> {
-  /**
-   * Registers a callback that fires when a new entry is added to the map.
-   *
-   * @param fn - Callback function receiving key and value
-   * @returns Unregister function to remove the callback
-   */
-  onSet(fn: (key: K, value: T) => void): UnregFn;
-
-  /**
-   * Registers a callback that fires when an entry is deleted from the map.
-   *
-   * @param fn - Callback function receiving key and value
-   * @returns Unregister function to remove the callback
-   */
-  onDelete(fn: (key: K, value: T) => void): UnregFn;
-
-  /**
-   * Updates the LRU parameters of the underlying map.
-   *
-   * @param params - New parameters to apply
-   */
-  setParam(params: KeyedParam<K, T>): void;
-
-  /**
-   * Async variant of get() that accepts a function returning a promise for the key.
-   *
-   * @param key - Function that returns a promise resolving to the key
-   * @returns Promise resolving to the value
-   */
-  asyncGet(key: () => Promise<K>): Promise<T>;
-
-  /**
-   * Gets or creates a value for the given key.
-   *
-   * If the key doesn't exist, creates a new instance using the factory function.
-   *
-   * @param key - The key or function returning the key
-   * @returns The value associated with the key
-   */
-  get(key: K | (() => K)): T;
-
-  /**
-   * Checks if a key exists in the map.
-   *
-   * @param key - The key or function returning the key
-   * @returns True if the key exists
-   */
-  has(key: K | (() => K)): boolean;
-
-  /**
-   * Deletes an entry from the map.
-   *
-   * @param key - The key to delete
-   */
-  delete(key: K): void;
-
-  /**
-   * Resets and deletes an entry from the map.
-   *
-   * Calls the value's reset() method before removing it.
-   *
-   * @param key - The key to reset and delete
-   */
-  unget(key: K): void;
-
-  /**
-   * Resets all entries and clears the map.
-   *
-   * Calls reset() on all values before clearing.
-   */
-  reset(): void;
-
-  /**
-   * Returns all values in the map.
-   *
-   * @returns Array of all values
-   */
-  values(): T[];
-
-  /**
-   * Returns all keys in the map.
-   *
-   * @returns Array of all keys
-   */
-  keys(): K[];
-
-  /**
-   * Iterates over all entries in the map.
-   *
-   * @yields Key-value pairs
-   */
-  forEach(fn: (k: K, v: T, idx: number) => void): void;
-
-  entries(): Iterable<[K, T]>;
-}
-
-/**
- * Base class for managing keyed instances with LRU caching.
- *
- * Keyed provides a map-like interface where values are lazily created via a factory function
- * and cached with optional LRU eviction. Values must have a `reset()` method for cleanup.
- *
- * @template T - The value type (must have a reset method)
- * @template K - The key type
- * @template CTX - Optional context type passed to the factory
- *
- * @example
- * ```typescript
- * const keyed = new Keyed(
- *   (ctx) => new ResolveOnce(ctx),
- *   { lru: { maxEntries: 100 } }
- * );
- *
- * const instance = keyed.get('myKey');
- * ```
- */
-export class Keyed<T extends { reset: () => void }, K = string, CTX extends NonNullable<object> = object> implements KeyedIf<T, K> {
-  protected readonly _map: LRUMap<K, T>;
-  readonly #ctx: CTX;
-
-  readonly factory: (ctx: AddKey<CTX, K>) => T;
-
-  constructor(factory: (ctx: AddKey<CTX, K>) => T, ctx: Partial<AddKeyedParam<K, T, CTX>>) {
-    this.#ctx = ctx.ctx || ({} as CTX);
-    this.factory = factory;
-    this._map = new LRUMap<K, T>(ctx?.lru ?? ({ maxEntries: -1 } as LRUParam<T, K>));
-  }
-
-  /**
-   * Registers a callback that fires when a new entry is added to the map.
-   *
-   * @param fn - Callback function receiving key and value
-   * @returns Unregister function to remove the callback
-   */
-  onSet(fn: (key: K, value: T) => void): UnregFn {
-    return this._map.onSet(fn);
-  }
-
-  /**
-   * Registers a callback that fires when an entry is deleted from the map.
-   *
-   * @param fn - Callback function receiving key and value
-   * @returns Unregister function to remove the callback
-   */
-  onDelete(fn: (key: K, value: T) => void): UnregFn {
-    return this._map.onDelete(fn);
-  }
-
-  /**
-   * Updates the LRU parameters of the underlying map.
-   *
-   * @param params - New parameters to apply
-   */
-  setParam(params: KeyedParam<K, T>): void {
-    this._map.setParam(params.lru);
-  }
-
-  /**
-   * Async variant of get() that accepts a function returning a promise for the key.
-   *
-   * @param key - Function that returns a promise resolving to the key
-   * @returns Promise resolving to the value
-   */
-  async asyncGet(key: () => Promise<K>): Promise<T> {
-    return this.get(await key());
-  }
-
-  /**
-   * Gets or creates a value for the given key.
-   *
-   * If the key doesn't exist, creates a new instance using the factory function.
-   *
-   * @param key - The key or function returning the key
-   * @returns The value associated with the key
-   */
-  get(key: K | (() => K)): T {
-    if (typeof key === "function") {
-      key = (key as () => K)();
-    }
-    let keyed = this._map.get(key);
-    if (!keyed) {
-      keyed = this.factory({ ...this.#ctx, key: key });
-      this._map.set(key, keyed);
-    }
-    return keyed;
-  }
-
-  /**
-   * Checks if a key exists in the map.
-   *
-   * @param key - The key or function returning the key
-   * @returns True if the key exists
-   */
-  has(key: K | (() => K)): boolean {
-    if (typeof key === "function") {
-      key = (key as () => K)();
-    }
-    return this._map.has(key);
-  }
-
-  /**
-   * Deletes an entry from the map.
-   *
-   * @param key - The key to delete
-   */
-  delete(key: K): void {
-    this._map.delete(key);
-  }
-
-  /**
-   * Resets and deletes an entry from the map.
-   *
-   * Calls the value's reset() method before removing it.
-   *
-   * @param key - The key to reset and delete
-   */
-  unget(key: K): void {
-    const keyed = this._map.get(key);
-    keyed?.reset();
-    this._map.delete(key);
-  }
-
-  /**
-   * Resets all entries and clears the map.
-   *
-   * Calls reset() on all values before clearing.
-   */
-  reset(): void {
-    this._map.forEach((keyed) => keyed.reset());
-    this._map.clear();
-  }
-
-  /**
-   * Returns all values in the map.
-   *
-   * @returns Array of all values
-   */
-  values(): T[] {
-    const results: T[] = [];
-    this.forEach((_, v) => {
-      results.push(v);
-    });
-    return results;
-  }
-
-  /**
-   * Returns all keys in the map.
-   *
-   * @returns Array of all keys
-   */
-  keys(): K[] {
-    const results: K[] = [];
-    this.forEach((k) => {
-      results.push(k);
-    });
-    return results;
-  }
-
-  /**
-   * Iterates over all entries in the map.
-   *
-   * @yields Key-value pairs
-   */
-  forEach(fn: (k: K, v: T, idx: number) => void): void {
-    let idx = 0;
-    for (const [k, v] of this._map.entries()) {
-      fn(k, v, idx++);
-    }
-  }
-
-  *entries(): Iterable<[K, T]> {
-    for (const [k, v] of this._map.entries()) {
-      yield [k, v];
-    }
-  }
-}
+// /**
+//  * Configuration parameters for Keyed instances.
+//  * @template K - The key type
+//  * @template V - The value type
+//  */
+// export interface KeyedParam<K, V> {
+//   readonly lru: Partial<LRUParam<V, K>>;
+// }
 
 /**
  * Represents a key-value pair where the value is wrapped in a Result.
@@ -879,14 +599,52 @@ export interface KeyItem<K, V> {
 }
 
 /**
+ * Configuration parameters for KeyedResolvOnce, excluding the createValue factory.
+ * @template K - The key type
+ * @template V - The value type
+ * @template CTX - The context type
+ */
+export type AddKeyedParam<K, V, CTX extends NonNullable<object>> = Omit<KeyedNgOptions<K, V, CTX>, "createValue">;
+
+/**
+ * Type helper that adds a key property to a context object.
+ * @template X - The context type
+ * @template K - The key type
+ */
+export type WithKey<X extends NonNullable<object>, K> = X & { readonly key: K };
+
+/**
+ * Type helper that adds an optional reset method to a value type.
+ * @template V - The value type
+ */
+export type WithOptionalReset<V> = V & { readonly reset?: () => void };
+
+/**
+ * Represents an item in a KeyedResolvOnce collection with its resolved result.
+ * @template K - The key type
+ * @template T - The value type
+ * @template CTX - The context type
+ */
+export interface KeyedResolveOnceItem<K, T, CTX extends NonNullable<object>> {
+  /** The key associated with this item */
+  readonly key: K;
+  /** The resolved value wrapped in a Result (Ok or Err) */
+  readonly value: Result<T>;
+  /** The complete KeyedNgItem containing metadata */
+  readonly item: KeyedNgItem<K, ResolveOnce<WithOptionalReset<T>, KeyedNgItemWithoutValue<K, CTX>>, CTX>;
+}
+
+/**
  * Keyed collection of ResolveOnce instances.
  *
  * Manages a map of ResolveOnce instances indexed by keys, with optional LRU caching.
  * Each key gets its own ResolveOnce instance that can be accessed and manipulated independently.
+ * Values can optionally have a reset() method for cleanup on deletion.
  *
- * @template T - The return type of the ResolveOnce instances
- * @template K - The key type
- * @template CTX - Optional context type
+ * @template T - The return type of the ResolveOnce instances (must include optional reset)
+ * @template K - The key type (defaults to string)
+ * @template CTX - Optional context type (defaults to empty object)
+ * @template PT - Plain type of T without reset (for internal use)
  *
  * @example
  * ```typescript
@@ -895,58 +653,234 @@ export interface KeyItem<K, V> {
  * // Each key gets its own ResolveOnce
  * const result1 = cache.get('key1').once(() => expensiveCalc1());
  * const result2 = cache.get('key2').once(() => expensiveCalc2());
+ *
+ * // Delete specific key
+ * cache.delete('key1');
+ *
+ * // Iterate over all resolved entries
+ * cache.forEach((item) => {
+ *   console.log(item.key, item.value.Ok);
+ * });
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // With custom key type and context
+ * interface UserKey { org: string; id: string; }
+ * interface UserContext { apiKey: string; }
+ *
+ * const users = new KeyedResolvOnce<User, UserKey, UserContext>({
+ *   key2string: (key) => `${key.org}:${key.id}`,
+ *   ctx: { apiKey: 'default' },
+ *   lru: { max: 100 }
+ * });
+ *
+ * const user = users.get({ org: 'acme', id: '123' })
+ *   .once(({ givenKey, ctx }) => fetchUser(givenKey, ctx));
  * ```
  */
-export class KeyedResolvOnce<T, K = string, CTX extends NonNullable<object> = object>
-  implements Omit<KeyedIf<ResolveOnce<T, AddKey<CTX, K>>, K>, "forEach" | "keys" | "values" | "entries">
+export class KeyedResolvOnce<T extends WithOptionalReset<PT>, K = string, CTX extends NonNullable<object> = object, PT = T>
+  implements
+    Omit<
+      // KeyedIf<ResolveOnce<T, KeyedNgItemWithoutValue<K, CTX>>, WithOptionalReset<T>, K>
+      KeyedIf<
+        KeyedNgItem<K, ResolveOnce<T, KeyedNgItemWithoutValue<K, CTX>>, CTX>,
+        ResolveOnce<T, KeyedNgItemWithoutValue<K, CTX>>,
+        K,
+        CTX
+      >,
+      "entries" | "forEach" | "onSet" | "onDelete" | "values" | "setParam"
+    >
 {
-  readonly _keyed: KeyedIf<ResolveOnce<T, AddKey<CTX, K>>, K>;
-  constructor(kp: Partial<AddKeyedParam<K, ResolveOnce<T, CTX>, CTX>> = {}) {
-    this._keyed = new Keyed(
-      (ctx) => new ResolveOnce<T, AddKey<CTX, K>>(ctx),
-      kp as AddKeyedParam<K, ResolveOnce<T, AddKey<CTX, K>>, CTX>,
-    );
+  /** @internal */
+  readonly _keyed: KeyedNg<K, ResolveOnce<WithOptionalReset<T>, KeyedNgItemWithoutValue<K, CTX>>, CTX>;
+
+  /**
+   * Creates a new KeyedResolvOnce instance.
+   *
+   * @param kp - Configuration options (key2string, ctx, lru)
+   */
+  constructor(kp: Partial<AddKeyedParam<K, T, CTX>> = {}) {
+    this._keyed = new KeyedNg({
+      createValue: (
+        item: KeyedNgItem<K, ResolveOnce<T, KeyedNgItemWithoutValue<K, CTX>>, CTX>,
+      ): ResolveOnce<T, KeyedNgItemWithoutValue<K, CTX>> => {
+        return new ResolveOnce<T, KeyedNgItemWithoutValue<K, CTX>>({
+          ...item,
+          ctx: kp.ctx ?? item.ctx,
+        });
+      },
+      key2string: kp.key2string,
+      ctx: kp.ctx as CTX,
+      lru: kp.lru,
+    });
   }
+
+  /**
+   * Returns all keys currently in the collection.
+   *
+   * @returns Array of all keys
+   */
   keys(): K[] {
-    const results: K[] = [];
-    this.forEach((k) => {
-      results.push(k.key);
+    return this._keyed.keys();
+  }
+
+  /**
+   * Returns all resolved items with their values wrapped in Result.
+   *
+   * Only includes items that have been resolved (ready state).
+   * Each item contains the key, Result-wrapped value, and full item metadata.
+   *
+   * @returns Array of all resolved items
+   *
+   * @example
+   * ```typescript
+   * const items = cache.values();
+   * items.forEach(({ key, value }) => {
+   *   if (value.Ok) {
+   *     console.log(key, value.unwrap());
+   *   } else {
+   *     console.error(key, value.unwrapErr());
+   *   }
+   * });
+   * ```
+   */
+  values(): KeyedResolveOnceItem<K, T, CTX>[] {
+    return this._keyed
+      .values()
+      .filter((i) => i.value.ready)
+      .map((item) => ({
+        key: item.givenKey,
+        value: item.value.error ? Result.Err<T>(item.value.error) : Result.Ok<T>(item.value.value as T),
+        item,
+      }));
+  }
+
+  /**
+   * Registers a callback that fires when a new ResolveOnce instance is created.
+   *
+   * @param fn - Callback receiving the key and ResolveOnce instance
+   * @returns Unregister function
+   */
+  onSet(fn: (key: K, value: ResolveOnce<T, KeyedNgItemWithoutValue<K, CTX>>) => void): UnregFn {
+    return this._keyed.onSet((item) => {
+      fn(item.givenKey, item.value);
     });
-    return results;
   }
-  values(): KeyItem<K, T>[] {
-    const results: KeyItem<K, T>[] = [];
-    this.forEach((v) => {
-      results.push(v);
+
+  /**
+   * Registers a callback that fires when a ResolveOnce instance is deleted.
+   *
+   * @param fn - Callback receiving the key and ResolveOnce instance
+   * @returns Unregister function
+   */
+  onDelete(fn: (key: K, value: ResolveOnce<T, KeyedNgItemWithoutValue<K, CTX>>) => void): UnregFn {
+    return this._keyed.onDelete((item) => {
+      fn(item.givenKey, item.value);
     });
-    return results;
   }
-  onSet(fn: (key: K, value: ResolveOnce<T, AddKey<CTX, K>>) => void): UnregFn {
-    return this._keyed.onSet(fn);
+
+  /**
+   * Updates the LRU parameters dynamically.
+   *
+   * @param params - New LRU parameters
+   */
+  setParam(params: Partial<AddKeyedParam<K, ResolveOnce<T, CTX>, CTX>>): void {
+    this._keyed.setParam({ lru: params.lru });
   }
-  onDelete(fn: (key: K, value: ResolveOnce<T, AddKey<CTX, K>>) => void): UnregFn {
-    return this._keyed.onDelete(fn);
-  }
-  setParam(params: KeyedParam<K, ResolveOnce<T, AddKey<CTX, K>>>): void {
-    this._keyed.setParam(params);
-  }
-  asyncGet(key: () => Promise<K>): Promise<ResolveOnce<T, AddKey<CTX, K>>> {
+
+  /**
+   * Asynchronously gets or creates a ResolveOnce for a key resolved from a promise.
+   *
+   * @param key - Function returning a promise that resolves to the key
+   * @returns Promise resolving to the ResolveOnce instance
+   */
+  asyncGet(key: () => Promise<K>): Promise<ResolveOnce<T, KeyedNgItemWithoutValue<K, CTX>>> {
     return this._keyed.asyncGet(key);
   }
-  get(key: K | (() => K)): ResolveOnce<T, AddKey<CTX, K>> {
-    return this._keyed.get(key);
+
+  /**
+   * Gets or creates a ResolveOnce instance for the given key.
+   *
+   * This is the primary method for accessing ResolveOnce instances. Each unique
+   * key gets its own instance that persists across calls.
+   *
+   * @param key - The key or function returning the key
+   * @param ctx - Optional context override for this operation
+   * @returns The ResolveOnce instance for this key
+   *
+   * @example
+   * ```typescript
+   * const result = cache.get('myKey').once(({ refKey, givenKey, ctx }) => {
+   *   return computeValue(givenKey, ctx);
+   * });
+   * ```
+   */
+  get(key: K | (() => K), ctx?: CTX): ResolveOnce<T, KeyedNgItemWithoutValue<K, CTX>> {
+    if (typeof key === "function") {
+      key = (key as () => K)();
+    }
+    return this._keyed.getItem(key, ctx).value;
   }
+
+  /**
+   * Gets or creates the complete KeyedNgItem for a key.
+   *
+   * Useful when you need access to the full item structure including metadata.
+   *
+   * @param key - The key to get
+   * @param ctx - Optional context override
+   * @returns The complete KeyedNgItem
+   */
+  getItem(key: K, ctx?: CTX): KeyedNgItem<K, ResolveOnce<T, KeyedNgItemWithoutValue<K, CTX>>, CTX> {
+    return this._keyed.getItem(key, ctx);
+  }
+
+  /**
+   * Checks if a key exists in the collection.
+   *
+   * @param key - The key or function returning the key
+   * @returns True if the key exists
+   */
   has(key: K | (() => K)): boolean {
     return this._keyed.has(key);
   }
+
+  /**
+   * Deletes an entry from the collection.
+   *
+   * Triggers onDelete callbacks before removal.
+   *
+   * @param key - The key to delete
+   */
   delete(key: K): void {
     this._keyed.delete(key);
   }
+
+  /**
+   * Resets and removes an entry from the collection.
+   *
+   * Calls the optional reset() method on the value before deletion,
+   * allowing for cleanup operations.
+   *
+   * @param key - The key to reset and delete
+   */
   unget(key: K): void {
-    this._keyed.unget(key);
+    const item = this._keyed.getItem(key);
+    item.value.reset?.();
+    return this._keyed.delete(item.givenKey);
   }
+
+  /**
+   * Resets all entries by calling their optional reset() methods.
+   *
+   * Does not remove entries from the collection, only resets their state.
+   * Useful for cleanup without losing the collection structure.
+   */
   reset(): void {
-    this._keyed.reset();
+    for (const v of this._keyed.values()) {
+      v.value.reset?.();
+    }
   }
 
   /**
@@ -955,25 +889,54 @@ export class KeyedResolvOnce<T, K = string, CTX extends NonNullable<object> = ob
    * Only yields entries that have been resolved (ready state).
    * Values are wrapped in Result to distinguish success from error.
    *
-   * @yields Key-result pairs for completed entries
+   * @param fn - Callback receiving KeyItem and index
+   *
+   * @example
+   * ```typescript
+   * cache.forEach((item, idx) => {
+   *   console.log(idx, item.key);
+   *   if (item.value.Ok) {
+   *     console.log('Success:', item.value.unwrap());
+   *   } else {
+   *     console.error('Error:', item.value.unwrapErr());
+   *   }
+   * });
+   * ```
    */
   forEach(fn: (ki: KeyItem<K, T>, idx: number) => void): void {
-    let idx = 0;
-    for (const [k, v] of this._keyed.entries()) {
+    for (const [item, idx] of this._keyed.entries()) {
+      const v = item.value;
+      const k = item.givenKey;
       if (!v.ready) {
         continue;
       }
       if (v.error) {
-        fn({ key: k, value: Result.Err<T>(v.error) }, idx++);
+        fn({ key: k, value: Result.Err<T>(v.error) }, idx);
       } else {
-        fn({ key: k, value: Result.Ok<T>(v.value as T) }, idx++);
+        fn({ key: k, value: Result.Ok<T>(v.value as T) }, idx);
       }
     }
   }
 
+  /**
+   * Returns an iterable of all completed entries.
+   *
+   * Only yields entries that have been resolved. Values are wrapped in Result.
+   *
+   * @returns Iterable of KeyItem entries
+   *
+   * @example
+   * ```typescript
+   * for (const item of cache.entries()) {
+   *   console.log(item.key, item.value.Ok);
+   * }
+   * ```
+   */
   *entries(): Iterable<KeyItem<K, T>> {
     /* this is not optimal, but sufficient for now */
-    for (const [k, v] of this._keyed.entries()) {
+    for (const [item] of this._keyed.entries()) {
+      const v = item.value;
+      const k = item.givenKey;
       if (!v.ready) {
         continue;
       }
@@ -987,36 +950,13 @@ export class KeyedResolvOnce<T, K = string, CTX extends NonNullable<object> = ob
 }
 
 /**
- * Type helper that adds a key property to a context object.
- *
- * Used by keyed collections to provide the current key to factory functions and callbacks.
- *
- * @template X - The context type
- * @template K - The key type
- *
- * @example
- * ```typescript
- * type MyContext = { userId: string };
- * type WithKey = AddKey<MyContext, number>;
- * // Result: { userId: string, key: number }
- * ```
- */
-export type AddKey<X extends NonNullable<object>, K> = X & { key: K };
-
-/**
- * Configuration type for KeyedResolvSeq.
- * @internal
- */
-type WithCTX<K, T, CTX extends NonNullable<object>> = KeyedParam<K, ResolveSeq<T, AddKey<CTX, K>>> & { readonly ctx: CTX };
-
-/**
  * Keyed collection of ResolveSeq instances.
  *
  * Manages a map of ResolveSeq instances indexed by keys, with optional LRU caching.
  * Each key gets its own ResolveSeq instance for sequential execution of operations.
  *
- * @template T - The return type of the ResolveSeq instances
- * @template K - The key type
+ * @template VALUEType - The return type of the ResolveSeq instances
+ * @template KEYType - The key type
  * @template CTX - Optional context type
  *
  * @example
@@ -1028,13 +968,30 @@ type WithCTX<K, T, CTX extends NonNullable<object>> = KeyedParam<K, ResolveSeq<T
  * sequences.get('user2').add(() => updateUser2());
  * ```
  */
-export class KeyedResolvSeq<T extends NonNullable<unknown>, K = string, CTX extends NonNullable<object> = object> extends Keyed<
-  ResolveSeq<T, AddKey<CTX, K>>,
-  K,
-  CTX
-> {
-  constructor(kp: Partial<WithCTX<K, T, CTX>> = {}) {
-    super((ctx) => new ResolveSeq<T, AddKey<CTX, K>>(ctx), kp);
+export class KeyedResolvSeq<
+  VALUEType extends NonNullable<unknown>,
+  KEYType = string,
+  CTX extends NonNullable<object> = object,
+> extends KeyedNg<KEYType, ResolveSeq<VALUEType, KeyedNgItemWithoutValue<KEYType, CTX>>, CTX> {
+  /**
+   * Creates a new KeyedResolvSeq instance.
+   *
+   * @param kp - Configuration options (key2string, ctx, lru)
+   */
+  constructor(kp: Partial<Omit<KeyedNgOptions<KEYType, VALUEType, CTX>, "createValue">> = {}) {
+    super({
+      createValue: (
+        item: KeyedNgItem<KEYType, ResolveSeq<VALUEType, KeyedNgItemWithoutValue<KEYType, CTX>>, CTX>,
+      ): ResolveSeq<VALUEType, KeyedNgItemWithoutValue<KEYType, CTX>> => {
+        return new ResolveSeq<VALUEType, KeyedNgItemWithoutValue<KEYType, CTX>>({
+          ...item,
+          ctx: kp.ctx ?? item.ctx,
+        });
+      },
+      key2string: kp.key2string,
+      ctx: kp.ctx as CTX,
+      lru: kp.lru,
+    });
   }
 }
 
