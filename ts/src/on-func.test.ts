@@ -1,4 +1,5 @@
-import { OnFunc } from "./on-func.js";
+import { Future } from "./future.js";
+import { OnFunc, OnFuncReturn } from "./on-func.js";
 import { sleep } from "./promise-sleep.js";
 
 // Base message interface
@@ -36,16 +37,16 @@ export interface FPCCError extends FPCCMsgBase {
 export type FPCCMessage = FPCCEvtNeedsLogin | FPCCError;
 
 interface OnMessageBase {
-  onMessage(fn: (event: MessageEvent<unknown>) => void): () => void;
+  onMessage(fn: (event: MessageEvent<unknown>) => unknown): () => void;
   onFPCCMessage(fn: (msg: FPCCMessage, srcEvent: MessageEvent<unknown>) => void): () => void;
   onFPCCEvtNeedsLogin(fn: (msg: FPCCEvtNeedsLogin, srcEvent: MessageEvent<unknown>) => void): () => void;
 }
 
 class OnFunctionTest implements OnMessageBase {
-  readonly onFunAction = OnFunc<(a: number, b: string) => void>();
+  readonly onFunAction = OnFunc<(a: number, b: string) => unknown>();
   readonly onVoidAction = OnFunc<() => void>();
 
-  readonly onMessage = OnFunc<(event: MessageEvent<unknown>) => void>();
+  readonly onMessage = OnFunc<(event: MessageEvent<unknown>) => unknown>();
   readonly onFPCCMessage = OnFunc<(msg: FPCCMessage, srcEvent: MessageEvent<unknown>) => void>();
   readonly onFPCCEvtNeedsLogin = OnFunc<(msg: FPCCEvtNeedsLogin, srcEvent: MessageEvent<unknown>) => void>();
 }
@@ -100,4 +101,44 @@ it("OnFunctionTest clear", () => {
   test.onFunAction.clear();
   test.onFunAction.invoke(1, "23");
   expect(fn.mock.calls).toEqual([]);
+});
+
+it("OnFunctionTest unregister from the callback", async () => {
+  const test = new OnFunctionTest();
+  const fn2 = vi.fn();
+  let fn1Stop = 2;
+  const fn1 = vi.fn(() => {
+    return --fn1Stop === 0 ? OnFuncReturn.UNREGISTER : undefined;
+  });
+  let fn3Stop = 2;
+  const waitForFn3 = new Future<void>();
+  const fn3 = vi.fn(() => {
+    if (--fn3Stop === 0) {
+      waitForFn3.resolve();
+      return OnFuncReturn.UNREGISTER;
+    }
+  });
+  test.onFunAction(fn1);
+  test.onFunAction(fn2);
+  test.onFunAction(fn3);
+
+  test.onFunAction.invoke(1, "13");
+  test.onFunAction.invoke(2, "23");
+  test.onFunAction.invoke(3, "33");
+  test.onFunAction.invoke(4, "43");
+  await waitForFn3.asPromise();
+  expect(fn1.mock.calls).toEqual([
+    [1, "13"],
+    [2, "23"],
+  ]);
+  expect(fn2.mock.calls).toEqual([
+    [1, "13"],
+    [2, "23"],
+    [3, "33"],
+    [4, "43"],
+  ]);
+  expect(fn3.mock.calls).toEqual([
+    [1, "13"],
+    [2, "23"],
+  ]);
 });

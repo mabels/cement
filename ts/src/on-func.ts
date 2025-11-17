@@ -1,18 +1,36 @@
+import { isPromise } from "./is-promise.js";
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 class OnFuncInstance<Args extends any[]> {
-  readonly #fns = new Set<(...a: Args) => void>();
+  readonly #fns = new Set<(...a: Args) => unknown>();
 
   addFunction(fn: (...a: Args) => unknown): () => void {
     this.#fns.add(fn);
     return () => {
-      this.#fns.delete(fn);
+      this.unreg(OnFuncReturn.UNREGISTER, fn);
     };
+  }
+
+  private unreg(ret: unknown, fn: (...a: Args) => unknown): unknown {
+    // console.log("unreg", ret, OnFuncReturn, OnFuncReturn[ret as keyof typeof OnFuncReturn]);
+    if (ret === OnFuncReturn.UNREGISTER || ret === OnFuncReturn.ONCE) {
+      this.#fns.delete(fn);
+      return undefined;
+    }
+    return ret;
   }
 
   public invoke(...a: Args): void {
     for (const fn of this.#fns) {
       try {
-        fn(...a);
+        const couldByPlainOrPromise = fn(...a);
+        if (isPromise(couldByPlainOrPromise)) {
+          void couldByPlainOrPromise.then((ret) => {
+            this.unreg(ret, fn);
+          });
+        } else {
+          this.unreg(couldByPlainOrPromise, fn);
+        }
       } catch (e) {
         // ignore errors
       }
@@ -24,19 +42,28 @@ class OnFuncInstance<Args extends any[]> {
   }
 
   public async invokeAsync(...a: Args): Promise<void> {
-    await Promise.allSettled(Array.from(this.#fns).map((fn) => Promise.resolve(fn(...a))));
+    await Promise.allSettled(Array.from(this.#fns).map((fn) => Promise.resolve(fn(...a)).then((ret) => this.unreg(ret, fn))));
   }
 }
 
+export const OnFuncReturn: {
+  readonly UNREGISTER: symbol;
+  readonly ONCE: symbol;
+} = {
+  UNREGISTER: Symbol("ONFUNC_UNREGISTER"),
+  ONCE: Symbol("ONFUNC_ONCE"),
+} as const;
+export type OnFuncReturn = (typeof OnFuncReturn)[keyof typeof OnFuncReturn];
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-interface ReturnOnFunc<Args extends any[]> {
-  (fn: (...a: Args) => unknown): () => void; // returns unregister function
+interface ReturnOnFunc<Args extends any[], X = unknown> {
+  (fn: (...a: Args) => OnFuncReturn | X): () => unknown; // returns unregister function
   invoke(...a: Args): void;
   invokeAsync(...a: Args): Promise<void>;
   clear(): void;
 }
 
-type ExtractArgs<T> = T extends (...args: infer A) => unknown ? A : never;
+type ExtractArgs<T, X> = T extends (...args: infer A) => OnFuncReturn | X ? A : never;
 
 /**
  * Creates a type-safe event emitter for a specific function signature.
@@ -76,12 +103,13 @@ type ExtractArgs<T> = T extends (...args: infer A) => unknown ? A : never;
  * onUserLogin.clear();
  * ```
  */
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function OnFunc<Fn extends (...args: any[]) => unknown>(): ReturnOnFunc<ExtractArgs<Fn>> {
-  const instance = new OnFuncInstance<ExtractArgs<Fn>>();
-  const ret = instance.addFunction.bind(instance) as ReturnOnFunc<ExtractArgs<Fn>>;
-  ret.invoke = instance.invoke.bind(instance) as ReturnOnFunc<ExtractArgs<Fn>>["invoke"];
-  ret.invokeAsync = instance.invokeAsync.bind(instance) as ReturnOnFunc<ExtractArgs<Fn>>["invokeAsync"];
-  ret.clear = instance.clear.bind(instance) as ReturnOnFunc<ExtractArgs<Fn>>["clear"];
+export function OnFunc<Fn extends (...args: any[]) => OnFuncReturn | X, X = unknown>(): ReturnOnFunc<ExtractArgs<Fn, X>> {
+  const instance = new OnFuncInstance<ExtractArgs<Fn, X>>();
+  const ret = instance.addFunction.bind(instance) as ReturnOnFunc<ExtractArgs<Fn, X>>;
+  ret.invoke = instance.invoke.bind(instance) as ReturnOnFunc<ExtractArgs<Fn, X>>["invoke"];
+  ret.invokeAsync = instance.invokeAsync.bind(instance) as ReturnOnFunc<ExtractArgs<Fn, X>>["invokeAsync"];
+  ret.clear = instance.clear.bind(instance) as ReturnOnFunc<ExtractArgs<Fn, X>>["clear"];
   return ret;
 }
