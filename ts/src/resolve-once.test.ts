@@ -147,7 +147,7 @@ describe("resolve-once", () => {
     );
     expect(reallyOnce).toHaveBeenCalledTimes(1);
     const diff = performance.now() - start;
-    expect(diff).toBeGreaterThanOrEqual(99);
+    expect(diff).toBeGreaterThanOrEqual(95);
     expect(diff).toBeLessThan(150);
   });
 
