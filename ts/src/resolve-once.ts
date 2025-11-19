@@ -564,8 +564,6 @@ export class ResolveOnce<T, CTX = void> implements ResolveOnceIf<T, CTX> {
   reset<R>(fn?: (c: CTX) => R): ResultOnce<R> {
     if (this.#state === "initial") {
       if (!fn) {
-        // eslint-disable-next-line no-console
-        console.warn("ResolveOnce.reset called but not yet resolved and no fn given");
         return undefined as ResultOnce<R>;
       }
       return this.once(fn as (c: CTX) => R);
