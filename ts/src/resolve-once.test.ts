@@ -903,6 +903,29 @@ describe("Lazy Initialization", () => {
     expect(await lazy()).toBe(3);
     expect(await lazy()).toBe(3);
   });
+
+  it("KeyedResolveOnce and resetAfter", async () => {
+    const keyed = new KeyedResolvOnce<number, number>({
+      resetAfter: 50,
+    });
+
+    let initVal = 0;
+    function onces(initVal: number): number[] {
+      return Array(5)
+        .fill(0)
+        .map((_, idx) => keyed.get(idx).once(() => initVal));
+    }
+    expect(onces(++initVal)).toEqual(Array(5).fill(initVal));
+    await sleep(10);
+    expect(onces(initVal)).toEqual(Array(5).fill(initVal));
+    await sleep(60);
+    expect(onces(++initVal)).toEqual(Array(5).fill(initVal));
+    await sleep(10);
+    expect(onces(initVal)).toEqual(Array(5).fill(initVal));
+    await sleep(60);
+    expect(onces(++initVal)).toEqual(Array(5).fill(initVal));
+    expect(onces(initVal)).toEqual(Array(5).fill(initVal));
+  });
 });
 
 interface Key2Hash {

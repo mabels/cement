@@ -812,10 +812,15 @@ export class KeyedResolvOnce<T extends WithOptionalReset<PT>, K = string, CTX ex
       createValue: (
         item: KeyedNgItem<K, ResolveOnce<T, KeyedNgItemWithoutValue<K, CTX>>, CTX>,
       ): ResolveOnce<T, KeyedNgItemWithoutValue<K, CTX>> => {
-        return new ResolveOnce<T, KeyedNgItemWithoutValue<K, CTX>>({
-          ...item,
-          ctx: kp.ctx ?? item.ctx,
-        });
+        return new ResolveOnce<T, KeyedNgItemWithoutValue<K, CTX>>(
+          {
+            ...item,
+            ctx: kp.ctx ?? item.ctx,
+          },
+          {
+            resetAfter: kp.resetAfter,
+          },
+        );
       },
       key2string: kp.key2string,
       ctx: kp.ctx as CTX,

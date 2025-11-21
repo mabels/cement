@@ -194,6 +194,8 @@ export interface KeyedNgOptions<K, V, CTX> {
    */
   readonly ctx?: CTX;
 
+  readonly resetAfter?: number;
+
   /**
    * Optional LRU cache configuration.
    *
@@ -356,6 +358,7 @@ export class KeyedNg<K, V, CTX> implements KeyedIf<KeyedNgItem<K, V, CTX>, V, K,
           return JSON.stringify(toSortedObject(key as unknown as Record<string, unknown>));
         }),
       ctx: opts.ctx ?? ({} as CTX),
+      resetAfter: opts.resetAfter ?? 0,
     };
     this.#map = new LRUMap(opts.lru as LRUParam<KeyedNgItem<K, V, CTX>, string>);
   }
