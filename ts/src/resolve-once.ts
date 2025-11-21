@@ -182,12 +182,18 @@ export interface ResolveOnceIf<R, CTX = void> {
  * @internal
  */
 export class SyncResolveOnce<T, CTX = void> {
-  state: ResolveState = "initial";
-
   #value?: T;
   #error?: Error;
 
   readonly queueLength = 0;
+
+  readonly #state: StateInstance;
+  readonly #rOnce: ResolveOnce<T, CTX>;
+
+  constructor(rOnce: ResolveOnce<T, CTX>, state: StateInstance) {
+    this.#state = state;
+    this.#rOnce = rOnce;
+  }
 
   /**
    * Gets the cached value if available.
@@ -207,12 +213,7 @@ export class SyncResolveOnce<T, CTX = void> {
    * Returns true if the function has been executed.
    */
   get ready(): boolean {
-    return this.state === "processed";
-  }
-
-  readonly #ctx?: CTX;
-  constructor(ctx?: CTX) {
-    this.#ctx = ctx;
+    return this.#state.isProcessed();
   }
 
   /**
@@ -224,14 +225,16 @@ export class SyncResolveOnce<T, CTX = void> {
    * @throws Error if the function returned a promise (use AsyncResolveOnce instead)
    */
   resolve(fn: (ctx?: CTX) => T): T {
-    if (this.state === "initial") {
-      this.state = "processed";
+    if (this.#state.isProcessing()) {
       try {
-        this.#value = fn(this.#ctx);
+        this.#value = fn(this.#rOnce._ctx);
       } catch (e) {
         this.#error = e as Error;
+      } finally {
+        this.#state.setProcessed();
+        this.#rOnce.setProcessed(this.#state);
       }
-      if (isPromise(this.value)) {
+      if (isPromise(this.#value)) {
         throw new Error("SyncResolveOnce.once fn returned a promise");
       }
     }
@@ -248,10 +251,10 @@ export class SyncResolveOnce<T, CTX = void> {
    * @returns The result if fn provided, undefined otherwise
    */
   reset(fn?: (c?: CTX) => T): T | undefined {
-    this.state = "initial";
     this.#value = undefined;
     this.#error = undefined;
     if (fn) {
+      this.#state.setProcessing();
       return this.resolve(fn);
     }
     return undefined as T;
@@ -263,15 +266,18 @@ export class SyncResolveOnce<T, CTX = void> {
  * Handles queuing of multiple concurrent requests for the same async operation.
  * @internal
  */
-class AsyncResolveItem<T> {
-  readonly id = Math.random();
-  #state: ResolveState = "initial";
+class AsyncResolveItem<T, CTX> {
+  readonly id: number = Math.random();
   readonly #toResolve: Promise<UnPromisify<T>>;
   #value: Option<UnPromisify<T>> = Option.None();
   #error?: Error;
+  readonly #state: StateInstance;
+  readonly #rOnce: ResolveOnce<T, CTX>;
 
-  constructor(fn: Promise<UnPromisify<T>>) {
+  constructor(fn: Promise<UnPromisify<T>>, rOnce: ResolveOnce<T, CTX>, state: StateInstance) {
     this.#toResolve = fn;
+    this.#state = state;
+    this.#rOnce = rOnce;
   }
 
   get value(): UnPromisify<T> | undefined {
@@ -292,7 +298,7 @@ class AsyncResolveItem<T> {
    * Returns true if this item has completed and has no pending futures.
    */
   isDisposable(): boolean {
-    return this.#state === "processed" && this.#queue.length === 0;
+    return this.#state.isProcessed() && this.#queue.length === 0;
   }
 
   #resolveFuture(future?: Future<UnPromisify<T>>): void {
@@ -315,15 +321,14 @@ class AsyncResolveItem<T> {
     if (this.#value.IsSome()) {
       return Promise.resolve(this.#value.Unwrap());
     }
-    throw new Error("AsyncResolveItem.#promiseResult impossible");
+    throw new Error(`AsyncResolveItem.#promiseResult impossible: ${this.#state.getResolveState()}`);
   }
 
   /**
    * Resolves the async operation, queuing the request if already in progress.
    */
   resolve(): T {
-    if (this.#state === "initial") {
-      this.#state = "waiting";
+    if (this.#state.isWaiting()) {
       const future = new Future<UnPromisify<T>>();
       this.#queue.push(future);
       this.#toResolve
@@ -334,22 +339,24 @@ class AsyncResolveItem<T> {
           this.#error = e as Error;
         })
         .finally(() => {
-          this.#state = "processed";
+          this.#state.setProcessed();
+          this.#rOnce.setProcessed(this.#state);
           while (this.#queue.length > 0) {
             this.#resolveFuture(this.#queue.shift());
           }
         });
       return future.asPromise() as T;
     }
-    if (this.#state === "processed") {
+
+    if (this.#state.isProcessed()) {
       return this.#promiseResult() as T;
     }
-    if (this.#state === "waiting") {
-      const future = new Future<UnPromisify<T>>();
-      this.#queue.push(future);
-      return future.asPromise() as T;
-    }
-    throw new Error("AsyncResolveItem.resolve impossible");
+    // if (this.#state.isWaiting()) {
+    //   const future = new Future<UnPromisify<T>>();
+    //   this.#queue.push(future);
+    //   return future.asPromise() as T;
+    // }
+    throw new Error(`AsyncResolveItem.resolve impossible: ${this.#state.getResolveState()}`);
   }
 }
 
@@ -364,17 +371,30 @@ class AsyncResolveItem<T> {
  * @template CTX - Optional context type
  * @internal
  */
+
+function isAsyncResolveOnce<T, CTX>(obj: SyncOrAsync<T, CTX>): obj is Option<AsyncResolveOnce<T, CTX>> {
+  return obj.IsSome() && obj.Unwrap() instanceof AsyncResolveOnce;
+}
+
 export class AsyncResolveOnce<T, CTX = void> {
-  state: ResolveState = "initial";
+  // #state: ResolveState = "initial";
+  readonly #state: StateInstance;
 
-  readonly #queue: AsyncResolveItem<T>[] = [];
+  readonly #queue: AsyncResolveItem<T, CTX>[];
 
-  readonly #ctx?: CTX;
-  constructor(ctx?: CTX) {
-    this.#ctx = ctx;
+  readonly #rOnce: ResolveOnce<T, CTX>;
+  //readonly #ctx?: CTX;
+  constructor(rOnce: ResolveOnce<T, CTX>, state: StateInstance, prev: SyncOrAsync<T, CTX>) {
+    this.#state = state;
+    this.#rOnce = rOnce;
+    if (isAsyncResolveOnce(prev)) {
+      this.#queue = [...prev.unwrap().#queue];
+    } else {
+      this.#queue = [];
+    }
   }
 
-  #active(): AsyncResolveItem<T> {
+  #active(): AsyncResolveItem<T, CTX> {
     const r = this.#queue[this.#queue.length - 1];
     if (!r) {
       throw new Error("AsyncResolveOnce.#active impossible");
@@ -390,17 +410,10 @@ export class AsyncResolveOnce<T, CTX = void> {
   }
 
   /**
-   * Returns true if the async operation has started.
-   */
-  get ready(): boolean {
-    return this.state !== "initial";
-  }
-
-  /**
    * Gets the cached resolved value if available.
    */
   get value(): UnPromisify<T> | undefined {
-    if (this.state === "initial") {
+    if (this.#state.isInitial()) {
       return undefined;
     }
     return this.#active().value;
@@ -410,7 +423,7 @@ export class AsyncResolveOnce<T, CTX = void> {
    * Gets the cached error if one occurred.
    */
   get error(): Error | undefined {
-    if (this.state === "initial") {
+    if (this.#state.isInitial()) {
       return undefined;
     }
     return this.#active().error;
@@ -424,11 +437,11 @@ export class AsyncResolveOnce<T, CTX = void> {
    * @returns A promise that resolves to the function's result
    */
   resolve(fn: (ctx?: CTX) => T): T {
-    if (this.state === "initial") {
-      this.state = "waiting";
+    if (this.#state.isProcessing()) {
+      this.#state.setWaiting();
       let promiseResult: Promise<UnPromisify<T>>;
       try {
-        const couldBePromise = fn(this.#ctx);
+        const couldBePromise = fn(this.#rOnce._ctx);
         if (!isPromise(couldBePromise)) {
           promiseResult = Promise.resolve(couldBePromise as UnPromisify<T>);
         } else {
@@ -437,7 +450,7 @@ export class AsyncResolveOnce<T, CTX = void> {
       } catch (e) {
         promiseResult = Promise.reject(e as Error);
       }
-      this.#queue.push(new AsyncResolveItem(promiseResult));
+      this.#queue.push(new AsyncResolveItem<T, CTX>(promiseResult, this.#rOnce, this.#state));
     }
     // remove all disposable items
     this.#queue
@@ -457,7 +470,7 @@ export class AsyncResolveOnce<T, CTX = void> {
    * @returns The result if fn provided, undefined otherwise
    */
   reset(fn?: (c?: CTX) => T): T {
-    this.state = "initial";
+    this.#state.setProcessing();
     if (fn) {
       return this.resolve(fn);
     }
@@ -489,91 +502,187 @@ export class AsyncResolveOnce<T, CTX = void> {
  * expensiveOp.reset();
  * ```
  */
-export class ResolveOnce<T, CTX = void> implements ResolveOnceIf<T, CTX> {
+
+export interface ResolveOnceOpts {
+  readonly resetAfter?: number; // milliseconds after which to reset the cached value
+}
+
+class StateInstance {
+  readonly id: number = Math.random();
   #state: ResolveState = "initial";
 
-  #syncOrAsync: Option<SyncResolveOnce<never, CTX> | AsyncResolveOnce<never, CTX>> = Option.None();
+  // get state(): ResolveState {
+  //   return this.#state;
+  // }
+  getResolveState(): ResolveState {
+    return this.#state;
+  }
 
-  readonly #ctx?: CTX;
-  constructor(ctx?: CTX) {
-    this.#ctx = ctx;
+  isInitial(): boolean {
+    return this.#state === "initial";
+  }
+
+  isProcessed(): boolean {
+    return this.#state === "processed";
+  }
+  setProcessed(): void {
+    this.#state = "processed";
+  }
+
+  isProcessing(): boolean {
+    return this.#state === "processing";
+  }
+  setProcessing(): void {
+    this.#state = "processing";
+  }
+
+  isWaiting(): boolean {
+    return this.#state === "waiting";
+  }
+
+  setWaiting(): void {
+    this.#state = "waiting";
+  }
+
+  equals(other: StateInstance): boolean {
+    return this.id === other.id;
+  }
+}
+
+type SyncOrAsync<T, CTX> = Option<SyncResolveOnce<T, CTX> | AsyncResolveOnce<T, CTX>>;
+
+export class ResolveOnce<T, CTX = void> implements ResolveOnceIf<T, CTX> {
+  #state = new StateInstance();
+
+  #syncOrAsync: SyncOrAsync<T, CTX> = Option.None();
+
+  readonly #opts: ResolveOnceOpts;
+  resetAfterTimer?: ReturnType<typeof setTimeout>;
+
+  readonly _ctx?: CTX;
+  constructor(ctx?: CTX, opts?: ResolveOnceOpts) {
+    this._ctx = ctx;
+    this.#opts = opts ?? {};
+  }
+
+  get state(): ResolveState {
+    return this.#state.getResolveState();
+  }
+
+  // activeState(state: StateInstance): StateInstance | undefined {
+  //   if (this.#state.equals(state)) {
+  //     return this.#state;
+  //   }
+  //   return undefined;
+  // }
+
+  setProcessed(state: StateInstance): void {
+    if (this.resetAfterTimer) {
+      clearTimeout(this.resetAfterTimer);
+    }
+    if (this.#state.equals(state)) {
+      this.#state.setProcessed();
+      if (typeof this.#opts.resetAfter === "number" && this.#opts.resetAfter > 0) {
+        this.resetAfterTimer = setTimeout(() => {
+          this.reset();
+        }, this.#opts.resetAfter);
+      }
+    }
   }
 
   get ready(): boolean {
-    return this.#state !== "initial" && this.#syncOrAsync.Unwrap().ready;
+    return !this.#state.isInitial();
   }
 
   get value(): UnPromisify<T> | undefined {
-    if (this.#state === "initial") {
+    if (this.#state.isInitial()) {
       return undefined;
     }
     return this.#syncOrAsync.Unwrap().value as UnPromisify<T>;
   }
 
   get queueLength(): number {
-    if (this.#state === "initial") {
+    if (this.#state.isInitial()) {
       return 0;
     }
     return this.#syncOrAsync.Unwrap().queueLength;
   }
 
   get error(): Error | undefined {
-    if (this.#state === "initial") {
+    if (this.#state.isInitial()) {
       return undefined;
     }
     return this.#syncOrAsync.Unwrap().error;
   }
 
-  get state(): ResolveState {
-    if (this.#state === "initial") {
-      return "initial";
-    }
-    return this.#syncOrAsync.Unwrap().state;
-  }
+  // get state(): ResolveState {
+  //   return this.#state;
+  // }
+  // set state(value: ResolveState) {
+  //   console.log(`ResolveOnce.state ${this.#state} -> ${value}`);
+  //   if (value === "processed") {
+  //     if (this.resetAfterTimer) {
+  //       clearTimeout(this.resetAfterTimer);
+  //     }
+  //     if (typeof this.#opts.resetAfter === "number" && this.#opts.resetAfter > 0) {
+  //       console.log("setting reset timer for", this.#opts.resetAfter);
+  //       this.resetAfterTimer = setTimeout(() => {
+  //         console.log("resetting after", this.#opts.resetAfter);
+  //         this.reset();
+  //       }, this.#opts.resetAfter);
+  //     }
+  //   }
+  //   this.#state = value;
+  // }
 
   once<R>(fn: (c: CTX) => R): ResultOnce<R> {
     let resultFn: (ctx: CTX) => R;
-    if (this.#state === "initial") {
-      this.#state = "processing";
+    if (this.#state.isInitial()) {
+      const state = this.#state;
       try {
+        state.setProcessing();
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-        const isSyncOrAsync = fn(this.#ctx ?? ({} as CTX)) as R;
+        const isSyncOrAsync = fn(this._ctx ?? ({} as CTX)) as R;
         if (isPromise(isSyncOrAsync)) {
-          this.#syncOrAsync = Option.Some(new AsyncResolveOnce<never, CTX>(this.#ctx));
+          this.#syncOrAsync = Option.Some(new AsyncResolveOnce<T, CTX>(this, state, this.#syncOrAsync));
         } else {
-          this.#syncOrAsync = Option.Some(new SyncResolveOnce<never, CTX>(this.#ctx));
+          this.#syncOrAsync = Option.Some(new SyncResolveOnce<T, CTX>(this, state));
         }
         resultFn = (): R => isSyncOrAsync;
       } catch (e) {
-        this.#syncOrAsync = Option.Some(new SyncResolveOnce<never, CTX>(this.#ctx));
+        this.#syncOrAsync = Option.Some(new SyncResolveOnce<T, CTX>(this, state));
         resultFn = (): R => {
           throw e;
         };
-      } finally {
-        this.#state = "processed";
       }
     } else {
       resultFn = fn;
     }
     if (!this.#syncOrAsync) {
-      throw new Error("ResolveOnce.once impossible");
+      throw new Error(`ResolveOnce.once impossible: state=${this.#state.getResolveState()}`);
     }
     return this.#syncOrAsync.Unwrap().resolve(resultFn as (c?: CTX) => never) as ResultOnce<R>;
   }
 
   reset<R>(fn?: (c: CTX) => R): ResultOnce<R> {
-    if (this.#state === "initial") {
+    if (this.#state.isInitial()) {
       if (!fn) {
         return undefined as ResultOnce<R>;
       }
       return this.once(fn as (c: CTX) => R);
     }
-    if (this.#state === "processing") {
+    if (this.#state.isProcessing()) {
       // eslint-disable-next-line no-console
       console.warn("ResolveOnce.reset dropped was called while processing");
       return undefined as ResultOnce<R>;
     }
-    return this.#syncOrAsync.Unwrap().reset(fn as (c?: CTX) => never) as ResultOnce<R>;
+    let ret = undefined as ResultOnce<R>;
+    this.#state = new StateInstance();
+    if (fn) {
+      ret = this.once(fn as (c: CTX) => R);
+      // ret = this.#syncOrAsync.Unwrap().reset(fn as (c?: CTX) => never) as ResultOnce<R>
+    }
+    return ret;
   }
 }
 
@@ -998,8 +1107,11 @@ export class KeyedResolvSeq<
  * @internal
  */
 class LazyContainer<T> {
-  readonly resolveOnce = new ResolveOnce<T>();
+  readonly resolveOnce: ResolveOnce<T>;
 
+  constructor(opts?: ResolveOnceOpts) {
+    this.resolveOnce = new ResolveOnce<T>(undefined, opts);
+  }
   call<Args extends readonly unknown[], Return>(fn: (...args: Args) => Return): () => Return {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-explicit-any
     return (...args: Args) => this.resolveOnce.once(() => fn(...args) as any) as unknown as Return;
@@ -1029,7 +1141,11 @@ class LazyContainer<T> {
  * getConfig(); // Returns cached config without logging
  * ```
  */
-export function Lazy<Args extends readonly unknown[], Return>(fn: (...args: Args) => Return): (...args: Args) => Return {
-  const lazy = new LazyContainer<Return>();
+
+export function Lazy<Args extends readonly unknown[], Return>(
+  fn: (...args: Args) => Return,
+  opts?: ResolveOnceOpts,
+): (...args: Args) => Return {
+  const lazy = new LazyContainer<Return>(opts);
   return lazy.call(fn);
 }

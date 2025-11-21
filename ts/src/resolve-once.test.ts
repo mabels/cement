@@ -1,5 +1,6 @@
 import { Result, KeyedResolvOnce, ResolveOnce, ResolveSeq, Lazy, Future, KeyedResolvSeq, KeyedNgItem } from "@adviser/cement";
 import { isPromise } from "./is-promise.js";
+import { sleep } from "./promise-sleep.js";
 
 describe("resolve-once", () => {
   it("sequence", async () => {
@@ -863,6 +864,44 @@ describe("Lazy Initialization", () => {
     expect(await my.action()).toEqual({ sync: 43, async: 44, asyncPass: 46, passIn: 42 });
     expect(await my.action()).toEqual({ sync: 43, async: 44, asyncPass: 46, passIn: 42 });
     expect(await my.action()).toEqual({ sync: 43, async: 44, asyncPass: 46, passIn: 42 });
+  });
+
+  it("Sync Lazy With Renew Timer", async () => {
+    let initVal = 0;
+    const lazy = Lazy(
+      () => {
+        return ++initVal;
+      },
+      { resetAfter: 50 },
+    );
+    expect(lazy()).toBe(1);
+    await sleep(10);
+    expect(lazy()).toBe(1);
+    await sleep(60);
+    expect(lazy()).toBe(2);
+    expect(lazy()).toBe(2);
+    await sleep(60);
+    expect(lazy()).toBe(3);
+    expect(lazy()).toBe(3);
+  });
+
+  it("Async Lazy With Renew Timer", async () => {
+    let initVal = 0;
+    const lazy = Lazy(
+      () => {
+        return Promise.resolve(++initVal);
+      },
+      { resetAfter: 50 },
+    );
+    expect(await lazy()).toBe(1);
+    await sleep(10);
+    expect(await lazy()).toBe(1);
+    await sleep(60);
+    expect(await lazy()).toBe(2);
+    expect(await lazy()).toBe(2);
+    await sleep(60);
+    expect(await lazy()).toBe(3);
+    expect(await lazy()).toBe(3);
   });
 });
 
