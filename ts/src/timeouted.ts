@@ -24,19 +24,23 @@ const IsTimeoutedImpl: IsTimeouted = {
   },
 };
 
-export interface PurTimeoutResultSuccess<T> extends IsTimeouted {
+export interface PurTimeoutState {
+  readonly state: "success" | "timeout" | "aborted" | "error";
+}
+
+export interface PurTimeoutResultSuccess<T> extends IsTimeouted, PurTimeoutState {
   readonly state: "success";
   readonly value: T;
 }
 
-export interface PurTimeoutResultTimeout extends IsTimeouted {
+export interface PurTimeoutResultTimeout extends IsTimeouted, PurTimeoutState {
   readonly state: "timeout";
 }
-export interface PurTimeoutResultAborted extends IsTimeouted {
+export interface PurTimeoutResultAborted extends IsTimeouted, PurTimeoutState {
   readonly state: "aborted";
   readonly reason: unknown;
 }
-export interface PurTimeoutResultError extends IsTimeouted {
+export interface PurTimeoutResultError extends IsTimeouted, PurTimeoutState {
   readonly state: "error";
   readonly error: Error;
 }
@@ -58,6 +62,33 @@ export type TimeoutResult<T, CTX = unknown> =
   | TimeoutResultTimeout<CTX>
   | TimeoutResultAborted<CTX>
   | TimeoutResultError<CTX>;
+
+export type ObjTimeoutResultSuccess<T, CTX> = Omit<
+  PurTimeoutResultSuccess<T>,
+  "isSuccess" | "isTimeout" | "isAborted" | "isError"
+> &
+  Partial<IsTimeouted> &
+  Partial<TimeoutState<CTX>>;
+export type ObjTimeoutResultTimeout<CTX> = Omit<PurTimeoutResultTimeout, "isSuccess" | "isTimeout" | "isAborted" | "isError"> &
+  Partial<IsTimeouted> &
+  Partial<TimeoutState<CTX>>;
+export type ObjTimeoutResultAborted<CTX> = Omit<PurTimeoutResultAborted, "isSuccess" | "isTimeout" | "isAborted" | "isError"> &
+  Partial<IsTimeouted> &
+  Partial<TimeoutState<CTX>>;
+export type ObjTimeoutResultError<CTX> = Omit<PurTimeoutResultError, "isSuccess" | "isTimeout" | "isAborted" | "isError"> &
+  Partial<IsTimeouted> &
+  Partial<TimeoutState<CTX>>;
+type PurTimeoutResultObj<T, CTX = unknown> =
+  | ObjTimeoutResultSuccess<T, CTX>
+  | ObjTimeoutResultTimeout<CTX>
+  | ObjTimeoutResultAborted<CTX>
+  | ObjTimeoutResultError<CTX>;
+
+export function createTimeoutResult<T, CTX = unknown, TR extends PurTimeoutResultObj<T, CTX> = PurTimeoutResultObj<T, CTX>>(
+  t: TR,
+): PurTimeoutResult<T> {
+  return { ...IsTimeoutedImpl, ...t } as PurTimeoutResult<T>;
+}
 
 export type ActionFunc<T> = (controller: AbortController) => Promise<T>;
 
@@ -256,7 +287,12 @@ export async function timeouted<T, CTX = void>(
 
   const abortToAwait = new Future<PurTimeoutResultAborted>();
   function onAbortHandler(): void {
-    abortToAwait.resolve({ state: "aborted" as const, reason: controller.signal.reason as unknown, ...IsTimeoutedImpl });
+    abortToAwait.resolve(
+      createTimeoutResult<T, CTX>({
+        state: "aborted" as const,
+        reason: controller.signal.reason as unknown,
+      }) as PurTimeoutResultAborted,
+    );
   }
   controller.signal.addEventListener("abort", onAbortHandler);
   toRemoveEventListeners.push(() => {
@@ -265,8 +301,8 @@ export async function timeouted<T, CTX = void>(
 
   const toRace: Promise<PurTimeoutResult<T>>[] = [
     toAwait
-      .then((value) => ({ state: "success" as const, value, ...IsTimeoutedImpl }))
-      .catch((error: Error) => ({ state: "error" as const, error, ...IsTimeoutedImpl })),
+      .then((value) => createTimeoutResult<T, CTX>({ state: "success" as const, value }))
+      .catch((error: Error) => createTimeoutResult<T, CTX>({ state: "error" as const, error })),
     abortToAwait.asPromise(),
   ];
   if (timeout > 0) {
@@ -274,11 +310,11 @@ export async function timeouted<T, CTX = void>(
       sleep(timeout, controller.signal).then((r): PurTimeoutResult<T> => {
         switch (true) {
           case r.isOk:
-            return { state: "timeout" as const, ...IsTimeoutedImpl };
+            return createTimeoutResult<T, CTX>({ state: "timeout" as const });
           case r.isErr:
-            return { state: "error" as const, error: r.error, ...IsTimeoutedImpl };
+            return createTimeoutResult<T, CTX>({ state: "error" as const, error: r.error });
           case r.isAborted:
-            return { state: "aborted" as const, reason: r.reason, ...IsTimeoutedImpl };
+            return createTimeoutResult<T, CTX>({ state: "aborted" as const, reason: r.reason });
         }
         throw new Error("Unreachable code in timeoutAction");
       }),
