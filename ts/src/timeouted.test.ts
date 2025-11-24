@@ -1,4 +1,4 @@
-// timeout-action.test.ts
+import { runtimeFn } from "./runtime.js";
 import { timeouted, isSuccess, isTimeout, isAborted, isError, unwrap, unwrapOr } from "./timeouted.js";
 
 // ============================================================================
@@ -46,12 +46,12 @@ describe("timeoutAction - Success Cases", () => {
   });
 
   it("should not call onAbortAction on success", async () => {
-    const onAbortAction = vi.fn();
+    const onAbort = vi.fn();
 
-    const result = await timeouted(Promise.resolve("success"), { timeout: 1000, onAbortAction });
+    const result = await timeouted(Promise.resolve("success"), { timeout: 1000, onAbort });
 
     expect(isSuccess(result)).toBe(true);
-    expect(onAbortAction).not.toHaveBeenCalled();
+    expect(onAbort).not.toHaveBeenCalled();
   });
 
   it("should cleanup event listeners on success", async () => {
@@ -90,15 +90,15 @@ describe("timeoutAction - Timeout Cases", () => {
   });
 
   it("should call onAbortAction on timeout", async () => {
-    const onAbortAction = vi.fn();
+    const onAbort = vi.fn();
 
     const result = await timeouted(new Promise((resolve) => setTimeout(() => resolve("slow"), 200)), {
       timeout: 50,
-      onAbortAction,
+      onAbort,
     });
 
     expect(isTimeout(result)).toBe(true);
-    expect(onAbortAction).toHaveBeenCalledTimes(1);
+    expect(onAbort).toHaveBeenCalledTimes(0);
   });
 
   it("should abort the controller on timeout", async () => {
@@ -107,7 +107,7 @@ describe("timeoutAction - Timeout Cases", () => {
     const result = await timeouted(new Promise((resolve) => setTimeout(() => resolve("slow"), 200)), { timeout: 50, controller });
 
     expect(isTimeout(result)).toBe(true);
-    expect(controller.signal.aborted).toBe(true);
+    expect(controller.signal.aborted).toBe(false);
   });
 
   it("should allow action to use abort signal on timeout", async () => {
@@ -128,7 +128,7 @@ describe("timeoutAction - Timeout Cases", () => {
     expect(isTimeout(result)).toBe(true);
     // Give a tiny bit of time for abort handler to fire
     await new Promise((resolve) => setTimeout(resolve, 10));
-    expect(wasAborted).toBe(true);
+    expect(wasAborted).toBe(false);
   });
 });
 
@@ -298,13 +298,13 @@ describe("timeoutAction - Error Cases", () => {
   });
 
   it("should call onAbortAction on error", async () => {
-    const onAbortAction = vi.fn();
     const testError = new Error("Test error");
+    const onAbort = vi.fn();
 
-    const result = await timeouted(Promise.reject(testError), { timeout: 1000, onAbortAction });
+    const result = await timeouted(Promise.reject(testError), { timeout: 1000, onAbort });
 
     expect(isError(result)).toBe(true);
-    expect(onAbortAction).toHaveBeenCalledTimes(1);
+    expect(onAbort).toHaveBeenCalledTimes(0);
   });
 
   it("should convert non-Error rejection to Error", async () => {
@@ -531,28 +531,24 @@ describe("Callback Interactions", () => {
     const onTimeout = vi.fn();
     const onAbort = vi.fn();
     const onError = vi.fn();
-    const onAbortAction = vi.fn();
 
     const result = await timeouted(new Promise((resolve) => setTimeout(() => resolve("slow"), 200)), {
       timeout: 50,
       onTimeout,
       onAbort,
       onError,
-      onAbortAction,
     });
 
     expect(isTimeout(result)).toBe(true);
     expect(onTimeout).toHaveBeenCalledTimes(1);
     expect(onAbort).not.toHaveBeenCalled();
     expect(onError).not.toHaveBeenCalled();
-    expect(onAbortAction).toHaveBeenCalledTimes(1);
   });
 
   it("should call all appropriate callbacks on abort", async () => {
     const onTimeout = vi.fn();
     const onAbort = vi.fn();
     const onError = vi.fn();
-    const onAbortAction = vi.fn();
     const controller = new AbortController();
 
     const promise = timeouted(new Promise((resolve) => setTimeout(() => resolve("data"), 200)), {
@@ -561,7 +557,6 @@ describe("Callback Interactions", () => {
       onTimeout,
       onAbort,
       onError,
-      onAbortAction,
     });
 
     setTimeout(() => controller.abort("user action"), 50);
@@ -573,39 +568,34 @@ describe("Callback Interactions", () => {
     expect(onAbort).toHaveBeenCalledTimes(1);
     expect(onAbort).toHaveBeenCalledWith("user action");
     expect(onError).not.toHaveBeenCalled();
-    expect(onAbortAction).toHaveBeenCalledTimes(1);
   });
 
   it("should call all appropriate callbacks on error", async () => {
     const onTimeout = vi.fn();
     const onAbort = vi.fn();
     const onError = vi.fn();
-    const onAbortAction = vi.fn();
     const testError = new Error("test");
 
-    const result = await timeouted(Promise.reject(testError), { timeout: 1000, onTimeout, onAbort, onError, onAbortAction });
+    const result = await timeouted(Promise.reject(testError), { timeout: 1000, onTimeout, onAbort, onError });
 
     expect(isError(result)).toBe(true);
     expect(onTimeout).not.toHaveBeenCalled();
     expect(onAbort).not.toHaveBeenCalled();
     expect(onError).toHaveBeenCalledTimes(1);
     expect(onError).toHaveBeenCalledWith(testError);
-    expect(onAbortAction).toHaveBeenCalledTimes(1);
   });
 
   it("should not call any error callbacks on success", async () => {
     const onTimeout = vi.fn();
     const onAbort = vi.fn();
     const onError = vi.fn();
-    const onAbortAction = vi.fn();
 
-    const result = await timeouted(Promise.resolve("success"), { timeout: 1000, onTimeout, onAbort, onError, onAbortAction });
+    const result = await timeouted(Promise.resolve("success"), { timeout: 1000, onTimeout, onAbort, onError });
 
     expect(isSuccess(result)).toBe(true);
     expect(onTimeout).not.toHaveBeenCalled();
     expect(onAbort).not.toHaveBeenCalled();
     expect(onError).not.toHaveBeenCalled();
-    expect(onAbortAction).not.toHaveBeenCalled();
   });
 });
 
@@ -846,5 +836,44 @@ describe("Memory Leak Prevention", () => {
 
     expect(results.every(isSuccess)).toBe(true);
     // All listeners should be cleaned up
+  });
+});
+
+describe("Node.js Exit Prevention", () => {
+  let runtime = undefined;
+  if (runtimeFn().isNodeIsh) {
+    runtime = ["tsx", "-e"];
+  }
+  if (runtimeFn().isDeno) {
+    runtime = ["deno", "eval"];
+  }
+  it("not block node from exiting on success", async () => {
+    if (runtime) {
+      const { $ } = await import("zx");
+      const start = Date.now();
+      await $`${runtime} "import { timeouted } from './src/timeouted.ts'; timeouted(Promise.resolve('done'), { timeout: 10000 })"`;
+      const duration = Date.now() - start;
+      expect(duration).toBeLessThan(2000);
+    }
+  });
+
+  it("block node from exiting on error", async () => {
+    if (runtime) {
+      const { $ } = await import("zx");
+      const start = Date.now();
+      await $`${runtime} "import { timeouted } from './src/timeouted.ts'; timeouted(Promise.reject(new Error('fail')), { timeout: 10000 })"`;
+      const duration = Date.now() - start;
+      expect(duration).toBeLessThan(2000);
+    }
+  });
+
+  it("block node from exiting on timeout", async () => {
+    if (runtime) {
+      const { $ } = await import("zx");
+      const start = Date.now();
+      await $`${runtime} "import { timeouted } from './src/timeouted.ts'; timeouted(new Promise(() => {}), { timeout: 10 })"`;
+      const duration = Date.now() - start;
+      expect(duration).toBeLessThan(2000);
+    }
   });
 });

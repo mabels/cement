@@ -54,7 +54,7 @@ export interface TimeoutActionOptions<CTX> {
   onTimeout: () => void;
   onAbort: (reason: unknown) => void;
   onError: (error: Error) => void;
-  onAbortAction: (reason: unknown) => void;
+  // onAbortAction: (reason: unknown) => void;
 }
 
 // ============================================================================
@@ -184,7 +184,7 @@ export async function timeouted<T, CTX = void>(
   action: TimeoutAction<T>,
   options: Partial<TimeoutActionOptions<CTX>> = {},
 ): Promise<TimeoutResult<T>> {
-  const { timeout = 30000, signal, controller: externalController, ctx, onTimeout, onAbort, onError, onAbortAction } = options;
+  const { timeout = 30000, signal, controller: externalController, ctx, onTimeout, onAbort, onError } = options;
 
   const controller = externalController || new AbortController();
   const startTime = Date.now();
@@ -207,7 +207,7 @@ export async function timeouted<T, CTX = void>(
     }
     toRemoveEventListeners.length = 0;
     if (!skipCleanupAction) {
-      void onAbortAction?.(signal?.reason);
+      // void onAbortAction?.(signal?.reason);
       controller.abort(new Error("Timeouted Abort Action"));
     }
     return {
@@ -263,16 +263,16 @@ export async function timeouted<T, CTX = void>(
   const res = await Promise.race(toRace);
   switch (true) {
     case res.state === "success":
-      return cleanup(res, true);
+      return cleanup(res);
     case res.state === "aborted":
       onAbort?.(res.reason);
-      return cleanup(res);
+      return cleanup(res, true);
     case res.state === "error":
       onError?.(res.error);
       return cleanup(res);
     case res.state === "timeout":
       onTimeout?.();
-      return cleanup(res);
+      return cleanup(res, true);
   }
   throw new Error("Unreachable code in timeoutAction");
 }
