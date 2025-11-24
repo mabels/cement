@@ -1,6 +1,6 @@
 import { sleep } from "./promise-sleep.js";
 import { runtimeFn } from "./runtime.js";
-import { timeouted, isSuccess, isTimeout, isAborted, isError, unwrap, unwrapOr } from "./timeouted.js";
+import { timeouted, isSuccess, isTimeout, isAborted, isError, unwrap, unwrapOr, createTimeoutResult } from "./timeouted.js";
 
 // ============================================================================
 // BASIC SUCCESS SCENARIOS
@@ -941,6 +941,62 @@ describe("Node.js Exit Prevention", () => {
       await $`${runtime} "import { timeouted } from './src/timeouted.ts'; timeouted(new Promise(() => {}), { timeout: 10 })"`;
       const duration = Date.now() - start;
       expect(duration).toBeLessThan(2000);
+    }
+  });
+});
+
+describe("createTimeoutResult", () => {
+  it("should create success result", () => {
+    const result = createTimeoutResult({
+      state: "success",
+      value: "data",
+    });
+    if (isSuccess(result)) {
+      expect(isSuccess(result)).toBe(true);
+      expect(result.value).toBe("data");
+      expect(result.duration).toBeGreaterThanOrEqual(0);
+    } else {
+      assert.fail("Result should be success");
+    }
+  });
+
+  it("should create abort result", () => {
+    const result = createTimeoutResult({
+      state: "aborted",
+      reason: "user abort",
+    });
+    if (isAborted(result)) {
+      expect(isAborted(result)).toBe(true);
+      expect(result.reason).toBe("user abort");
+      expect(result.duration).toBeGreaterThanOrEqual(0);
+    } else {
+      assert.fail("Result should be aborted");
+    }
+  });
+
+  it("should create error result", () => {
+    const result = createTimeoutResult({
+      state: "error",
+      error: new Error("user abort"),
+    });
+    if (isError(result)) {
+      expect(isError(result)).toBe(true);
+      expect(result.error.message).toBe("user abort");
+      expect(result.duration).toBeGreaterThanOrEqual(0);
+    } else {
+      assert.fail("Result should be error");
+    }
+  });
+
+  it("should create timeout result", () => {
+    const result = createTimeoutResult({
+      state: "timeout",
+    });
+    if (isTimeout(result)) {
+      expect(isTimeout(result)).toBe(true);
+      expect(result.duration).toBeGreaterThanOrEqual(0);
+    } else {
+      assert.fail("Result should be timeout");
     }
   });
 });
