@@ -2,19 +2,41 @@ import { Future } from "./future.js";
 import { isPromise } from "./is-promise.js";
 import { sleep } from "./promise-sleep.js";
 
-export interface PurTimeoutResultSuccess<T> {
+export interface IsTimeouted {
+  isSuccess(): this is TimeoutResultSuccess<unknown>;
+  isTimeout(): this is TimeoutResultTimeout<unknown>;
+  isAborted(): this is TimeoutResultAborted<unknown>;
+  isError(): this is TimeoutResultError<unknown>;
+}
+
+const IsTimeoutedImpl: IsTimeouted = {
+  isSuccess(): this is TimeoutResultSuccess<unknown> {
+    return (this as TimeoutResult<unknown>).state === "success";
+  },
+  isTimeout(): this is TimeoutResultTimeout<unknown> {
+    return (this as TimeoutResult<unknown>).state === "timeout";
+  },
+  isAborted(): this is TimeoutResultAborted<unknown> {
+    return (this as TimeoutResult<unknown>).state === "aborted";
+  },
+  isError(): this is TimeoutResultError<unknown> {
+    return (this as TimeoutResult<unknown>).state === "error";
+  },
+};
+
+export interface PurTimeoutResultSuccess<T> extends IsTimeouted {
   readonly state: "success";
   readonly value: T;
 }
 
-export interface PurTimeoutResultTimeout {
+export interface PurTimeoutResultTimeout extends IsTimeouted {
   readonly state: "timeout";
 }
-export interface PurTimeoutResultAborted {
+export interface PurTimeoutResultAborted extends IsTimeouted {
   readonly state: "aborted";
   readonly reason: unknown;
 }
-export interface PurTimeoutResultError {
+export interface PurTimeoutResultError extends IsTimeouted {
   readonly state: "error";
   readonly error: Error;
 }
@@ -227,13 +249,14 @@ export async function timeouted<T, CTX = void>(
       return cleanup({
         state: "error",
         error: error instanceof Error ? error : new Error(error as string),
+        ...IsTimeoutedImpl,
       });
     }
   }
 
   const abortToAwait = new Future<PurTimeoutResultAborted>();
   function onAbortHandler(): void {
-    abortToAwait.resolve({ state: "aborted" as const, reason: controller.signal.reason as unknown });
+    abortToAwait.resolve({ state: "aborted" as const, reason: controller.signal.reason as unknown, ...IsTimeoutedImpl });
   }
   controller.signal.addEventListener("abort", onAbortHandler);
   toRemoveEventListeners.push(() => {
@@ -241,7 +264,9 @@ export async function timeouted<T, CTX = void>(
   });
 
   const toRace: Promise<PurTimeoutResult<T>>[] = [
-    toAwait.then((value) => ({ state: "success" as const, value })).catch((error: Error) => ({ state: "error" as const, error })),
+    toAwait
+      .then((value) => ({ state: "success" as const, value, ...IsTimeoutedImpl }))
+      .catch((error: Error) => ({ state: "error" as const, error, ...IsTimeoutedImpl })),
     abortToAwait.asPromise(),
   ];
   if (timeout > 0) {
@@ -249,11 +274,11 @@ export async function timeouted<T, CTX = void>(
       sleep(timeout, controller.signal).then((r): PurTimeoutResult<T> => {
         switch (true) {
           case r.isOk:
-            return { state: "timeout" as const };
+            return { state: "timeout" as const, ...IsTimeoutedImpl };
           case r.isErr:
-            return { state: "error" as const, error: r.error };
+            return { state: "error" as const, error: r.error, ...IsTimeoutedImpl };
           case r.isAborted:
-            return { state: "aborted" as const, reason: r.reason };
+            return { state: "aborted" as const, reason: r.reason, ...IsTimeoutedImpl };
         }
         throw new Error("Unreachable code in timeoutAction");
       }),

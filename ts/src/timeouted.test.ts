@@ -1,3 +1,4 @@
+import { sleep } from "./promise-sleep.js";
 import { runtimeFn } from "./runtime.js";
 import { timeouted, isSuccess, isTimeout, isAborted, isError, unwrap, unwrapOr } from "./timeouted.js";
 
@@ -596,6 +597,72 @@ describe("Callback Interactions", () => {
     expect(onTimeout).not.toHaveBeenCalled();
     expect(onAbort).not.toHaveBeenCalled();
     expect(onError).not.toHaveBeenCalled();
+  });
+});
+
+describe("isTimeouted isTypeGuard Consistency", () => {
+  it("isSuccess", async () => {
+    const timed = await timeouted(Promise.resolve("data"), { timeout: 1000 });
+    expect(isSuccess(timed)).toBe(true);
+    expect(timed.isSuccess()).toBe(true);
+    expect(isTimeout(timed)).toBe(false);
+    expect(timed.isTimeout()).toBe(false);
+    expect(isAborted(timed)).toBe(false);
+    expect(timed.isAborted()).toBe(false);
+    expect(isError(timed)).toBe(false);
+    expect(timed.isError()).toBe(false);
+  });
+
+  it("isTimeout", async () => {
+    const timed = await timeouted(sleep(10000), { timeout: 10 });
+    expect(isSuccess(timed)).toBe(false);
+    expect(timed.isSuccess()).toBe(false);
+    expect(isTimeout(timed)).toBe(true);
+    expect(timed.isTimeout()).toBe(true);
+    expect(isAborted(timed)).toBe(false);
+    expect(timed.isAborted()).toBe(false);
+    expect(isError(timed)).toBe(false);
+    expect(timed.isError()).toBe(false);
+  });
+
+  it("isAbort controller", async () => {
+    const controller = new AbortController();
+    setTimeout(() => controller.abort(), 10);
+    const timed = await timeouted(sleep(10000), { timeout: 100000, controller: controller });
+    expect(isSuccess(timed)).toBe(false);
+    expect(timed.isSuccess()).toBe(false);
+    expect(isTimeout(timed)).toBe(false);
+    expect(timed.isTimeout()).toBe(false);
+    expect(isAborted(timed)).toBe(true);
+    expect(timed.isAborted()).toBe(true);
+    expect(isError(timed)).toBe(false);
+    expect(timed.isError()).toBe(false);
+  });
+
+  it("isAbort signal", async () => {
+    const controller = new AbortController();
+    setTimeout(() => controller.abort(), 10);
+    const timed = await timeouted(sleep(10000), { timeout: 100000, signal: controller.signal });
+    expect(isSuccess(timed)).toBe(false);
+    expect(timed.isSuccess()).toBe(false);
+    expect(isTimeout(timed)).toBe(false);
+    expect(timed.isTimeout()).toBe(false);
+    expect(isAborted(timed)).toBe(true);
+    expect(timed.isAborted()).toBe(true);
+    expect(isError(timed)).toBe(false);
+    expect(timed.isError()).toBe(false);
+  });
+
+  it("isError", async () => {
+    const timed = await timeouted(Promise.reject(new Error("data")), { timeout: 1000 });
+    expect(isSuccess(timed)).toBe(false);
+    expect(timed.isSuccess()).toBe(false);
+    expect(isTimeout(timed)).toBe(false);
+    expect(timed.isTimeout()).toBe(false);
+    expect(isAborted(timed)).toBe(false);
+    expect(timed.isAborted()).toBe(false);
+    expect(isError(timed)).toBe(true);
+    expect(timed.isError()).toBe(true);
   });
 });
 
