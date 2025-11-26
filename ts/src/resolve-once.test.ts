@@ -233,19 +233,25 @@ describe("resolve-once", () => {
       keyed.get(() => "b").once(b_orderFn),
     ]);
     expect(a_orderFn).toHaveBeenCalledTimes(1);
-    expect(a_orderFn).toHaveBeenCalledWith({
-      refKey: "a",
-      givenKey: "a",
-      value: undefined,
-      ctx: {},
-    });
+    expect(a_orderFn).toHaveBeenCalledWith(
+      {
+        refKey: "a",
+        givenKey: "a",
+        value: undefined,
+        ctx: {},
+      },
+      undefined,
+    );
     expect(b_orderFn).toHaveBeenCalledTimes(1);
-    expect(b_orderFn).toHaveBeenCalledWith({
-      refKey: "b",
-      givenKey: "b",
-      value: undefined,
-      ctx: {},
-    });
+    expect(b_orderFn).toHaveBeenCalledWith(
+      {
+        refKey: "b",
+        givenKey: "b",
+        value: undefined,
+        ctx: {},
+      },
+      undefined,
+    );
   });
 
   it("keyedResolvOnce with pass ctx & {key: K}", () => {
@@ -325,19 +331,25 @@ describe("resolve-once", () => {
         .then((resolveOnce) => resolveOnce.once(b_orderFn)),
     ]);
     expect(a_orderFn).toHaveBeenCalledTimes(1);
-    expect(a_orderFn).toHaveBeenCalledWith({
-      ctx: {},
-      givenKey: "a",
-      refKey: "a",
-      value: undefined,
-    });
+    expect(a_orderFn).toHaveBeenCalledWith(
+      {
+        ctx: {},
+        givenKey: "a",
+        refKey: "a",
+        value: undefined,
+      },
+      undefined,
+    );
     expect(b_orderFn).toHaveBeenCalledTimes(1);
-    expect(b_orderFn).toHaveBeenCalledWith({
-      ctx: {},
-      givenKey: "b",
-      refKey: "b",
-      value: undefined,
-    });
+    expect(b_orderFn).toHaveBeenCalledWith(
+      {
+        ctx: {},
+        givenKey: "b",
+        refKey: "b",
+        value: undefined,
+      },
+      undefined,
+    );
   });
 
   function shuffle<T>(array: T[]): T[] {
