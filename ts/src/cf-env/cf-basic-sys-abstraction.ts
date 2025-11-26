@@ -1,12 +1,11 @@
-import type {
+import {
+  BaseBasicRuntimeSysAbstractionParams,
   BaseBasicSysAbstraction,
-  BasicRuntimeService,
-  BasicSysAbstraction,
-  Env,
-  EnvFactory,
-  TxtEnDecoder,
-  WithCementWrapperSysAbstractionParams,
-} from "@adviser/cement";
+  WrapperBasicSysAbstraction,
+} from "../base-sys-abstraction.js";
+import { BasicRuntimeService, BasicSysAbstraction } from "../sys-abstraction.js";
+import { Env, envFactory, EnvFactory } from "../sys-env.js";
+import { TxtEnDecoder, TxtEnDecoderSingleton } from "../txt-en-decoder.js";
 
 export class CFRuntimeService implements BasicRuntimeService {
   readonly _txtEnDe: TxtEnDecoder;
@@ -72,15 +71,15 @@ function CFWriteableStream(writeFn: (chunk: Uint8Array) => Promise<void>): Writa
 }
 
 let baseSysAbstraction: BaseBasicSysAbstraction | undefined = undefined;
-export function CFBasicSysAbstraction(param: WithCementWrapperSysAbstractionParams): BasicSysAbstraction {
-  const ende = param?.TxtEnDecoder || param.cement.TxtEnDecoderSingleton();
+export function CFBasicSysAbstraction(param: Partial<BaseBasicRuntimeSysAbstractionParams>): BasicSysAbstraction {
+  const ende = param?.TxtEnDecoder || TxtEnDecoderSingleton();
   baseSysAbstraction =
     baseSysAbstraction ??
-    new param.cement.BaseBasicSysAbstraction({
+    new BaseBasicSysAbstraction({
       TxtEnDecoder: ende,
     });
-  return new param.cement.WrapperBasicSysAbstraction(baseSysAbstraction, {
-    basicRuntimeService: new CFRuntimeService(ende, param.cement.envFactory),
+  return new WrapperBasicSysAbstraction(baseSysAbstraction, {
+    basicRuntimeService: new CFRuntimeService(ende, envFactory),
     ...param,
   });
 }

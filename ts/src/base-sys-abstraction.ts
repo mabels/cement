@@ -11,11 +11,11 @@ import {
 } from "./sys-abstraction.js";
 import { Time } from "./time.js";
 import { TxtEnDecoder } from "./txt-en-decoder.js";
-import { WebBasicSysAbstraction } from "./web/web-basic-sys-abstraction.js";
+import { WebBasicSysAbstraction } from "./web-env/index.js";
 import { Env } from "./sys-env.js";
-import { CFBasicSysAbstraction } from "@adviser/cement/cf";
-import { DenoBasicSysAbstraction } from "./deno/deno-basic-sys-abstraction.js";
-import { NodeBasicSysAbstraction } from "./node/node-basic-sys-abstraction.js";
+import { CFBasicSysAbstraction } from "./cf-env/index.js";
+import { DenoBasicSysAbstraction } from "./deno-env/index.js";
+import { NodeBasicSysAbstraction } from "./node-env/index.js";
 import { WithCement } from "@adviser/cement";
 import { addCement } from "./add-cement-do-not-export.js";
 

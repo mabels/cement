@@ -1,17 +1,18 @@
-import type { EnvActions, EnvImpl, EnvFactoryOpts, Env, WithCement } from "@adviser/cement";
+import { runtimeFn } from "../runtime.js";
+import { Env, EnvActions, EnvFactoryOpts, EnvImpl } from "../sys-env.js";
 
 let once: CFEnvActions | undefined = undefined;
 export class CFEnvActions implements EnvActions {
   readonly injectOnRegister: Record<string, string> = {};
   readonly cfEnv: Map<string, string>;
-  readonly opts: WithCement<Partial<EnvFactoryOpts>>;
+  readonly opts: Partial<EnvFactoryOpts>;
   env?: EnvImpl;
-  static new(opts: WithCement<Partial<EnvFactoryOpts>>): EnvActions {
+  static new(opts: Partial<EnvFactoryOpts> = {}): EnvActions {
     once = once ?? new CFEnvActions(opts);
     return once;
   }
-  static inject(o: Record<string, string>, cement: typeof import("@adviser/cement")): void {
-    const env = CFEnvActions.new({ cement }) as CFEnvActions;
+  static inject(o: Record<string, string>): void {
+    const env = CFEnvActions.new() as CFEnvActions;
     for (const key in o) {
       const value = o[key];
       if (typeof value === "string") {
@@ -23,12 +24,12 @@ export class CFEnvActions implements EnvActions {
       }
     }
   }
-  private constructor(env: WithCement<Partial<EnvFactoryOpts>>) {
+  private constructor(env: Partial<EnvFactoryOpts>) {
     this.cfEnv = new Map<string, string>(Object.entries(env.presetEnv || {}));
     this.opts = env;
   }
   active(): boolean {
-    return this.opts.cement.runtimeFn().isCFWorker;
+    return runtimeFn().isCFWorker;
   }
   register(env: Env): Env {
     this.env = env as EnvImpl;

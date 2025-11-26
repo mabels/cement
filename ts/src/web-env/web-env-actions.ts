@@ -1,4 +1,4 @@
-import type { EnvActions, EnvFactoryOpts, Env } from "@adviser/cement";
+import { Env, EnvActions, EnvFactoryOpts } from "../sys-env.js";
 
 let once: BrowserEnvActions | undefined = undefined;
 export class BrowserEnvActions implements EnvActions {

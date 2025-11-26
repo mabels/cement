@@ -9,7 +9,6 @@ import type {
 } from "@adviser/cement";
 import { NodeFileService } from "./node-file-service.js";
 import process from "node:process";
-import { NodeBasicSysAbstraction } from "./node-basic-sys-abstraction.js";
 
 export class NodeExitServiceImpl implements ExitService {
   constructor() {
@@ -111,7 +110,7 @@ export function NodeSysAbstraction(param: WithCementWrapperSysAbstractionParams)
       SystemService: new NodeSystemService(),
     });
   return new param.cement.WrapperRuntimeSysAbstraction(baseSysAbstraction, {
-    basicRuntimeService: NodeBasicSysAbstraction(param),
+    basicRuntimeService: param.cement.NodeBasicSysAbstraction(param),
     ...param,
   });
 }

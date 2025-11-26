@@ -1,8 +1,8 @@
 /// <reference types="deno" />
 import { Env, EnvActions, EnvFactoryOpts, EnvImpl, envFactory, registerEnvAction, runtimeFn, param } from "@adviser/cement";
-import * as cement from "@adviser/cement";
-import { CFEnvActions } from "@adviser/cement/cf";
-import { BrowserEnvActions } from "@adviser/cement/web";
+import { CFEnvActions } from "./cf-env/index.js";
+import { BrowserEnvActions } from "./web-env/index.js";
+import { addCement } from "./add-cement-do-not-export.js";
 
 describe("sys_env", () => {
   let key: string;
@@ -104,7 +104,7 @@ describe("sys_env", () => {
       const onSet = vi.fn();
       env.onSet(onSet);
 
-      CFEnvActions.inject({ "cf-key": "cf-value" }, cement);
+      CFEnvActions.inject({ "cf-key": "cf-value" });
 
       env.set("cf-key-1", "cf-value-2");
 

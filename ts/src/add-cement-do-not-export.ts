@@ -9,6 +9,7 @@ import {
 import { TxtEnDecoderSingleton } from "./txt-en-decoder.js";
 import { ConsoleWriterStream } from "./utils/console-write-stream.js";
 import { envFactory } from "./sys-env.js";
+import { NodeBasicSysAbstraction } from "./node-env/index.js";
 
 export function addCement<T>(params: T): WithCement<T> {
   return {
@@ -21,6 +22,7 @@ export function addCement<T>(params: T): WithCement<T> {
       envFactory,
       BaseBasicSysAbstraction,
       BaseSysAbstraction,
+      NodeBasicSysAbstraction,
     },
     ...params,
   };

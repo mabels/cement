@@ -1,7 +1,7 @@
-import { DenoEnvActions } from "@adviser/cement/deno";
-import { NodeEnvActions } from "@adviser/cement/node";
-import { BrowserEnvActions } from "@adviser/cement/web";
-import { CFEnvActions } from "@adviser/cement/cf";
+import { DenoEnvActions } from "./deno-env/index.js";
+import { NodeEnvActions } from "./node-env/index.js";
+import { BrowserEnvActions } from "./web-env/index.js";
+import { CFEnvActions } from "./cf-env/index.js";
 import { KeyedResolvOnce } from "./resolve-once.js";
 import { Result } from "./result.js";
 import { wrapImportMetaEnv, ImportMetaEnv } from "@adviser/cement/import-meta-env";

@@ -16,12 +16,12 @@ async function main(): Promise<void> {
     .Logger();
   const rt = runtimeFn();
   if (rt.isNodeIsh) {
-    const { NodeSysAbstraction } = await import("@adviser/cement/node");
+    const { NodeSysAbstraction } = await import("@adviser/cement/node-fs");
     const sys = NodeSysAbstraction({ cement });
     log.Info().Str("id", sys.NextId()).Msg("Node-Alright");
   }
   if (rt.isDeno) {
-    const { DenoSysAbstraction } = await import("@adviser/cement/deno");
+    const { DenoSysAbstraction } = await import("@adviser/cement/deno-fs");
     const sys = DenoSysAbstraction({ cement });
     log.Info().Str("id", sys.NextId()).Msg("Deno-Alright");
   }

@@ -8,10 +8,6 @@
     //    "module": "NodeNext" /* Specify what module code is generated. */,
     "paths": {
       "@adviser/cement": ["./src/index.js"],
-      "@adviser/cement/node": ["./src/node/index.js"],
-      "@adviser/cement/deno": ["./src/deno/index.js"],
-      "@adviser/cement/web": ["./src/web/index.js"],
-      "@adviser/cement/cf": ["./src/cf/index.js"],
       "@adviser/cement/import-meta-env": ["./src/import-meta-env.commonjs.js"]
     },
 

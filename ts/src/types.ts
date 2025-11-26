@@ -29,6 +29,7 @@ export type WithCement<T> = T & {
     readonly envFactory: typeof import("./sys-env.js").envFactory;
     readonly BaseBasicSysAbstraction: typeof import("./base-sys-abstraction.js").BaseBasicSysAbstraction;
     readonly BaseSysAbstraction: typeof import("./base-sys-abstraction.js").BaseSysAbstraction;
+    readonly NodeBasicSysAbstraction: typeof import("./node-env/index.js").NodeBasicSysAbstraction;
   };
 };
 

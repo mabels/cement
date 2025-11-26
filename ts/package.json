@@ -8,7 +8,7 @@
   "exports": {
     ".": {
       "types": "./esm/index.d.ts",
-      "require": "./cjs/index.cjs.cjs",
+      "require": "./cjs/index.cjs",
       "import": "./esm/index.js"
     },
     "./cli": {
@@ -16,25 +16,15 @@
       "require": "./cjs/cli/index.cjs",
       "import": "./esm/cli/index.js"
     },
-    "./web": {
-      "types": "./esm/web/index.d.ts",
-      "require": "./cjs/web/index.cjs",
-      "import": "./esm/web/index.js"
+    "./node-fs": {
+      "types": "./esm/node-fs/index.d.ts",
+      "require": "./cjs/node-fs/index.cjs",
+      "import": "./esm/node-fs/index.js"
     },
-    "./cf": {
-      "types": "./esm/cf/index.d.ts",
-      "require": "./cjs/cf/index.cjs",
-      "import": "./esm/cf/index.js"
-    },
-    "./node": {
-      "types": "./esm/node/index.d.ts",
-      "require": "./cjs/node/index.cjs",
-      "import": "./esm/node/index.js"
-    },
-    "./deno": {
-      "types": "./esm/deno/index.d.ts",
-      "require": "./cjs/deno/index.cjs",
-      "import": "./esm/deno/index.js"
+    "./deno-fs": {
+      "types": "./esm/deno-fs/index.d.ts",
+      "require": "./cjs/deno-fs/index.cjs",
+      "import": "./esm/deno-fs/index.js"
     },
     "./import-meta-env": {
       "types": "./esm/import-meta-env.module.d.ts",
@@ -44,13 +34,14 @@
   },
   "scripts": {
     "clean": "rm -rf dist node_modules",
-    "build": "pnpm run build:tsgo && pnpm run build:js && pnpm run build:deno",
+    "build": "pnpm run build:tsgo && pnpm run build:js && pnpm run build:deno && pnpm run build:isplain",
     "build:tsc": "rm -rf ./dist/ts ; pnpm run /^build:tsc:/",
     "build:tsgo": "rm -rf ./dist/ts ; pnpm run /^build:tsgo:/",
     "build:tsgo:global": "tsgo --noEmit",
     "build:tsgo:esm": "tsgo -p ./tsconfig.esm.json; src/cli/run.sh generateVersionTs -t ./tsconfig.esm.json",
     "build:tsgo:cjs": "tsgo -p ./tsconfig.cjs.json; src/cli/run.sh generateVersionTs -t ./tsconfig.cjs.json",
     "build:js": "rm -rf dist/pkg ; mkdir -p dist/pkg; cp -pr ./dist/ts/* dist/pkg",
+    "build:isplain": "esbuild --bundle src/index.ts --outfile=/dev/null --format=esm",
     "build:deno": "deno publish --dry-run --unstable-sloppy-imports --allow-dirty --set-version 0.0.0-dev --quiet",
     "test": "pnpm run test:js; pnpm run test:deno",
     "test:deno": "deno run --quiet --allow-net --allow-write --allow-run  --allow-sys --allow-ffi  --allow-read --allow-env  ./node_modules/vitest/vitest.mjs --run --project node",

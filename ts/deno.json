@@ -4,10 +4,10 @@
   "license": "AFL-2.0",
   "exports": {
     ".": "./src/index.ts",
-    "./web": "./src/web/index.ts",
-    "./cf": "./src/cf/index.ts",
-    "./node": "./src/node/index.ts",
-    "./deno": "./src/deno/index.ts",
+    "./web-env": "./src/web-env/index.ts",
+    "./cf-env": "./src/cf-env/index.ts",
+    "./node-env": "./src/node-env/index.ts",
+    "./deno-env": "./src/deno-env/index.ts",
     "./cli": "./src/cli/index.ts",
     "./import-meta-env": "./src/import-meta-env.module.ts"
   },

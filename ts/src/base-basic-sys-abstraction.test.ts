@@ -1,56 +1,40 @@
-import { WebBasicSysAbstraction } from "@adviser/cement/web";
-import { CFBasicSysAbstraction } from "@adviser/cement/cf";
+import { WebBasicSysAbstraction } from "./web-env/index.js";
+import { CFBasicSysAbstraction } from "./cf-env/index.js";
 import { runtimeFn } from "./runtime.js";
 import { IDMode, TimeMode, RandomMode, BasicSysAbstraction } from "./sys-abstraction.js";
-import { NodeBasicSysAbstraction } from "@adviser/cement/node";
-import { DenoBasicSysAbstraction } from "@adviser/cement/deno";
+import { NodeBasicSysAbstraction } from "./node-env/index.js";
+import { DenoBasicSysAbstraction } from "./deno-env/index.js";
 import { describe, it, expect } from "vitest";
 import { BaseBasicRuntimeSysAbstractionParams } from "./base-sys-abstraction.js";
-import * as cement from "@adviser/cement";
+import { addCement } from "./add-cement-do-not-export.js";
 
 const abstractions: { name: string; fn: (id?: Partial<BaseBasicRuntimeSysAbstractionParams>) => BasicSysAbstraction }[] = [];
 
 if (runtimeFn().isCFWorker) {
   abstractions.push({
     name: "CFSysAbstraction",
-    fn: (a) =>
-      CFBasicSysAbstraction({
-        ...a,
-        cement,
-      }),
+    fn: (a) => CFBasicSysAbstraction(addCement(a)),
   });
 }
 
 if (runtimeFn().isNodeIsh) {
   abstractions.push({
     name: "NodeSysAbstraction",
-    fn: (a) =>
-      NodeBasicSysAbstraction({
-        ...a,
-        cement,
-      }),
+    fn: (a) => NodeBasicSysAbstraction(addCement(a)),
   });
 }
 
 if (runtimeFn().isDeno) {
   abstractions.push({
     name: "DenoSysAbstraction",
-    fn: (a) =>
-      DenoBasicSysAbstraction({
-        ...a,
-        cement,
-      }),
+    fn: (a) => DenoBasicSysAbstraction(addCement(a)),
   });
 }
 
 if (runtimeFn().isBrowser) {
   abstractions.push({
     name: "WebSysAbstraction",
-    fn: (a) =>
-      WebBasicSysAbstraction({
-        ...a,
-        cement,
-      }),
+    fn: (a) => WebBasicSysAbstraction(addCement(a)),
   });
 }
 

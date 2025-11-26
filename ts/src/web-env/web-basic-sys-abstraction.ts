@@ -1,12 +1,12 @@
-import type {
-  WithCementWrapperSysAbstractionParams,
-  BasicRuntimeService,
+import {
+  BaseBasicRuntimeSysAbstractionParams,
   BaseBasicSysAbstraction,
-  TxtEnDecoder,
-  EnvFactory,
-  Env,
-  BasicSysAbstraction,
-} from "@adviser/cement";
+  WrapperBasicSysAbstraction,
+} from "../base-sys-abstraction.js";
+import { BasicRuntimeService, BasicSysAbstraction } from "../sys-abstraction.js";
+import { Env, envFactory, EnvFactory } from "../sys-env.js";
+import { TxtEnDecoder, TxtEnDecoderSingleton } from "../txt-en-decoder.js";
+import { ConsoleWriterStream } from "../utils/console-write-stream.js";
 
 class WebSystemService implements BasicRuntimeService {
   readonly _txtEnDe: TxtEnDecoder;
@@ -42,15 +42,15 @@ class WebSystemService implements BasicRuntimeService {
 }
 
 let baseBasicSysAbstraction: BaseBasicSysAbstraction | undefined = undefined;
-export function WebBasicSysAbstraction(param: WithCementWrapperSysAbstractionParams): BasicSysAbstraction {
-  const ende = param.TxtEnDecoder ?? param.cement.TxtEnDecoderSingleton();
+export function WebBasicSysAbstraction(param: Partial<BaseBasicRuntimeSysAbstractionParams>): BasicSysAbstraction {
+  const ende = param.TxtEnDecoder ?? TxtEnDecoderSingleton();
   baseBasicSysAbstraction =
     baseBasicSysAbstraction ??
-    new param.cement.BaseBasicSysAbstraction({
+    new BaseBasicSysAbstraction({
       TxtEnDecoder: ende,
     });
-  return new param.cement.WrapperBasicSysAbstraction(baseBasicSysAbstraction, {
-    basicRuntimeService: new WebSystemService(ende, param.cement.envFactory, () => new param.cement.ConsoleWriterStream()),
+  return new WrapperBasicSysAbstraction(baseBasicSysAbstraction, {
+    basicRuntimeService: new WebSystemService(ende, envFactory, () => new ConsoleWriterStream()),
     ...param,
   });
 }

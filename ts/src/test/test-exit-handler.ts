@@ -16,8 +16,8 @@ const gts = globalThis as unknown /*Deno*/ as {
 
 async function main(): Promise<void> {
   const modPath = runtimeFn().isDeno
-    ? new URL("../deno/deno-sys-abstraction.ts", import.meta.url).pathname
-    : new URL("../node/node-sys-abstraction.ts", import.meta.url).pathname;
+    ? new URL("../deno-fs/deno-sys-abstraction.ts", import.meta.url).pathname
+    : new URL("../node-fs/node-sys-abstraction.ts", import.meta.url).pathname;
   // console.log("modPath", modPath);
   const sa = (await import(modPath)) as {
     DenoSysAbstraction: (params: { cement: typeof cement }) => RuntimeSysAbstraction;
