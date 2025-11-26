@@ -635,14 +635,18 @@ export class ResolveOnce<T, CTX = void> implements ResolveOnceIf<T, CTX> {
   //   this.#state = value;
   // }
 
-  once<R>(fn: (c: CTX) => R): ResultOnce<R> {
+  once<R>(fn: (c: CTX, prev?: T) => R): ResultOnce<R> {
     let resultFn: (ctx: CTX) => R;
     if (this.#state.isInitial()) {
       const state = this.#state;
       try {
         state.setProcessing();
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-        const isSyncOrAsync = fn(this._ctx ?? ({} as CTX)) as R;
+        let prev: T | undefined = undefined;
+        if (this.#syncOrAsync.IsSome()) {
+          prev = this.#syncOrAsync.Unwrap().value as T;
+        }
+        const isSyncOrAsync = fn(this._ctx ?? ({} as CTX), prev);
         if (isPromise(isSyncOrAsync)) {
           this.#syncOrAsync = Option.Some(new AsyncResolveOnce<T, CTX>(this, state, this.#syncOrAsync));
         } else {

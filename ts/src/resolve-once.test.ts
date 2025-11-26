@@ -998,3 +998,46 @@ describe("KeyToHash", () => {
     });
   });
 });
+
+it("ResolveOnce gets is prev value if reset", () => {
+  const once = new ResolveOnce<{
+    value: number;
+    stats: number;
+  }>();
+
+  once.once(() => ({
+    value: 42,
+    stats: 1,
+  }));
+
+  once.reset();
+
+  const res1 = once.once((_, prev) => {
+    if (!prev) {
+      throw new Error("prev is undefined");
+    }
+    return {
+      value: 45,
+      stats: prev.stats + 1,
+    };
+  });
+  expect(res1).toEqual({
+    value: 45,
+    stats: 2,
+  });
+
+  once.reset();
+
+  const res2 = once.once((_, prev) => {
+    if (!prev) {
+      throw new Error("prev is undefined");
+    }
+    prev.stats++;
+    prev.value += 3;
+    return prev;
+  });
+  expect(res2).toEqual({
+    value: 48,
+    stats: 3,
+  });
+});

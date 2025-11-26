@@ -28,8 +28,8 @@ import { isPromise } from "./is-promise.js";
  * ```
  */
 export abstract class Result<T, E = Error> {
-  static Ok<T = void>(...args: T[]): Result<T, Error> {
-    return args.length >= 1 ? new ResultOK<T>(args[0]) : new ResultOK<T>(undefined as unknown as T);
+  static Ok<T = void, E = Error>(...args: T[]): Result<T, E> {
+    return args.length >= 1 ? new ResultOK<T, E>(args[0]) : new ResultOK<T, E>(undefined as unknown as T);
   }
   static Err<T, E extends Error = Error>(t: E | string | Result<unknown, E>): Result<T, E> {
     if (typeof t === "string") {
@@ -77,7 +77,7 @@ export abstract class Result<T, E = Error> {
   abstract unwrap_err(): E;
 }
 
-export class ResultOK<T> extends Result<T, Error> {
+export class ResultOK<T, E = unknown> extends Result<T, E> {
   private _t: T;
   constructor(t: T) {
     super();
@@ -89,7 +89,7 @@ export class ResultOK<T> extends Result<T, Error> {
   is_err(): boolean {
     return false;
   }
-  unwrap_err(): Error {
+  unwrap_err(): E {
     throw new Error("Result is Ok");
   }
   unwrap(): T {
