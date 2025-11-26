@@ -1,6 +1,4 @@
-import { FanoutWriteStream } from "../utils/fanout-write-stream.js";
-import { Future } from "../future.js";
-import { TxtEnDecoder, TxtEnDecoderSingleton } from "../txt-en-decoder.js";
+import { FanoutWriteStream, Future, type TxtEnDecoder, TxtEnDecoderSingleton } from "@adviser/cement";
 
 export class LogWriteStream implements WritableStreamDefaultWriter<Uint8Array> {
   private readonly _bufferArr: Uint8Array[];

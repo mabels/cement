@@ -1,12 +1,12 @@
-import { runtimeFn } from "@adviser/cement";
-import { MockFileService } from "@adviser/cement/node";
+import { MockFileService } from "./mock-file-service.js";
+import { runtimeFn, TxtEnDecoderSingleton } from "@adviser/cement";
 
 describe("MockFileService", () => {
   if (runtimeFn().isNodeIsh || runtimeFn().isDeno) {
     let MFS: MockFileService;
     beforeAll(async () => {
       const { MockFileService } = await import("./mock-file-service.js");
-      MFS = new MockFileService();
+      MFS = new MockFileService(TxtEnDecoderSingleton());
     });
     it("writeFileString", async () => {
       const f = MFS;

@@ -28,7 +28,7 @@ export * from "./is-promise.js";
 export * from "./app-context.js";
 
 // ugly
-export * as utils from "./utils/index.js";
+// export * as utils from "@adviser/cement/utils"
 // import * as utils from "./utils/index.js";
 
 // export const param = utils.param;

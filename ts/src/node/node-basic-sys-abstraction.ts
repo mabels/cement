@@ -1,11 +1,16 @@
-import { BaseBasicSysAbstraction, WrapperBasicSysAbstraction, WrapperBasicSysAbstractionParams } from "../base-sys-abstraction.js";
-import { ResolveOnce } from "../resolve-once.js";
-import { BasicRuntimeService, BasicSysAbstraction } from "../sys-abstraction.js";
-import { Env, envFactory } from "../sys-env.js";
-import { TxtEnDecoder, TxtEnDecoderSingleton } from "../txt-en-decoder.js";
+import type {
+  BaseBasicSysAbstraction,
+  BasicRuntimeService,
+  BasicSysAbstraction,
+  Env,
+  EnvFactory,
+  TxtEnDecoder,
+  WithCementWrapperSysAbstractionParams,
+} from "@adviser/cement";
 
 export class NodeRuntimeService implements BasicRuntimeService {
   readonly _txtEnDe: TxtEnDecoder;
+  readonly _envFactory: EnvFactory;
   readonly _gthis: {
     process: {
       argv: string[];
@@ -17,12 +22,13 @@ export class NodeRuntimeService implements BasicRuntimeService {
       };
     };
   };
-  constructor(ende: TxtEnDecoder) {
+  constructor(ende: TxtEnDecoder, envFactory: EnvFactory) {
     this._txtEnDe = ende;
+    this._envFactory = envFactory;
     this._gthis = globalThis as unknown as NodeRuntimeService["_gthis"];
   }
   Env(): Env {
-    return envFactory();
+    return this._envFactory();
   }
 
   Args(): string[] {
@@ -45,15 +51,17 @@ export class NodeRuntimeService implements BasicRuntimeService {
   }
 }
 
-const baseSysAbstraction = new ResolveOnce<BaseBasicSysAbstraction>();
-export function NodeBasicSysAbstraction(param?: WrapperBasicSysAbstractionParams): BasicSysAbstraction {
-  const my = baseSysAbstraction.once(() => {
-    return new BaseBasicSysAbstraction({
-      TxtEnDecoder: param?.TxtEnDecoder || TxtEnDecoderSingleton(),
+let baseSysAbstraction: BaseBasicSysAbstraction | undefined = undefined;
+
+export function NodeBasicSysAbstraction(param: WithCementWrapperSysAbstractionParams): BasicSysAbstraction {
+  const ende = param.TxtEnDecoder ?? param.cement.TxtEnDecoderSingleton();
+  baseSysAbstraction =
+    baseSysAbstraction ??
+    new param.cement.BaseBasicSysAbstraction({
+      TxtEnDecoder: ende,
     });
-  });
-  return new WrapperBasicSysAbstraction(my, {
-    basicRuntimeService: new NodeRuntimeService(param?.TxtEnDecoder ?? my._txtEnDe),
+  return new param.cement.WrapperBasicSysAbstraction(baseSysAbstraction, {
+    basicRuntimeService: new NodeRuntimeService(ende, param.cement.envFactory),
     ...param,
   });
 }

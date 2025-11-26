@@ -1,4 +1,4 @@
-import { TxtEnDecoderSingleton } from "../txt-en-decoder.js";
+import { TxtEnDecoderSingleton } from "@adviser/cement";
 import { stream2string } from "./stream2string.js";
 
 it("stream2string", async () => {

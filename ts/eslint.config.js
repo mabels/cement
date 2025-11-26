@@ -43,6 +43,7 @@ export default tseslint.config(
       "@typescript-eslint/explicit-function-return-type": "error",
       "@typescript-eslint/no-inferrable-types": "error",
       "@typescript-eslint/no-deprecated": "error",
+      "no-duplicate-imports": "error",
     },
   },
 );

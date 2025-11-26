@@ -1,6 +1,6 @@
 import { Lazy } from "./resolve-once.js";
 import { Result } from "./result.js";
-import { coerceIntoUint8, ToUInt8 } from "./utils/coerce-uint8.js";
+import { ToUInt8, coerceIntoUint8 } from "./utils/coerce-uint8.js";
 
 export type ToDecoder = ToUInt8 | string | Result<string>;
 export type AsyncToDecoder = ToDecoder | Blob | Promise<ToDecoder | Blob>;

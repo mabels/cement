@@ -1,18 +1,21 @@
 /// <reference types="deno" />
 
-import { BaseBasicSysAbstraction, WrapperBasicSysAbstraction, WrapperBasicSysAbstractionParams } from "../base-sys-abstraction.js";
-import { ResolveOnce } from "../resolve-once.js";
-import { BasicRuntimeService, BasicSysAbstraction } from "../sys-abstraction.js";
-import { Env, envFactory } from "../sys-env.js";
-import { TxtEnDecoder, TxtEnDecoderSingleton } from "../txt-en-decoder.js";
+import type {
+  BasicRuntimeService,
+  Env,
+  BasicSysAbstraction,
+  EnvFactory,
+  BaseBasicSysAbstraction,
+  WithCementWrapperSysAbstractionParams,
+} from "@adviser/cement";
 
 export class DenoRuntimeService implements BasicRuntimeService {
-  readonly _txtEnDe: TxtEnDecoder;
-  constructor(ende: TxtEnDecoder) {
-    this._txtEnDe = ende;
+  readonly _envFactory: EnvFactory;
+  constructor(envFactory: EnvFactory) {
+    this._envFactory = envFactory;
   }
   Env(): Env {
-    return envFactory();
+    return this._envFactory();
   }
 
   Args(): string[] {
@@ -27,15 +30,16 @@ export class DenoRuntimeService implements BasicRuntimeService {
   }
 }
 
-const baseSysAbstraction = new ResolveOnce<BaseBasicSysAbstraction>();
-export function DenoBasicSysAbstraction(param?: WrapperBasicSysAbstractionParams): BasicSysAbstraction {
-  const my = baseSysAbstraction.once(() => {
-    return new BaseBasicSysAbstraction({
-      TxtEnDecoder: param?.TxtEnDecoder || TxtEnDecoderSingleton(),
+let baseBasicSysAbstraction: BaseBasicSysAbstraction | undefined = undefined;
+export function DenoBasicSysAbstraction(param: WithCementWrapperSysAbstractionParams): BasicSysAbstraction {
+  const ende = param.TxtEnDecoder ?? param.cement.TxtEnDecoderSingleton();
+  baseBasicSysAbstraction =
+    baseBasicSysAbstraction ??
+    new param.cement.BaseBasicSysAbstraction({
+      TxtEnDecoder: ende,
     });
-  });
-  return new WrapperBasicSysAbstraction(my, {
-    basicRuntimeService: new DenoRuntimeService(param?.TxtEnDecoder ?? my._txtEnDe),
+  return new param.cement.WrapperBasicSysAbstraction(baseBasicSysAbstraction, {
+    basicRuntimeService: new DenoRuntimeService(param?.cement.envFactory),
     ...param,
   });
 }

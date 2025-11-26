@@ -1,5 +1,5 @@
-import { runtimeFn } from "../runtime.js";
-import { RuntimeSysAbstraction } from "../sys-abstraction.js";
+import { runtimeFn, type RuntimeSysAbstraction } from "@adviser/cement";
+import * as cement from "@adviser/cement";
 
 const gts = globalThis as unknown /*Deno*/ as {
   Deno: {
@@ -20,11 +20,17 @@ async function main(): Promise<void> {
     : new URL("../node/node-sys-abstraction.ts", import.meta.url).pathname;
   // console.log("modPath", modPath);
   const sa = (await import(modPath)) as {
-    DenoSysAbstraction: () => RuntimeSysAbstraction;
-    NodeSysAbstraction: () => RuntimeSysAbstraction;
+    DenoSysAbstraction: (params: { cement: typeof cement }) => RuntimeSysAbstraction;
+    NodeSysAbstraction: (params: { cement: typeof cement }) => RuntimeSysAbstraction;
   };
 
-  const my = runtimeFn().isDeno ? sa.DenoSysAbstraction() : sa.NodeSysAbstraction();
+  const my = runtimeFn().isDeno
+    ? sa.DenoSysAbstraction({
+        cement,
+      })
+    : sa.NodeSysAbstraction({
+        cement,
+      });
 
   const process = runtimeFn().isDeno ? gts.Deno : gts.process;
 

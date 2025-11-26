@@ -1,13 +1,14 @@
 import path from "node:path";
 import fs from "node:fs";
 import process from "node:process";
-import { FileService, NamedWritableStream } from "../file-service.js";
-import { TxtEnDecoder, TxtEnDecoderSingleton } from "../txt-en-decoder.js";
+import type { FileService, NamedWritableStream, TxtEnDecoder } from "@adviser/cement";
 
 export class NodeFileService implements FileService {
   readonly baseDir: string;
-  constructor(baseDir: string = process.cwd()) {
+  readonly defTxtEnde: TxtEnDecoder;
+  constructor(defTxtEncode: TxtEnDecoder, baseDir: string = process.cwd()) {
     this.baseDir = this.abs(baseDir);
+    this.defTxtEnde = defTxtEncode;
   }
 
   // nodeImport(fname: string): string {
@@ -57,7 +58,7 @@ export class NodeFileService implements FileService {
     return path.isAbsolute(fname);
   }
 
-  async writeFileString(fname: string, content: string, ende: TxtEnDecoder = TxtEnDecoderSingleton()): Promise<void> {
+  async writeFileString(fname: string, content: string, ende: TxtEnDecoder = this.defTxtEnde): Promise<void> {
     const o = await this.create(fname);
     const wr = o.stream.getWriter();
     await wr.write(ende.encode(content));

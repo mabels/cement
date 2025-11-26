@@ -7,35 +7,7 @@ import { TxtEnDecoder, TxtEnDecoderSingleton } from "./txt-en-decoder.js";
 import { CoerceURI } from "./uri.js";
 import { isJSON } from "./is-json.js";
 import { ReadonlyURL } from "./mutable-url.js";
-
-export const Level = {
-  WARN: "warn",
-  DEBUG: "debug",
-  INFO: "info",
-  ERROR: "error",
-};
-
-export type Level = (typeof Level)[keyof typeof Level];
-
-export type Serialized = string | number | boolean;
-export type FnSerialized = () => Serialized | Serialized[];
-
-export class LogValue {
-  constructor(readonly fn: FnSerialized) {}
-  value(): Serialized | Serialized[] {
-    try {
-      // console.log("LogValue.value", this.fn.toString());
-      return this.fn();
-    } catch (e) {
-      return `LogValue:${(e as Error).message}`;
-    }
-  }
-  toJSON(): Serialized | Serialized[] {
-    return this.value();
-  }
-}
-
-export type LogSerializable = Record<string, LogValue | Promise<LogValue>>;
+import { FnSerialized, Level, LogSerializable, LogValue, Serialized } from "./types.js";
 
 // export function sanitizeSerialize(lineEnd?: string): (key: unknown, val: unknown) => unknown {
 //   const cache = new Set();

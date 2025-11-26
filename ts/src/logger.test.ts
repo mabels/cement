@@ -15,10 +15,11 @@ import {
   JSONFormatter,
   YAMLFormatter,
   BasicSysAbstractionFactory,
-  utils,
   TxtEnDecoderSingleton,
   ReadonlyURL,
 } from "@adviser/cement";
+import { ConsoleWriterStream } from "./utils/console-write-stream.js";
+import { stripper } from "./utils/stripper.js";
 
 describe("TestLogger", () => {
   let logCollector: LogCollector;
@@ -852,7 +853,7 @@ describe("TestLogger", () => {
         warn: vi.fn(),
       };
       const logger = new LoggerImpl({
-        out: new utils.ConsoleWriterStream(logParams),
+        out: new ConsoleWriterStream(logParams),
       }).SetDebug("*");
       logger.Debug().Msg("msg debug");
       logger.Error().Msg("msg error");
@@ -1272,7 +1273,7 @@ describe("TestLogger", () => {
     async function fixupLogs(): Promise<unknown> {
       await logger.Flush();
       // return logCollector.Logs()
-      return utils.stripper(
+      return stripper(
         [
           "isReloadNavigation",
           "reason",

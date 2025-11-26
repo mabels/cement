@@ -1,8 +1,8 @@
-import { utils } from "@adviser/cement";
+import { array2stream, devnull, stream2array, streamMap } from "./stream-map.js";
 import { receiveFromStream, sendToStream, streamingTestState } from "./stream-test-helper.js";
 
 it("array2stream", async () => {
-  const as = utils.array2stream([1, 2, 3]);
+  const as = array2stream([1, 2, 3]);
   let i = 0;
   const reader = as.getReader();
   while (true) {
@@ -15,7 +15,7 @@ it("array2stream", async () => {
 });
 
 it("stream2array", async () => {
-  const as = await utils.stream2array(
+  const as = await stream2array(
     new ReadableStream({
       start(controller): void {
         controller.enqueue(1);
@@ -29,8 +29,8 @@ it("stream2array", async () => {
 });
 
 it("devnull", async () => {
-  const cnt = await utils.devnull(
-    utils.streamMap(utils.array2stream([1, 2, 3]), {
+  const cnt = await devnull(
+    streamMap(array2stream([1, 2, 3]), {
       Map: (i, idx) => (idx + 1) * 10 + i + 1,
     }),
   );
@@ -39,8 +39,8 @@ it("devnull", async () => {
 
 it("stream_map", async () => {
   const closeFn = vitest.fn();
-  const s = await utils.stream2array(
-    utils.streamMap(utils.array2stream([1, 2, 3]), {
+  const s = await stream2array(
+    streamMap(array2stream([1, 2, 3]), {
       Map: (i, idx) => (idx + 1) * 10 + i + 1,
       Close: closeFn,
     }),
@@ -51,8 +51,8 @@ it("stream_map", async () => {
 
 it("stream_map async", async () => {
   const closeFn = vitest.fn();
-  const s = await utils.stream2array(
-    utils.streamMap(utils.array2stream([1, 2, 3]), {
+  const s = await stream2array(
+    streamMap(array2stream([1, 2, 3]), {
       Map: (i, idx) => Promise.resolve((idx + 1) * 10 + i + 1),
       Close: closeFn,
     }),
@@ -62,8 +62,8 @@ it("stream_map async", async () => {
 });
 
 it("map types", async () => {
-  const oo = await utils.stream2array(
-    utils.streamMap(utils.array2stream([1, 2, 3]), {
+  const oo = await stream2array(
+    streamMap(array2stream([1, 2, 3]), {
       Map: (chunk, idx) => {
         return "[" + chunk + "/" + idx + "]";
       },
@@ -81,7 +81,7 @@ describe("test streaming through streamMap", () => {
   };
   it("does streamMap respect backpressure", async () => {
     const ts = new TransformStream<Uint8Array, Uint8Array>(undefined, undefined, { highWaterMark: 2 });
-    const reb = utils.streamMap(ts.readable, {
+    const reb = streamMap(ts.readable, {
       Map: (chunk) => {
         for (let i = 0; i < chunk.length; i++) {
           chunk[i] = (chunk[i] + 1) % 256;

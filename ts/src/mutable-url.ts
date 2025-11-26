@@ -1,5 +1,5 @@
 import { exception2Result, Result } from "./result.js";
-import { hasHostPartProtocols } from "./uri.js";
+import { hasHostPartProtocols } from "./types.js";
 
 // due to that the System URL class is has a strange behavior
 // on different platforms, we need to implement our own URL class

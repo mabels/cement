@@ -35,4 +35,18 @@ export * from "./promise-sleep.js";
 export * from "./keyed-ng.js";
 
 // ugly not really esm but how could that work otherwise?
-export * as utils from "./utils/index.js";
+// export * as utils from "@adviser/cement/utils"
+
+export * from "./utils/rebuffer.js";
+export * from "./utils/stream-map.js";
+export * from "./utils/stream2string.js";
+export * from "./utils/string2stream.js";
+export * from "./utils/console-write-stream.js";
+export * from "./utils/fanout-write-stream.js";
+export * from "./utils/get-params-result.js";
+export * from "./utils/stripper.js";
+export * from "./utils/sorted-object.js";
+export * from "./utils/uint8array-equal.js";
+export * from "./utils/coerce-uint8.js";
+export * from "./utils/consume.js";
+export * from "./utils/to-sorted.js";

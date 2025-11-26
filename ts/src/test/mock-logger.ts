@@ -1,8 +1,5 @@
-import { LevelHandlerImpl } from "../log-level-impl.js";
-import { Logger } from "../logger.js";
-import { LoggerImpl } from "../logger-impl.js";
+import { LevelHandlerImpl, type Logger, LoggerImpl, type BasicSysAbstraction } from "@adviser/cement";
 import { LogCollector } from "./log-write-stream.js";
-import { BasicSysAbstraction } from "../sys-abstraction.js";
 
 export interface MockLoggerReturn {
   readonly logger: Logger;

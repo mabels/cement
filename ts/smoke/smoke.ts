@@ -1,4 +1,5 @@
 import { Lazy, VERSION, LoggerImpl, Result, Option, Level, runtimeFn, BasicSysAbstractionFactory } from "@adviser/cement";
+import * as cement from "@adviser/cement";
 
 async function main(): Promise<void> {
   const none = Option.None();
@@ -16,12 +17,12 @@ async function main(): Promise<void> {
   const rt = runtimeFn();
   if (rt.isNodeIsh) {
     const { NodeSysAbstraction } = await import("@adviser/cement/node");
-    const sys = NodeSysAbstraction();
+    const sys = NodeSysAbstraction({ cement });
     log.Info().Str("id", sys.NextId()).Msg("Node-Alright");
   }
   if (rt.isDeno) {
     const { DenoSysAbstraction } = await import("@adviser/cement/deno");
-    const sys = DenoSysAbstraction();
+    const sys = DenoSysAbstraction({ cement });
     log.Info().Str("id", sys.NextId()).Msg("Deno-Alright");
   }
   {

@@ -1,11 +1,13 @@
-import { DenoEnvActions } from "./deno/deno-env-actions.js";
-import { NodeEnvActions } from "./node/node-env-actions.js";
-import { BrowserEnvActions } from "./web/web-env-actions.js";
-import { CFEnvActions } from "./cf/cf-env-actions.js";
+import { DenoEnvActions } from "@adviser/cement/deno";
+import { NodeEnvActions } from "@adviser/cement/node";
+import { BrowserEnvActions } from "@adviser/cement/web";
+import { CFEnvActions } from "@adviser/cement/cf";
 import { KeyedResolvOnce } from "./resolve-once.js";
 import { Result } from "./result.js";
-import { getParamsResult, KeysParam } from "./utils/get-params-result.js";
 import { wrapImportMetaEnv, ImportMetaEnv } from "@adviser/cement/import-meta-env";
+import { getParamsResult, KeysParam } from "./utils/get-params-result.js";
+import { WithCement } from "./types.js";
+import { addCement } from "./add-cement-do-not-export.js";
 
 export type EnvTuple = ([string, string] | [string, string][] | Record<string, string> | Iterator<[string, string]>)[];
 
@@ -40,13 +42,13 @@ export interface Env extends EnvMap {
   sets(...keys: EnvTuple): void;
 }
 
-export type EnvFactoryFn = (opts: Partial<EnvFactoryOpts>) => EnvActions;
+export type EnvFactoryFn = (opts: WithCement<Partial<EnvFactoryOpts>>) => EnvActions;
 
 const envActions: { id: string; fn: EnvFactoryFn }[] = [
-  { id: "cf", fn: (opts: Partial<EnvFactoryOpts>): EnvActions => CFEnvActions.new(opts) },
-  { id: "node", fn: (opts: Partial<EnvFactoryOpts>): EnvActions => NodeEnvActions.new(opts) },
-  { id: "deno", fn: (opts: Partial<EnvFactoryOpts>): EnvActions => DenoEnvActions.new(opts) },
-  { id: "browser", fn: (opts: Partial<EnvFactoryOpts>): EnvActions => BrowserEnvActions.new(opts) },
+  { id: "cf", fn: (opts: WithCement<Partial<EnvFactoryOpts>>): EnvActions => CFEnvActions.new(opts) },
+  { id: "node", fn: (opts: WithCement<Partial<EnvFactoryOpts>>): EnvActions => NodeEnvActions.new(opts) },
+  { id: "deno", fn: (opts: WithCement<Partial<EnvFactoryOpts>>): EnvActions => DenoEnvActions.new(opts) },
+  { id: "browser", fn: (opts: WithCement<Partial<EnvFactoryOpts>>): EnvActions => BrowserEnvActions.new(opts) },
 ];
 
 /**
@@ -120,14 +122,16 @@ const _envFactories = new KeyedResolvOnce<Env>();
  * }, 'API_KEY'); // Optional: filter by specific keys
  * ```
  */
+export type EnvFactory = (opts?: Partial<EnvFactoryOpts>) => Env;
 export function envFactory(opts: Partial<EnvFactoryOpts> = {}): Env {
-  const found = envActions.find((fi) => fi.fn(opts).active());
+  const withCement = addCement(opts);
+  const found = envActions.find((fi) => fi.fn(withCement).active());
   if (!found) {
     throw new Error("SysContainer:envFactory: no env available");
   }
   const res = _envFactories.get(opts.id ?? found.id).once(() => {
-    const action = wrapImportMetaEnv(found.fn(opts));
-    const ret = new EnvImpl(action, opts);
+    const action = wrapImportMetaEnv(found.fn(withCement));
+    const ret = new EnvImpl(action, withCement);
     action.register(ret);
     return ret;
   });
@@ -152,7 +156,7 @@ function isIterable(obj: unknown): obj is Iterable<[string, string]> {
 
 export class EnvImpl implements Env {
   readonly _map: EnvMap;
-  constructor(map: EnvMap, opts: Partial<EnvFactoryOpts> = {}) {
+  constructor(map: EnvMap, opts: Partial<EnvFactoryOpts>) {
     this._map = map;
     this._updatePresets(opts.presetEnv);
   }

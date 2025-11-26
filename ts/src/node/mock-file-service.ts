@@ -1,5 +1,4 @@
-import { NamedWritableStream } from "../file-service.js";
-import { TxtEnDecoderSingleton } from "../txt-en-decoder.js";
+import type { NamedWritableStream } from "@adviser/cement";
 import { NodeFileService } from "./node-file-service.js";
 
 export interface FileCollector {
@@ -26,7 +25,7 @@ export class MockFileService extends NodeFileService {
     };
     this.files[oName] = fc;
     this.files[fname] = fc;
-    const decoder = TxtEnDecoderSingleton();
+    const decoder = this.defTxtEnde;
 
     return Promise.resolve({
       name: oName,

@@ -1,5 +1,4 @@
-import { Result } from "../result.js";
-import { param } from "../types.js";
+import { Result, param } from "@adviser/cement";
 
 export type MsgFn = (...keys: string[]) => string;
 export type KeysParam = (string | MsgFn | Record<string, param | number | string | boolean | undefined | null>)[];

@@ -1,4 +1,5 @@
 const { VERSION, LoggerImpl, Result, Option, Level, runtimeFn, BasicSysAbstractionFactory } = require("@adviser/cement");
+const cement = require("@adviser/cement");
 
 async function main() {
   const none = Option.None();
@@ -16,7 +17,7 @@ async function main() {
   const rt = runtimeFn();
   if (rt.isNodeIsh) {
     const { NodeSysAbstraction } = await import("@adviser/cement/node");
-    const sys = NodeSysAbstraction();
+    const sys = NodeSysAbstraction({ cement });
     log.Info().Str("id", sys.NextId()).Msg("Node-Alright");
   }
   if (rt.isDeno) {

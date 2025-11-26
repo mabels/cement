@@ -13,9 +13,11 @@ import { Time } from "./time.js";
 import { TxtEnDecoder } from "./txt-en-decoder.js";
 import { WebBasicSysAbstraction } from "./web/web-basic-sys-abstraction.js";
 import { Env } from "./sys-env.js";
-import { CFBasicSysAbstraction } from "./cf/cf-basic-sys-abstraction.js";
+import { CFBasicSysAbstraction } from "@adviser/cement/cf";
 import { DenoBasicSysAbstraction } from "./deno/deno-basic-sys-abstraction.js";
 import { NodeBasicSysAbstraction } from "./node/node-basic-sys-abstraction.js";
+import { WithCement } from "@adviser/cement";
+import { addCement } from "./add-cement-do-not-export.js";
 
 /**
  * Real-time implementation using system clock.
@@ -325,6 +327,11 @@ export interface BasicSysAbstractionParams {
 
 export type WrapperBasicSysAbstractionParams = Partial<BasicRuntimeService & BasicSysAbstractionParams>;
 
+export type BaseBasicRuntimeSysAbstractionParams =
+  | (BasicRuntimeService & BasicSysAbstractionParams)
+  | (BasicRuntimeService & BaseSysAbstractionParams);
+
+export type WithCementWrapperSysAbstractionParams = WithCement<Partial<BaseBasicRuntimeSysAbstractionParams>>;
 /**
  * Creates a BasicSysAbstraction instance for the current runtime environment.
  *
@@ -355,17 +362,18 @@ export type WrapperBasicSysAbstractionParams = Partial<BasicRuntimeService & Bas
  * const id2 = testSys.NextId(); // "STEPId-1"
  * ```
  */
+
 export function BasicSysAbstractionFactory(params?: WrapperBasicSysAbstractionParams): BasicSysAbstraction {
   const fn = runtimeFn();
   switch (true) {
     case fn.isBrowser:
-      return WebBasicSysAbstraction(params);
+      return WebBasicSysAbstraction(addCement(params));
     case fn.isDeno:
-      return DenoBasicSysAbstraction(params);
+      return DenoBasicSysAbstraction(addCement(params));
     case fn.isCFWorker:
-      return CFBasicSysAbstraction(params);
+      return CFBasicSysAbstraction(addCement(params));
     case fn.isNodeIsh:
-      return NodeBasicSysAbstraction(params);
+      return NodeBasicSysAbstraction(addCement(params));
     default:
       throw new Error("Unknown runtime");
   }

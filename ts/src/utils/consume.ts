@@ -1,4 +1,4 @@
-import { isPromise } from "../is-promise.js";
+import { isPromise } from "@adviser/cement";
 
 /**
  * Consumes a ReadableStream, applying a callback to each chunk and collecting results.

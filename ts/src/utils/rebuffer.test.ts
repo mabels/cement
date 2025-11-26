@@ -1,24 +1,24 @@
-import { utils } from "@adviser/cement";
+import { rebuffer, rebufferArray } from "./rebuffer.js";
 import { receiveFromStream, sendToStream, streamingTestState } from "./stream-test-helper.js";
 
 it("rechunk empty", async () => {
-  const chunks = await utils.rebufferArray([], 10);
+  const chunks = await rebufferArray([], 10);
   expect(chunks.length).toEqual(0);
 });
 
 it("rechunk 0 size", async () => {
-  const chunks = await utils.rebufferArray([new Uint8Array(0)], 10);
+  const chunks = await rebufferArray([new Uint8Array(0)], 10);
   expect(chunks.length).toEqual(0);
 });
 
 it("rechunk smaller 10", async () => {
-  const chunks = await utils.rebufferArray([new Uint8Array(3)], 10);
+  const chunks = await rebufferArray([new Uint8Array(3)], 10);
   expect(chunks.length).toEqual(1);
   expect(chunks[0].length).toEqual(3);
 });
 
 it("rechunk smaller 10 pack smaller chunks", async () => {
-  const chunks = await utils.rebufferArray(
+  const chunks = await rebufferArray(
     Array(7)
       .fill(0)
       .map((_, i) => {
@@ -40,7 +40,7 @@ it("rechunk smaller 10 pack smaller chunks", async () => {
 });
 
 it("rechunk smaller 10 pack bigger chunks", async () => {
-  const chunks = await utils.rebufferArray(
+  const chunks = await rebufferArray(
     Array(3)
       .fill(0)
       .map((_, i) => {
@@ -74,7 +74,7 @@ describe("test streaming through rebuffer", () => {
 
   it("does rebuffer respect backpressure", async () => {
     const ts = new TransformStream<Uint8Array, Uint8Array>(undefined, undefined, { highWaterMark: 2 });
-    const reb = utils.rebuffer(ts.readable, reBufferSize);
+    const reb = rebuffer(ts.readable, reBufferSize);
     await Promise.all([receiveFromStream(reb, state), sendToStream(ts.writable, state)]);
 
     expect(state.CollectorFn).toBeCalledTimes(~~((state.sendChunkSize * state.sendChunks) / reBufferSize) + 1 + 1 /*done*/);

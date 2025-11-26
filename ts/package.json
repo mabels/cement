@@ -21,11 +21,6 @@
       "require": "./cjs/web/index.cjs",
       "import": "./esm/web/index.js"
     },
-    "./utils": {
-      "types": "./esm/utils/index.d.ts",
-      "require": "./cjs/utils/index.cjs",
-      "import": "./esm/utils/index.js"
-    },
     "./cf": {
       "types": "./esm/cf/index.d.ts",
       "require": "./cjs/cf/index.cjs",

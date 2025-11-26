@@ -1,13 +1,12 @@
-import {
+import type {
   ExitService,
   ExitHandler,
   BaseSysAbstraction,
-  WrapperBasicSysAbstractionParams,
-  WrapperRuntimeSysAbstraction,
-} from "../base-sys-abstraction.js";
-import { ResolveOnce } from "../resolve-once.js";
-import { RuntimeSysAbstraction, SystemService, VoidFunc } from "../sys-abstraction.js";
-import { TxtEnDecoderSingleton } from "../txt-en-decoder.js";
+  RuntimeSysAbstraction,
+  SystemService,
+  VoidFunc,
+  WithCementWrapperSysAbstractionParams,
+} from "@adviser/cement";
 import { DenoBasicSysAbstraction } from "./deno-basic-sys-abstraction.js";
 // import * as process from "node:process";
 import { DenoFileService } from "./deno-file-service.js";
@@ -114,17 +113,17 @@ export class DenoSystemService implements SystemService {
   }
 }
 
-const baseSysAbstraction = new ResolveOnce<BaseSysAbstraction>();
-export function DenoSysAbstraction(param?: WrapperBasicSysAbstractionParams): RuntimeSysAbstraction {
-  const my = baseSysAbstraction.once(
-    () =>
-      new BaseSysAbstraction({
-        TxtEnDecoder: param?.TxtEnDecoder || TxtEnDecoderSingleton(),
-        FileSystem: new DenoFileService(),
-        SystemService: new DenoSystemService(),
-      }),
-  );
-  return new WrapperRuntimeSysAbstraction(my, {
+let baseSysAbstraction: BaseSysAbstraction | undefined = undefined;
+export function DenoSysAbstraction(param: WithCementWrapperSysAbstractionParams): RuntimeSysAbstraction {
+  const ende = param?.TxtEnDecoder ?? param.cement.TxtEnDecoderSingleton();
+  baseSysAbstraction =
+    baseSysAbstraction ??
+    new param.cement.BaseSysAbstraction({
+      TxtEnDecoder: ende,
+      FileSystem: new DenoFileService(ende),
+      SystemService: new DenoSystemService(),
+    });
+  return new param.cement.WrapperRuntimeSysAbstraction(baseSysAbstraction, {
     basicRuntimeService: DenoBasicSysAbstraction(param),
     ...param,
   });

@@ -1,6 +1,4 @@
-import { ResolveOnce } from "../resolve-once.js";
-import { runtimeFn } from "../runtime.js";
-import { Env, EnvActions, EnvFactoryOpts } from "../sys-env.js";
+import type { Env, EnvActions, EnvFactoryOpts, WithCement } from "@adviser/cement";
 
 interface DenoEnv {
   get: (key: string) => string | undefined;
@@ -10,7 +8,7 @@ interface DenoEnv {
   delete: (key: string) => void;
 }
 
-const once = new ResolveOnce<DenoEnvActions>();
+let once: DenoEnvActions | undefined = undefined;
 export class DenoEnvActions implements EnvActions {
   readonly #deno = globalThis as unknown as {
     Deno: {
@@ -18,16 +16,17 @@ export class DenoEnvActions implements EnvActions {
     };
   };
 
-  static new(opts: Partial<EnvFactoryOpts>): EnvActions {
-    return once.once(() => new DenoEnvActions(opts));
+  static new(opts: WithCement<Partial<EnvFactoryOpts>>): EnvActions {
+    once = once ?? new DenoEnvActions(opts);
+    return once;
   }
 
   get _env(): DenoEnv {
     return this.#deno.Deno.env;
   }
 
-  readonly opts: Partial<EnvFactoryOpts>;
-  private constructor(opts: Partial<EnvFactoryOpts>) {
+  readonly opts: WithCement<Partial<EnvFactoryOpts>>;
+  private constructor(opts: WithCement<Partial<EnvFactoryOpts>>) {
     this.opts = opts;
   }
 
@@ -38,7 +37,7 @@ export class DenoEnvActions implements EnvActions {
     return env;
   }
   active(): boolean {
-    return runtimeFn().isDeno;
+    return this.opts.cement.runtimeFn().isDeno;
   }
   keys(): string[] {
     return Object.keys(this._env.toObject());

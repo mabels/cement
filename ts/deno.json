@@ -5,7 +5,6 @@
   "exports": {
     ".": "./src/index.ts",
     "./web": "./src/web/index.ts",
-    "./utils": "./src/utils/index.ts",
     "./cf": "./src/cf/index.ts",
     "./node": "./src/node/index.ts",
     "./deno": "./src/deno/index.ts",

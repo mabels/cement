@@ -1,4 +1,4 @@
-import { Result } from "../result.js";
+import { Result } from "@adviser/cement";
 
 // Tested in txt-en-decoder.test.ts
 

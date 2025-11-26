@@ -15,8 +15,7 @@
  */
 
 import { Future } from "./future.js";
-import { UnPromisify } from "./is-promise.js";
-import { isPromise } from "./is-promise.js";
+import { UnPromisify, isPromise } from "./is-promise.js";
 import { UnregFn } from "./lru-map-set.js";
 import { Result } from "./result.js";
 import { Option } from "./option.js";
@@ -641,7 +640,6 @@ export class ResolveOnce<T, CTX = void> implements ResolveOnceIf<T, CTX> {
       const state = this.#state;
       try {
         state.setProcessing();
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
         let prev: T | undefined = undefined;
         if (this.#syncOrAsync.IsSome()) {
           prev = this.#syncOrAsync.Unwrap().value as T;

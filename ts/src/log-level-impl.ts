@@ -1,5 +1,6 @@
-import { LevelHandler, Level } from "./logger.js";
+import { LevelHandler } from "./logger.js";
 import { Option } from "./option.js";
+import { Level } from "./types.js";
 
 export class LevelHandlerImpl implements LevelHandler {
   readonly _globalLevels: Set<Level> = new Set<Level>([Level.INFO, Level.ERROR, Level.WARN]);

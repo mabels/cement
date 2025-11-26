@@ -1,16 +1,22 @@
-import { BaseBasicSysAbstraction, WrapperBasicSysAbstraction, WrapperBasicSysAbstractionParams } from "../base-sys-abstraction.js";
-import { ResolveOnce } from "../resolve-once.js";
-import { BasicRuntimeService, BasicSysAbstraction } from "../sys-abstraction.js";
-import { Env, envFactory } from "../sys-env.js";
-import { TxtEnDecoder, TxtEnDecoderSingleton } from "../txt-en-decoder.js";
+import type {
+  BaseBasicSysAbstraction,
+  BasicRuntimeService,
+  BasicSysAbstraction,
+  Env,
+  EnvFactory,
+  TxtEnDecoder,
+  WithCementWrapperSysAbstractionParams,
+} from "@adviser/cement";
 
 export class CFRuntimeService implements BasicRuntimeService {
   readonly _txtEnDe: TxtEnDecoder;
-  constructor(ende: TxtEnDecoder) {
+  readonly _envFactory: EnvFactory;
+  constructor(ende: TxtEnDecoder, envFactory: EnvFactory) {
     this._txtEnDe = ende;
+    this._envFactory = envFactory;
   }
   Env(): Env {
-    return envFactory();
+    return this._envFactory();
   }
   Args(): string[] {
     throw new Error("Args-Method not implemented.");
@@ -65,15 +71,16 @@ function CFWriteableStream(writeFn: (chunk: Uint8Array) => Promise<void>): Writa
   return ts.writable;
 }
 
-const baseSysAbstraction = new ResolveOnce<BaseBasicSysAbstraction>();
-export function CFBasicSysAbstraction(param?: WrapperBasicSysAbstractionParams): BasicSysAbstraction {
-  const my = baseSysAbstraction.once(() => {
-    return new BaseBasicSysAbstraction({
-      TxtEnDecoder: param?.TxtEnDecoder || TxtEnDecoderSingleton(),
+let baseSysAbstraction: BaseBasicSysAbstraction | undefined = undefined;
+export function CFBasicSysAbstraction(param: WithCementWrapperSysAbstractionParams): BasicSysAbstraction {
+  const ende = param?.TxtEnDecoder || param.cement.TxtEnDecoderSingleton();
+  baseSysAbstraction =
+    baseSysAbstraction ??
+    new param.cement.BaseBasicSysAbstraction({
+      TxtEnDecoder: ende,
     });
-  });
-  return new WrapperBasicSysAbstraction(my, {
-    basicRuntimeService: new CFRuntimeService(param?.TxtEnDecoder ?? my._txtEnDe),
+  return new param.cement.WrapperBasicSysAbstraction(baseSysAbstraction, {
+    basicRuntimeService: new CFRuntimeService(ende, param.cement.envFactory),
     ...param,
   });
 }

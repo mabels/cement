@@ -1,10 +1,10 @@
 import type { DeepWritable } from "ts-essentials";
 import { exception2Result, Result } from "./result.js";
-import { getParamsResult, KeysParam } from "./utils/get-params-result.js";
-import { relativePath } from "./utils/relative-path.js";
-import { StripCommand, stripper } from "./utils/stripper.js";
 import { ReadonlyURL, URLSearchParamsEntries, WritableURL } from "./mutable-url.js";
 import { KeyedResolvOnce } from "./resolve-once.js";
+import { KeysParam, getParamsResult, hasHostPartProtocols } from "./index.js";
+import { relativePath } from "./utils/relative-path.js";
+import { StripCommand, stripper } from "./utils/stripper.js";
 // import { param } from "./types.js";
 
 type NullOrUndef = null | undefined;
@@ -527,8 +527,6 @@ export function isCoerceURI(value: unknown): value is CoerceURI {
   }
   return false;
 }
-
-export const hasHostPartProtocols: Set<string> = new Set<string>(["http", "https", "ws", "wss"]);
 
 const uriInstances = new KeyedResolvOnce<URI>({
   lru: { maxEntries: 1000 },

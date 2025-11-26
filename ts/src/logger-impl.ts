@@ -2,17 +2,12 @@
 import YAML from "yaml";
 import {
   AsError,
-  FnSerialized,
-  LogSerializable,
-  Level,
   Logger,
   logValue,
-  Serialized,
   WithLogger,
   // sanitizeSerialize,
   Sized,
   Lengthed,
-  LogValue,
   LevelHandler,
   LogFormatter,
   LogValueArg,
@@ -26,6 +21,7 @@ import { TxtEnDecoder, TxtEnDecoderSingleton } from "./txt-en-decoder.js";
 import { LevelHandlerSingleton } from "./log-level-impl.js";
 import { BasicSysAbstractionFactory } from "./base-sys-abstraction.js";
 import { LogWriterStream } from "./log-writer-impl.js";
+import { LogValue, LogSerializable, Level, FnSerialized, Serialized } from "./types.js";
 
 function getLen(value: unknown, lvs: LogValueState): LogValue {
   if (Array.isArray(value)) {

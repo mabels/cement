@@ -1,13 +1,13 @@
-import { ResolveOnce } from "../resolve-once.js";
-import { EnvActions, EnvFactoryOpts, Env } from "../sys-env.js";
+import type { EnvActions, EnvFactoryOpts, Env } from "@adviser/cement";
 
-const once = new ResolveOnce<BrowserEnvActions>();
+let once: BrowserEnvActions | undefined = undefined;
 export class BrowserEnvActions implements EnvActions {
   readonly env: Map<string, string> = new Map<string, string>();
   readonly opts: Partial<EnvFactoryOpts>;
 
   static new(opts: Partial<EnvFactoryOpts>): EnvActions {
-    return once.once(() => new BrowserEnvActions(opts));
+    once = once ?? new BrowserEnvActions(opts);
+    return once;
   }
 
   private constructor(opts: Partial<EnvFactoryOpts>) {

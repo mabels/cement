@@ -1,6 +1,5 @@
 import * as path from "node:path";
-import type { FileService, NamedWritableStream } from "../file-service.js";
-import { TxtEnDecoder, TxtEnDecoderSingleton } from "../txt-en-decoder.js";
+import type { FileService, NamedWritableStream, TxtEnDecoder } from "@adviser/cement";
 
 const Deno = (globalThis as unknown as { Deno: unknown }).Deno as {
   cwd(): string;
@@ -12,7 +11,7 @@ const Deno = (globalThis as unknown as { Deno: unknown }).Deno as {
 export class DenoFileService implements FileService {
   readonly baseDir: string;
   readonly txtEnde: TxtEnDecoder;
-  constructor(baseDir: string = Deno.cwd(), txtEnde: TxtEnDecoder = TxtEnDecoderSingleton()) {
+  constructor(txtEnde: TxtEnDecoder, baseDir: string = Deno.cwd()) {
     this.baseDir = this.abs(baseDir);
     this.txtEnde = txtEnde;
   }
@@ -64,7 +63,7 @@ export class DenoFileService implements FileService {
     return path.isAbsolute(fname);
   }
 
-  async writeFileString(fname: string, content: string, ende: TxtEnDecoder = TxtEnDecoderSingleton()): Promise<void> {
+  async writeFileString(fname: string, content: string, ende: TxtEnDecoder = this.txtEnde): Promise<void> {
     const o = await this.create(fname);
     const wr = o.stream.getWriter();
     await wr.write(ende.encode(content));

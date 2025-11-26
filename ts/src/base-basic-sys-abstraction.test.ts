@@ -2,27 +2,56 @@ import { WebBasicSysAbstraction } from "@adviser/cement/web";
 import { CFBasicSysAbstraction } from "@adviser/cement/cf";
 import { runtimeFn } from "./runtime.js";
 import { IDMode, TimeMode, RandomMode, BasicSysAbstraction } from "./sys-abstraction.js";
-import { NodeBasicSysAbstraction } from "./node/node-basic-sys-abstraction.js";
-import { DenoBasicSysAbstraction } from "./deno/deno-basic-sys-abstraction.js";
+import { NodeBasicSysAbstraction } from "@adviser/cement/node";
+import { DenoBasicSysAbstraction } from "@adviser/cement/deno";
 import { describe, it, expect } from "vitest";
-import { WrapperBasicSysAbstractionParams } from "./base-sys-abstraction.js";
+import { BaseBasicRuntimeSysAbstractionParams } from "./base-sys-abstraction.js";
+import * as cement from "@adviser/cement";
 
-const abstractions: { name: string; fn: (id?: WrapperBasicSysAbstractionParams) => BasicSysAbstraction }[] = [];
+const abstractions: { name: string; fn: (id?: Partial<BaseBasicRuntimeSysAbstractionParams>) => BasicSysAbstraction }[] = [];
 
 if (runtimeFn().isCFWorker) {
-  abstractions.push({ name: "CFSysAbstraction", fn: CFBasicSysAbstraction });
+  abstractions.push({
+    name: "CFSysAbstraction",
+    fn: (a) =>
+      CFBasicSysAbstraction({
+        ...a,
+        cement,
+      }),
+  });
 }
 
 if (runtimeFn().isNodeIsh) {
-  abstractions.push({ name: "NodeSysAbstraction", fn: NodeBasicSysAbstraction });
+  abstractions.push({
+    name: "NodeSysAbstraction",
+    fn: (a) =>
+      NodeBasicSysAbstraction({
+        ...a,
+        cement,
+      }),
+  });
 }
 
 if (runtimeFn().isDeno) {
-  abstractions.push({ name: "DenoSysAbstraction", fn: DenoBasicSysAbstraction });
+  abstractions.push({
+    name: "DenoSysAbstraction",
+    fn: (a) =>
+      DenoBasicSysAbstraction({
+        ...a,
+        cement,
+      }),
+  });
 }
 
 if (runtimeFn().isBrowser) {
-  abstractions.push({ name: "WebSysAbstraction", fn: WebBasicSysAbstraction });
+  abstractions.push({
+    name: "WebSysAbstraction",
+    fn: (a) =>
+      WebBasicSysAbstraction({
+        ...a,
+        cement,
+      }),
+  });
 }
 
 for (const abstraction of abstractions) {

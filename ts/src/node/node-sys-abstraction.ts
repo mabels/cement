@@ -1,15 +1,14 @@
-import { RuntimeSysAbstraction, SystemService, VoidFunc } from "../sys-abstraction.js";
-import {
+import type {
+  RuntimeSysAbstraction,
+  SystemService,
+  VoidFunc,
   BaseSysAbstraction,
   ExitHandler,
   ExitService,
-  WrapperBasicSysAbstractionParams,
-  WrapperRuntimeSysAbstraction,
-} from "../base-sys-abstraction.js";
+  WithCementWrapperSysAbstractionParams,
+} from "@adviser/cement";
 import { NodeFileService } from "./node-file-service.js";
-import { TxtEnDecoderSingleton } from "../txt-en-decoder.js";
 import process from "node:process";
-import { ResolveOnce } from "../resolve-once.js";
 import { NodeBasicSysAbstraction } from "./node-basic-sys-abstraction.js";
 
 export class NodeExitServiceImpl implements ExitService {
@@ -101,17 +100,17 @@ export class NodeSystemService implements SystemService {
   }
 }
 
-const baseSysAbstraction = new ResolveOnce<BaseSysAbstraction>();
-export function NodeSysAbstraction(param?: WrapperBasicSysAbstractionParams): RuntimeSysAbstraction {
-  const my = baseSysAbstraction.once(
-    () =>
-      new BaseSysAbstraction({
-        TxtEnDecoder: param?.TxtEnDecoder || TxtEnDecoderSingleton(),
-        FileSystem: new NodeFileService(),
-        SystemService: new NodeSystemService(),
-      }),
-  );
-  return new WrapperRuntimeSysAbstraction(my, {
+let baseSysAbstraction: BaseSysAbstraction | undefined = undefined;
+export function NodeSysAbstraction(param: WithCementWrapperSysAbstractionParams): RuntimeSysAbstraction {
+  const ende = param?.TxtEnDecoder || param.cement.TxtEnDecoderSingleton();
+  baseSysAbstraction =
+    baseSysAbstraction ??
+    new param.cement.BaseSysAbstraction({
+      TxtEnDecoder: ende,
+      FileSystem: new NodeFileService(ende),
+      SystemService: new NodeSystemService(),
+    });
+  return new param.cement.WrapperRuntimeSysAbstraction(baseSysAbstraction, {
     basicRuntimeService: NodeBasicSysAbstraction(param),
     ...param,
   });
