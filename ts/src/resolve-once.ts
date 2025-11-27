@@ -20,7 +20,6 @@ import { UnregFn } from "./lru-map-set.js";
 import { Result } from "./result.js";
 import { Option } from "./option.js";
 import { KeyedIf, KeyedNg, KeyedNgItem, KeyedNgItemWithoutValue, KeyedNgOptions } from "./keyed-ng.js";
-import { runtimeFn } from "./runtime.js";
 
 /**
  * Internal item representing a queued function in a ResolveSeq sequence.
@@ -588,13 +587,12 @@ export class ResolveOnce<T, CTX = void> implements ResolveOnceIf<T, CTX> {
           this.reset();
         }, this.#opts.resetAfter);
         if (!this.#opts.skipUnref) {
-          // node solution
-          if (typeof this.resetAfterTimer.unref === "function") {
-            this.resetAfterTimer.unref();
-          } else {
-            if (runtimeFn().isDeno) {
-              Deno.unrefTimer(this.resetAfterTimer as unknown as number);
-            }
+          const hasUnref = this.resetAfterTimer as unknown as { unref?: () => void };
+          if (typeof hasUnref === "object" && typeof hasUnref.unref === "function") {
+            hasUnref.unref();
+          } else if (typeof globalThis.Deno === "object") {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
+            globalThis.Deno.unrefTimer(this.resetAfterTimer as any);
           }
         }
       }
