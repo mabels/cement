@@ -1,4 +1,14 @@
-import { Result, KeyedResolvOnce, ResolveOnce, ResolveSeq, Lazy, Future, KeyedResolvSeq, KeyedNgItem } from "@adviser/cement";
+import {
+  Result,
+  KeyedResolvOnce,
+  ResolveOnce,
+  ResolveSeq,
+  Lazy,
+  Future,
+  KeyedResolvSeq,
+  KeyedNgItem,
+  runtimeFn,
+} from "@adviser/cement";
 import { isPromise } from "./is-promise.js";
 import { sleep } from "./promise-sleep.js";
 
@@ -1052,4 +1062,27 @@ it("ResolveOnce gets is prev value if reset", () => {
     value: 48,
     stats: 3,
   });
+});
+
+it("does not block node on process exit", async () => {
+  let runtime = undefined;
+  if (runtimeFn().isNodeIsh) {
+    runtime = ["tsx", "-e"];
+  }
+  if (runtimeFn().isDeno) {
+    runtime = ["deno", "eval"];
+  }
+  if (runtime) {
+    const { $ } = await import("zx");
+    const start = Date.now();
+    const code = [
+      "import { ResolveOnce } from './src/resolve-once.ts';",
+      `(new ResolveOnce(undefined, { resetAfter: 100000 }).once(() => Promise.resolve("done")))`,
+      `.finally(() => console.log("done"));`,
+    ].join("");
+    const res = await $`${runtime} ${[code]}`;
+    expect(res.ok).toBe(true);
+    const duration = Date.now() - start;
+    expect(duration).toBeLessThan(1000);
+  }
 });

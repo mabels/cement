@@ -20,6 +20,7 @@ import { UnregFn } from "./lru-map-set.js";
 import { Result } from "./result.js";
 import { Option } from "./option.js";
 import { KeyedIf, KeyedNg, KeyedNgItem, KeyedNgItemWithoutValue, KeyedNgOptions } from "./keyed-ng.js";
+import { runtimeFn } from "./runtime.js";
 
 /**
  * Internal item representing a queued function in a ResolveSeq sequence.
@@ -504,6 +505,7 @@ export class AsyncResolveOnce<T, CTX = void> {
 
 export interface ResolveOnceOpts {
   readonly resetAfter?: number; // milliseconds after which to reset the cached value
+  readonly skipUnref?: boolean; // skip unref() on the reset timer
 }
 
 class StateInstance {
@@ -585,6 +587,16 @@ export class ResolveOnce<T, CTX = void> implements ResolveOnceIf<T, CTX> {
         this.resetAfterTimer = setTimeout(() => {
           this.reset();
         }, this.#opts.resetAfter);
+        if (!this.#opts.skipUnref) {
+          // node solution
+          if (typeof this.resetAfterTimer.unref === "function") {
+            this.resetAfterTimer.unref();
+          } else {
+            if (runtimeFn().isDeno) {
+              Deno.unrefTimer(this.resetAfterTimer as unknown as number);
+            }
+          }
+        }
       }
     }
   }

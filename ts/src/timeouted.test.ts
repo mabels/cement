@@ -918,7 +918,7 @@ describe("Node.js Exit Prevention", () => {
     if (runtime) {
       const { $ } = await import("zx");
       const start = Date.now();
-      await $`${runtime} "import { timeouted } from './src/timeouted.ts'; timeouted(Promise.resolve('done'), { timeout: 10000 })"`;
+      await $`${runtime} "import { timeouted } from './src/timeouted.ts'; import { sleep } from './src/promise-sleep.ts'; timeouted(sleep(200), { timeout: 10000 })"`;
       const duration = Date.now() - start;
       expect(duration).toBeLessThan(2000);
     }
