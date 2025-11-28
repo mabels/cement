@@ -2,45 +2,39 @@ import { Future } from "./future.js";
 import { isPromise } from "./is-promise.js";
 import { sleep } from "./promise-sleep.js";
 
-export interface IsTimeouted {
-  isSuccess(): this is TimeoutResultSuccess<unknown>;
-  isTimeout(): this is TimeoutResultTimeout<unknown>;
-  isAborted(): this is TimeoutResultAborted<unknown>;
-  isError(): this is TimeoutResultError<unknown>;
+export interface IsTimeouted<T, CTX> {
+  isSuccess(): this is TimeoutResultSuccess<T, CTX>;
+  isTimeout(): this is TimeoutResultTimeout<CTX>;
+  isAborted(): this is TimeoutResultAborted<CTX>;
+  isError(): this is TimeoutResultError<CTX>;
 }
 
-const IsTimeoutedImpl: IsTimeouted = {
-  isSuccess(): this is TimeoutResultSuccess<unknown> {
-    return (this as TimeoutResult<unknown>).state === "success";
-  },
-  isTimeout(): this is TimeoutResultTimeout<unknown> {
-    return (this as TimeoutResult<unknown>).state === "timeout";
-  },
-  isAborted(): this is TimeoutResultAborted<unknown> {
-    return (this as TimeoutResult<unknown>).state === "aborted";
-  },
-  isError(): this is TimeoutResultError<unknown> {
-    return (this as TimeoutResult<unknown>).state === "error";
-  },
-};
+function isTimeoutedMixin<T, CTX, R extends PurTimeoutResult<T>>(obj: R): R & IsTimeouted<T, CTX> {
+  return Object.assign(obj, {
+    isSuccess: () => isSuccess(obj),
+    isTimeout: () => isTimeout(obj),
+    isAborted: () => isAborted(obj),
+    isError: () => isError(obj),
+  }) as R & IsTimeouted<T, CTX>;
+}
 
 export interface PurTimeoutState {
   readonly state: "success" | "timeout" | "aborted" | "error";
 }
 
-export interface PurTimeoutResultSuccess<T> extends IsTimeouted, PurTimeoutState {
+export interface PurTimeoutResultSuccess<T> extends PurTimeoutState {
   readonly state: "success";
   readonly value: T;
 }
 
-export interface PurTimeoutResultTimeout extends IsTimeouted, PurTimeoutState {
+export interface PurTimeoutResultTimeout extends PurTimeoutState {
   readonly state: "timeout";
 }
-export interface PurTimeoutResultAborted extends IsTimeouted, PurTimeoutState {
+export interface PurTimeoutResultAborted extends PurTimeoutState {
   readonly state: "aborted";
   readonly reason: unknown;
 }
-export interface PurTimeoutResultError extends IsTimeouted, PurTimeoutState {
+export interface PurTimeoutResultError extends PurTimeoutState {
   readonly state: "error";
   readonly error: Error;
 }
@@ -52,42 +46,19 @@ export interface TimeoutState<CTX> {
 
 type PurTimeoutResult<T> = PurTimeoutResultSuccess<T> | PurTimeoutResultTimeout | PurTimeoutResultAborted | PurTimeoutResultError;
 
-export type TimeoutResultSuccess<T, CTX = unknown> = PurTimeoutResultSuccess<T> & TimeoutState<CTX>;
-export type TimeoutResultTimeout<CTX = unknown> = PurTimeoutResultTimeout & TimeoutState<CTX>;
-export type TimeoutResultAborted<CTX = unknown> = PurTimeoutResultAborted & TimeoutState<CTX>;
-export type TimeoutResultError<CTX = unknown> = PurTimeoutResultError & TimeoutState<CTX>;
+export type TimeoutResultSuccess<T, CTX = unknown> = PurTimeoutResultSuccess<T> & TimeoutState<CTX> & IsTimeouted<T, CTX>;
+export type TimeoutResultTimeout<CTX = unknown> = PurTimeoutResultTimeout & TimeoutState<CTX> & IsTimeouted<unknown, CTX>;
+export type TimeoutResultAborted<CTX = unknown> = PurTimeoutResultAborted & TimeoutState<CTX> & IsTimeouted<unknown, CTX>;
+export type TimeoutResultError<CTX = unknown> = PurTimeoutResultError & TimeoutState<CTX> & IsTimeouted<unknown, CTX>;
 
-export type TimeoutResult<T, CTX = unknown> =
+export type TimeoutResult<T, CTX> =
   | TimeoutResultSuccess<T, CTX>
   | TimeoutResultTimeout<CTX>
   | TimeoutResultAborted<CTX>
   | TimeoutResultError<CTX>;
 
-export type ObjTimeoutResultSuccess<T, CTX> = Omit<
-  PurTimeoutResultSuccess<T>,
-  "isSuccess" | "isTimeout" | "isAborted" | "isError"
-> &
-  Partial<IsTimeouted> &
-  Partial<TimeoutState<CTX>>;
-export type ObjTimeoutResultTimeout<CTX> = Omit<PurTimeoutResultTimeout, "isSuccess" | "isTimeout" | "isAborted" | "isError"> &
-  Partial<IsTimeouted> &
-  Partial<TimeoutState<CTX>>;
-export type ObjTimeoutResultAborted<CTX> = Omit<PurTimeoutResultAborted, "isSuccess" | "isTimeout" | "isAborted" | "isError"> &
-  Partial<IsTimeouted> &
-  Partial<TimeoutState<CTX>>;
-export type ObjTimeoutResultError<CTX> = Omit<PurTimeoutResultError, "isSuccess" | "isTimeout" | "isAborted" | "isError"> &
-  Partial<IsTimeouted> &
-  Partial<TimeoutState<CTX>>;
-type PurTimeoutResultObj<T, CTX = unknown> =
-  | ObjTimeoutResultSuccess<T, CTX>
-  | ObjTimeoutResultTimeout<CTX>
-  | ObjTimeoutResultAborted<CTX>
-  | ObjTimeoutResultError<CTX>;
-
-export function createTimeoutResult<T, CTX = unknown, TR extends PurTimeoutResultObj<T, CTX> = PurTimeoutResultObj<T, CTX>>(
-  t: TR,
-): TimeoutResult<T, CTX> {
-  return { ...IsTimeoutedImpl, duration: 0, ...t } as TimeoutResult<T, CTX>;
+export function createTimeoutResult<T, CTX>(t: PurTimeoutResult<T> & TimeoutState<CTX>): TimeoutResult<T, CTX> {
+  return { ...isTimeoutedMixin(t), ...t } as TimeoutResult<T, CTX>;
 }
 
 export type ActionFunc<T> = (controller: AbortController) => Promise<T>;
@@ -121,7 +92,7 @@ export interface TimeoutActionOptions<CTX> {
  * @param result - The TimeoutResult to check
  * @returns True if the result state is "success"
  */
-export function isSuccess<T>(result: TimeoutResult<T>): result is TimeoutResultSuccess<T> {
+export function isSuccess<T>(result: PurTimeoutResult<T>): result is TimeoutResultSuccess<T> {
   return result.state === "success";
 }
 
@@ -132,7 +103,7 @@ export function isSuccess<T>(result: TimeoutResult<T>): result is TimeoutResultS
  * @param result - The TimeoutResult to check
  * @returns True if the result state is "timeout"
  */
-export function isTimeout<T>(result: TimeoutResult<T>): result is TimeoutResultTimeout<T> {
+export function isTimeout<T>(result: PurTimeoutResult<T>): result is TimeoutResultTimeout<T> {
   return result.state === "timeout";
 }
 
@@ -143,7 +114,7 @@ export function isTimeout<T>(result: TimeoutResult<T>): result is TimeoutResultT
  * @param result - The TimeoutResult to check
  * @returns True if the result state is "aborted"
  */
-export function isAborted<T>(result: TimeoutResult<T>): result is TimeoutResultAborted<T> {
+export function isAborted<T>(result: PurTimeoutResult<T>): result is TimeoutResultAborted<T> {
   return result.state === "aborted";
 }
 
@@ -154,7 +125,7 @@ export function isAborted<T>(result: TimeoutResult<T>): result is TimeoutResultA
  * @param result - The TimeoutResult to check
  * @returns True if the result state is "error"
  */
-export function isError<T>(result: TimeoutResult<T>): result is TimeoutResultError<T> {
+export function isError<T>(result: PurTimeoutResult<T>): result is TimeoutResultError<T> {
   return result.state === "error";
 }
 
@@ -166,7 +137,7 @@ export function isError<T>(result: TimeoutResult<T>): result is TimeoutResultErr
  * @returns The success value
  * @throws Error if the result is not in success state
  */
-export function unwrap<T>(result: TimeoutResult<T>): T {
+export function unwrap<T, CTX>(result: TimeoutResult<T, CTX>): T {
   if (isSuccess(result)) {
     return result.value;
   }
@@ -181,7 +152,7 @@ export function unwrap<T>(result: TimeoutResult<T>): T {
  * @param defaultValue - The value to return if result is not successful
  * @returns The success value or the default value
  */
-export function unwrapOr<T>(result: TimeoutResult<T>, defaultValue: T): T {
+export function unwrapOr<T, CTX>(result: TimeoutResult<T, CTX>, defaultValue: T): T {
   return isSuccess(result) ? result.value : defaultValue;
 }
 
@@ -236,7 +207,7 @@ export function unwrapOr<T>(result: TimeoutResult<T>, defaultValue: T): T {
 export async function timeouted<T, CTX = void>(
   action: TimeoutAction<T>,
   options: Partial<TimeoutActionOptions<CTX>> = {},
-): Promise<TimeoutResult<T>> {
+): Promise<TimeoutResult<T, CTX>> {
   const { timeout = 30000, signal, controller: externalController, ctx, onTimeout, onAbort, onError } = options;
 
   const controller = externalController || new AbortController();
@@ -277,11 +248,14 @@ export async function timeouted<T, CTX = void>(
     try {
       toAwait = action(controller);
     } catch (error) {
-      return cleanup({
-        state: "error",
-        error: error instanceof Error ? error : new Error(error as string),
-        ...IsTimeoutedImpl,
-      });
+      return cleanup(
+        createTimeoutResult<T, CTX>({
+          state: "error",
+          error: error instanceof Error ? error : new Error(error as string),
+          duration: Date.now() - startTime,
+          ctx: ctx as CTX,
+        }),
+      );
     }
   }
 

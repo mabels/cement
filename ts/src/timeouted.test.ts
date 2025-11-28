@@ -1,6 +1,20 @@
 import { sleep } from "./promise-sleep.js";
 import { runtimeFn } from "./runtime.js";
-import { timeouted, isSuccess, isTimeout, isAborted, isError, unwrap, unwrapOr, createTimeoutResult } from "./timeouted.js";
+import {
+  timeouted,
+  isSuccess,
+  isTimeout,
+  isAborted,
+  isError,
+  unwrap,
+  unwrapOr,
+  createTimeoutResult,
+  TimeoutResultSuccess,
+  TimeoutResultTimeout,
+  TimeoutResultAborted,
+  TimeoutResultError,
+  TimeoutResult,
+} from "./timeouted.js";
 
 // ============================================================================
 // BASIC SUCCESS SCENARIOS
@@ -950,6 +964,8 @@ describe("createTimeoutResult", () => {
     const result = createTimeoutResult({
       state: "success",
       value: "data",
+      duration: 100,
+      ctx: undefined,
     });
     if (isSuccess(result)) {
       expect(isSuccess(result)).toBe(true);
@@ -964,6 +980,8 @@ describe("createTimeoutResult", () => {
     const result = createTimeoutResult({
       state: "aborted",
       reason: "user abort",
+      duration: 100,
+      ctx: undefined,
     });
     if (isAborted(result)) {
       expect(isAborted(result)).toBe(true);
@@ -978,6 +996,8 @@ describe("createTimeoutResult", () => {
     const result = createTimeoutResult({
       state: "error",
       error: new Error("user abort"),
+      duration: 100,
+      ctx: undefined,
     });
     if (isError(result)) {
       expect(isError(result)).toBe(true);
@@ -991,6 +1011,8 @@ describe("createTimeoutResult", () => {
   it("should create timeout result", () => {
     const result = createTimeoutResult({
       state: "timeout",
+      duration: 100,
+      ctx: undefined,
     });
     if (isTimeout(result)) {
       expect(isTimeout(result)).toBe(true);
@@ -998,5 +1020,32 @@ describe("createTimeoutResult", () => {
     } else {
       assert.fail("Result should be timeout");
     }
+  });
+
+  it("timeoutd return isTimeouted", async () => {
+    const result = await timeouted(Promise.resolve("data"), { timeout: 1000 });
+    switch (true) {
+      case result.isSuccess(): {
+        type IsTimeouted = typeof result;
+        expectTypeOf<IsTimeouted>().toEqualTypeOf<TimeoutResultSuccess<string, void>>();
+        break;
+      }
+      case result.isTimeout(): {
+        type IsTimeouted = typeof result;
+        expectTypeOf<IsTimeouted>().toEqualTypeOf<TimeoutResultTimeout<void>>();
+        break;
+      }
+      case result.isAborted(): {
+        type IsTimeouted = typeof result;
+        expectTypeOf<IsTimeouted>().toEqualTypeOf<TimeoutResultAborted<void>>();
+        break;
+      }
+      case result.isError(): {
+        type IsTimeouted = typeof result;
+        expectTypeOf<IsTimeouted>().toEqualTypeOf<TimeoutResultError<void>>();
+        break;
+      }
+    }
+    expectTypeOf(result).toEqualTypeOf<TimeoutResult<string, void>>();
   });
 });
