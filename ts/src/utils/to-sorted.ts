@@ -1,4 +1,4 @@
-export type TouchType = bigint | Date | symbol | string | boolean | number | Uint8Array | null | undefined | object | unknown[];
+export type TouchType = bigint | Date | symbol | string | boolean | number | Uint8Array | null | undefined | object;
 export type TouchFn = (value: TouchType, type: keyof typeof TouchTypes) => void;
 
 export const TouchTypes = {
