@@ -798,19 +798,21 @@ export interface KeyedResolveOnceItem<K, T, CTX extends NonNullable<object>> {
  *   .once(({ givenKey, ctx }) => fetchUser(givenKey, ctx));
  * ```
  */
-export class KeyedResolvOnce<T extends WithOptionalReset<PT>, K = string, CTX extends NonNullable<object> = object, PT = T>
-  implements
-    Omit<
-      // KeyedIf<ResolveOnce<T, KeyedNgItemWithoutValue<K, CTX>>, WithOptionalReset<T>, K>
-      KeyedIf<
-        KeyedNgItem<K, ResolveOnce<T, KeyedNgItemWithoutValue<K, CTX>>, CTX>,
-        ResolveOnce<T, KeyedNgItemWithoutValue<K, CTX>>,
-        K,
-        CTX
-      >,
-      "entries" | "forEach" | "onSet" | "onDelete" | "values" | "setParam"
-    >
-{
+export class KeyedResolvOnce<
+  T extends WithOptionalReset<PT>,
+  K = string,
+  CTX extends NonNullable<object> = object,
+  PT = T,
+> implements Omit<
+  // KeyedIf<ResolveOnce<T, KeyedNgItemWithoutValue<K, CTX>>, WithOptionalReset<T>, K>
+  KeyedIf<
+    KeyedNgItem<K, ResolveOnce<T, KeyedNgItemWithoutValue<K, CTX>>, CTX>,
+    ResolveOnce<T, KeyedNgItemWithoutValue<K, CTX>>,
+    K,
+    CTX
+  >,
+  "entries" | "forEach" | "onSet" | "onDelete" | "values" | "setParam"
+> {
   /** @internal */
   readonly _keyed: KeyedNg<K, ResolveOnce<WithOptionalReset<T>, KeyedNgItemWithoutValue<K, CTX>>, CTX>;
 
