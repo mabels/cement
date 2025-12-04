@@ -15,11 +15,13 @@
  */
 
 import { Future } from "./future.js";
-import { UnPromisify, isPromise } from "./is-promise.js";
+import { isPromise } from "./is-promise.js";
 import { UnregFn } from "./lru-map-set.js";
 import { Result } from "./result.js";
 import { Option } from "./option.js";
 import { KeyedIf, KeyedNg, KeyedNgItem, KeyedNgItemWithoutValue, KeyedNgOptions } from "./keyed-ng.js";
+import { runtimeFn } from "./runtime.js";
+import { Writable } from "ts-essentials";
 
 /**
  * Internal item representing a queued function in a ResolveSeq sequence.
@@ -143,32 +145,57 @@ export class ResolveSeq<T, CTX extends NonNullable<object> = object> {
 type ResolveState = "initial" | "processed" | "waiting" | "processing";
 
 /**
- * Type helper that unwraps Promise types to their resolved value type.
+ * Type helper that awaits Promise types and passes through non-Promise types.
+ * This ensures that if a function returns a Promise<T>, the once method also returns Promise<T>,
+ * and if the function returns T (non-Promise), once returns T directly.
  *
- * @template R - The type to unwrap
+ * Uses the built-in Awaited utility type to properly handle nested Promises and thenable objects.
+ *
+ * @template R - The type to process
  *
  * @example
  * ```typescript
  * type A = ResultOnce<Promise<number>>; // Promise<number>
  * type B = ResultOnce<string>;          // string
+ * type C = ResultOnce<number>;          // number
+ * type D = ResultOnce<Promise<Promise<number>>>; // Promise<number>
  * ```
  */
-export type ResultOnce<R> = R extends Promise<infer T> ? Promise<T> : R;
+export type ResultOnce<R> = R extends Promise<unknown> ? Promise<Awaited<R>> : R;
 
+export interface OnceActionArg<R, CTX> {
+  readonly ctx: CTX;
+  readonly self: ResolveOnceIf<R, CTX>;
+}
+
+// export type OnceAction<R, CTX, RET> = (arg: OnceActionArg<R, CTX>) => RET extends Promise<R> ?  Promise<R> : R;
 /**
  * Interface defining the contract for ResolveOnce-like objects.
  * @template R - The return type
  * @template CTX - Optional context type
  */
-export interface ResolveOnceIf<R, CTX = void> {
+export interface ResolveOnceIf<R, CTX> {
   get ready(): boolean;
-  get value(): UnPromisify<R> | undefined;
+  get value(): R | undefined;
   get error(): Error | undefined;
   get state(): ResolveState;
 
-  once<R>(fn: (c?: CTX) => R): ResultOnce<R>;
-  reset<R>(fn?: (c?: CTX) => R): ResultOnce<R>;
+  setResetAfter(ms?: number): void;
+
+  once<RET extends R | Promise<R>>(fn: (arg: OnceActionArg<R, CTX>) => RET): ResultOnce<RET>;
+  reset<RET extends R | Promise<R>>(fn?: (arg: OnceActionArg<R, CTX>) => RET): ResultOnce<RET>;
+
+  setProcessed(state: StateInstance): void;
 }
+
+export interface SyncOrAsyncIf<T> {
+  get value(): T | undefined;
+  get error(): Error | undefined;
+  get queueLength(): number;
+
+  resolve<RET extends T | Promise<T>>(fn: () => RET): ResultOnce<RET>;
+}
+export type SyncOrAsync<T> = Option<SyncOrAsyncIf<T>>;
 
 /**
  * Synchronous version of ResolveOnce for functions that return non-promise values.
@@ -180,7 +207,7 @@ export interface ResolveOnceIf<R, CTX = void> {
  * @template CTX - Optional context type
  * @internal
  */
-export class SyncResolveOnce<T, CTX = void> {
+export class SyncResolveOnce<T, CTX> implements SyncOrAsyncIf<T> {
   #value?: T;
   #error?: Error;
 
@@ -223,10 +250,10 @@ export class SyncResolveOnce<T, CTX = void> {
    * @returns The result of the function
    * @throws Error if the function returned a promise (use AsyncResolveOnce instead)
    */
-  resolve(fn: (ctx?: CTX) => T): T {
+  resolve<RET extends T | Promise<T>>(fn: () => RET): ResultOnce<RET> {
     if (this.#state.isProcessing()) {
       try {
-        this.#value = fn(this.#rOnce._ctx);
+        this.#value = fn() as unknown as T;
       } catch (e) {
         this.#error = e as Error;
       } finally {
@@ -240,24 +267,24 @@ export class SyncResolveOnce<T, CTX = void> {
     if (this.#error) {
       throw this.#error;
     }
-    return this.#value as T;
+    return this.#value as ResultOnce<RET>;
   }
 
-  /**
-   * Resets the cached state, allowing the function to be executed again.
-   *
-   * @param fn - Optional function to execute immediately after reset
-   * @returns The result if fn provided, undefined otherwise
-   */
-  reset(fn?: (c?: CTX) => T): T | undefined {
-    this.#value = undefined;
-    this.#error = undefined;
-    if (fn) {
-      this.#state.setProcessing();
-      return this.resolve(fn);
-    }
-    return undefined as T;
-  }
+  // /**
+  //  * Resets the cached state, allowing the function to be executed again.
+  //  *
+  //  * @param fn - Optional function to execute immediately after reset
+  //  * @returns The result if fn provided, undefined otherwise
+  //  */
+  // reset(fn?: () => RET): T | undefined {
+  //   this.#value = undefined;
+  //   this.#error = undefined;
+  //   if (fn) {
+  //     this.#state.setProcessing();
+  //     return this.resolve(fn);
+  //   }
+  //   return undefined as T;
+  // }
 }
 
 /**
@@ -267,19 +294,19 @@ export class SyncResolveOnce<T, CTX = void> {
  */
 class AsyncResolveItem<T, CTX> {
   readonly id: number = Math.random();
-  readonly #toResolve: Promise<UnPromisify<T>>;
-  #value: Option<UnPromisify<T>> = Option.None();
+  readonly #toResolve: Promise<T>;
+  #value: Option<T> = Option.None();
   #error?: Error;
   readonly #state: StateInstance;
-  readonly #rOnce: ResolveOnce<T, CTX>;
+  readonly #rOnce: ResolveOnceIf<T, CTX>;
 
-  constructor(fn: Promise<UnPromisify<T>>, rOnce: ResolveOnce<T, CTX>, state: StateInstance) {
+  constructor(fn: Promise<T>, rOnce: ResolveOnceIf<T, CTX>, state: StateInstance) {
     this.#toResolve = fn;
     this.#state = state;
     this.#rOnce = rOnce;
   }
 
-  get value(): UnPromisify<T> | undefined {
+  get value(): T | undefined {
     return this.#value.IsSome() ? this.#value.unwrap() : undefined;
   }
 
@@ -287,7 +314,7 @@ class AsyncResolveItem<T, CTX> {
     return this.#error;
   }
 
-  readonly #queue: Future<UnPromisify<T>>[] = [];
+  readonly #queue: Future<T>[] = [];
 
   get queuelength(): number {
     return this.#queue.length;
@@ -300,7 +327,7 @@ class AsyncResolveItem<T, CTX> {
     return this.#state.isProcessed() && this.#queue.length === 0;
   }
 
-  #resolveFuture(future?: Future<UnPromisify<T>>): void {
+  #resolveFuture(future?: Future<T>): void {
     if (!future) {
       return;
     }
@@ -313,7 +340,7 @@ class AsyncResolveItem<T, CTX> {
     }
   }
 
-  #promiseResult(): Promise<UnPromisify<T>> {
+  #promiseResult(): Promise<T> {
     if (this.#error) {
       return Promise.reject(this.#error);
     }
@@ -326,9 +353,9 @@ class AsyncResolveItem<T, CTX> {
   /**
    * Resolves the async operation, queuing the request if already in progress.
    */
-  resolve(): T {
+  resolve<RET extends T | Promise<T>>(_fn: () => RET): ResultOnce<RET> {
     if (this.#state.isWaiting()) {
-      const future = new Future<UnPromisify<T>>();
+      const future = new Future<T>();
       this.#queue.push(future);
       this.#toResolve
         .then((value) => {
@@ -344,11 +371,11 @@ class AsyncResolveItem<T, CTX> {
             this.#resolveFuture(this.#queue.shift());
           }
         });
-      return future.asPromise() as T;
+      return future.asPromise() as ResultOnce<RET>;
     }
 
     if (this.#state.isProcessed()) {
-      return this.#promiseResult() as T;
+      return this.#promiseResult() as ResultOnce<RET>;
     }
     // if (this.#state.isWaiting()) {
     //   const future = new Future<UnPromisify<T>>();
@@ -371,23 +398,23 @@ class AsyncResolveItem<T, CTX> {
  * @internal
  */
 
-function isAsyncResolveOnce<T, CTX>(obj: SyncOrAsync<T, CTX>): obj is Option<AsyncResolveOnce<T, CTX>> {
+function isAsyncResolveOnce<T, CTX>(obj: SyncOrAsync<T>): obj is Option<AsyncResolveOnce<T, CTX>> {
   return obj.IsSome() && obj.Unwrap() instanceof AsyncResolveOnce;
 }
 
-export class AsyncResolveOnce<T, CTX = void> {
+export class AsyncResolveOnce<T, CTX> implements SyncOrAsyncIf<T> {
   // #state: ResolveState = "initial";
   readonly #state: StateInstance;
 
   readonly #queue: AsyncResolveItem<T, CTX>[];
 
-  readonly #rOnce: ResolveOnce<T, CTX>;
-  //readonly #ctx?: CTX;
-  constructor(rOnce: ResolveOnce<T, CTX>, state: StateInstance, prev: SyncOrAsync<T, CTX>) {
+  readonly #rOnce: ResolveOnceIf<T, CTX>;
+  //readonly #ctx?: RET;
+  constructor(rOnce: ResolveOnceIf<T, CTX>, state: StateInstance, prev: SyncOrAsync<T>) {
     this.#state = state;
     this.#rOnce = rOnce;
     if (isAsyncResolveOnce(prev)) {
-      this.#queue = [...prev.unwrap().#queue];
+      this.#queue = [...(prev.unwrap().#queue as AsyncResolveItem<T, CTX>[])];
     } else {
       this.#queue = [];
     }
@@ -411,7 +438,7 @@ export class AsyncResolveOnce<T, CTX = void> {
   /**
    * Gets the cached resolved value if available.
    */
-  get value(): UnPromisify<T> | undefined {
+  get value(): T | undefined {
     if (this.#state.isInitial()) {
       return undefined;
     }
@@ -435,16 +462,16 @@ export class AsyncResolveOnce<T, CTX = void> {
    * @param fn - The async function to execute
    * @returns A promise that resolves to the function's result
    */
-  resolve(fn: (ctx?: CTX) => T): T {
+  resolve<RET extends T | Promise<T>>(fn: () => RET): ResultOnce<RET> {
     if (this.#state.isProcessing()) {
       this.#state.setWaiting();
-      let promiseResult: Promise<UnPromisify<T>>;
+      let promiseResult: Promise<T>;
       try {
-        const couldBePromise = fn(this.#rOnce._ctx);
+        const couldBePromise = fn();
         if (!isPromise(couldBePromise)) {
-          promiseResult = Promise.resolve(couldBePromise as UnPromisify<T>);
+          promiseResult = Promise.resolve(couldBePromise) as Promise<T>;
         } else {
-          promiseResult = couldBePromise as Promise<UnPromisify<T>>;
+          promiseResult = couldBePromise as Promise<T>;
         }
       } catch (e) {
         promiseResult = Promise.reject(e as Error);
@@ -459,22 +486,22 @@ export class AsyncResolveOnce<T, CTX = void> {
       .reverse()
       .forEach((idx) => this.#queue.splice(idx, 1));
 
-    return this.#active().resolve();
+    return this.#active().resolve(fn);
   }
 
-  /**
-   * Resets the cached state, allowing the function to be executed again.
-   *
-   * @param fn - Optional function to execute immediately after reset
-   * @returns The result if fn provided, undefined otherwise
-   */
-  reset(fn?: (c?: CTX) => T): T {
-    this.#state.setProcessing();
-    if (fn) {
-      return this.resolve(fn);
-    }
-    return undefined as T;
-  }
+  // /**
+  //  * Resets the cached state, allowing the function to be executed again.
+  //  *
+  //  * @param fn - Optional function to execute immediately after reset
+  //  * @returns The result if fn provided, undefined otherwise
+  //  */
+  // reset(fn?: () => ResultOnce<T>): T {
+  //   this.#state.setProcessing();
+  //   if (fn) {
+  //     return this.resolve(fn);
+  //   }
+  //   return undefined as T;
+  // }
 }
 
 /**
@@ -549,20 +576,24 @@ class StateInstance {
   }
 }
 
-type SyncOrAsync<T, CTX> = Option<SyncResolveOnce<T, CTX> | AsyncResolveOnce<T, CTX>>;
+// type SyncOrAsync<T, CTX> = Option<SyncResolveOnce<T, CTX> | AsyncResolveOnce<T, CTX>>;
 
 export class ResolveOnce<T, CTX = void> implements ResolveOnceIf<T, CTX> {
   #state = new StateInstance();
 
-  #syncOrAsync: SyncOrAsync<T, CTX> = Option.None();
+  #syncOrAsync: SyncOrAsync<T> = Option.None();
 
-  readonly #opts: ResolveOnceOpts;
+  readonly #opts: Writable<ResolveOnceOpts>;
   resetAfterTimer?: ReturnType<typeof setTimeout>;
 
-  readonly _ctx?: CTX;
+  readonly _onceArg: OnceActionArg<T, CTX>;
+
   constructor(ctx?: CTX, opts?: ResolveOnceOpts) {
-    this._ctx = ctx;
-    this.#opts = opts ?? {};
+    this.#opts = { ...(opts ?? {}) };
+    this._onceArg = {
+      ctx: ctx as CTX,
+      self: this,
+    };
   }
 
   get state(): ResolveState {
@@ -584,15 +615,47 @@ export class ResolveOnce<T, CTX = void> implements ResolveOnceIf<T, CTX> {
       this.#state.setProcessed();
       if (typeof this.#opts.resetAfter === "number" && this.#opts.resetAfter > 0) {
         this.resetAfterTimer = setTimeout(() => {
-          this.reset();
+          void this.reset();
         }, this.#opts.resetAfter);
-        if (!this.#opts.skipUnref) {
-          const hasUnref = this.resetAfterTimer as unknown as { unref?: () => void };
-          if (typeof hasUnref === "object" && typeof hasUnref.unref === "function") {
-            hasUnref.unref();
-          } else if (typeof globalThis.Deno === "object") {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
-            globalThis.Deno.unrefTimer(this.resetAfterTimer as any);
+        if (!this.#opts.skipUnref && this.resetAfterTimer) {
+          // node solution
+          const runtime = runtimeFn();
+          switch (true) {
+            case runtime.isDeno:
+              {
+                let id = this.resetAfterTimer as unknown as number;
+                if (typeof Deno.unrefTimer === "function") {
+                  if (typeof this.resetAfterTimer === "number") {
+                    id = this.resetAfterTimer;
+                  } else {
+                    try {
+                      const ret = Reflect.ownKeys(this.resetAfterTimer).find((key) => {
+                        return key.toString().includes("timerId");
+                      });
+                      if (ret) {
+                        id = this.resetAfterTimer[ret as keyof typeof this.resetAfterTimer] as unknown as number;
+                        // eslint-disable-next-line no-console
+                        console.warn("Deno.unrefTimer timerId from struct:", id, "version:", globalThis.Deno?.version);
+                      }
+                    } catch (e) {
+                      // eslint-disable-next-line no-console
+                      console.warn(
+                        "Deno.unrefTimer failed to get timerId",
+                        e,
+                        "id:",
+                        this.resetAfterTimer,
+                        "version:",
+                        globalThis.Deno?.version,
+                      );
+                    }
+                  }
+                  Deno.unrefTimer(id);
+                }
+              }
+              break;
+            case runtime.isNodeIsh:
+              (this.resetAfterTimer as unknown as { unref: () => void }).unref();
+              break;
           }
         }
       }
@@ -603,11 +666,11 @@ export class ResolveOnce<T, CTX = void> implements ResolveOnceIf<T, CTX> {
     return !this.#state.isInitial();
   }
 
-  get value(): UnPromisify<T> | undefined {
+  get value(): T | undefined {
     if (this.#state.isInitial()) {
       return undefined;
     }
-    return this.#syncOrAsync.Unwrap().value as UnPromisify<T>;
+    return this.#syncOrAsync.Unwrap().value;
   }
 
   get queueLength(): number {
@@ -644,57 +707,68 @@ export class ResolveOnce<T, CTX = void> implements ResolveOnceIf<T, CTX> {
   //   this.#state = value;
   // }
 
-  once<R>(fn: (c: CTX, prev?: T) => R): ResultOnce<R> {
-    let resultFn: (ctx: CTX) => R;
+  once<RET extends T | Promise<T>>(fn: (arg: OnceActionArg<T, CTX>) => RET): ResultOnce<RET> {
+    let resultFn: () => RET;
     if (this.#state.isInitial()) {
       const state = this.#state;
       try {
         state.setProcessing();
-        let prev: T | undefined = undefined;
-        if (this.#syncOrAsync.IsSome()) {
-          prev = this.#syncOrAsync.Unwrap().value as T;
-        }
-        const isSyncOrAsync = fn(this._ctx ?? ({} as CTX), prev);
+        // let prev: T | undefined = undefined;
+        // if (this.#syncOrAsync.IsSome()) {
+        //   prev = this.#syncOrAsync.Unwrap().value as T;
+        // }
+        const isSyncOrAsync = fn(this._onceArg);
         if (isPromise(isSyncOrAsync)) {
           this.#syncOrAsync = Option.Some(new AsyncResolveOnce<T, CTX>(this, state, this.#syncOrAsync));
         } else {
           this.#syncOrAsync = Option.Some(new SyncResolveOnce<T, CTX>(this, state));
         }
-        resultFn = (): R => isSyncOrAsync;
+        resultFn = (): RET => isSyncOrAsync;
       } catch (e) {
         this.#syncOrAsync = Option.Some(new SyncResolveOnce<T, CTX>(this, state));
-        resultFn = (): R => {
+        resultFn = (): RET => {
           throw e;
         };
       }
     } else {
-      resultFn = fn;
+      resultFn = (): RET => fn(this._onceArg);
     }
     if (!this.#syncOrAsync) {
       throw new Error(`ResolveOnce.once impossible: state=${this.#state.getResolveState()}`);
     }
-    return this.#syncOrAsync.Unwrap().resolve(resultFn as (c?: CTX) => never) as ResultOnce<R>;
+    return this.#syncOrAsync.Unwrap().resolve(resultFn);
   }
 
-  reset<R>(fn?: (c: CTX) => R): ResultOnce<R> {
+  reset<RET extends T | Promise<T>>(fn?: (arg: OnceActionArg<T, CTX>) => RET): ResultOnce<RET> {
     if (this.#state.isInitial()) {
       if (!fn) {
-        return undefined as ResultOnce<R>;
+        return undefined as ResultOnce<RET>;
       }
-      return this.once(fn as (c: CTX) => R);
+      return this.once(fn);
     }
     if (this.#state.isProcessing()) {
       // eslint-disable-next-line no-console
       console.warn("ResolveOnce.reset dropped was called while processing");
-      return undefined as ResultOnce<R>;
+      return undefined as ResultOnce<RET>;
     }
-    let ret = undefined as ResultOnce<R>;
+    let ret = undefined as ResultOnce<RET>;
     this.#state = new StateInstance();
     if (fn) {
-      ret = this.once(fn as (c: CTX) => R);
+      ret = this.once(fn);
       // ret = this.#syncOrAsync.Unwrap().reset(fn as (c?: CTX) => never) as ResultOnce<R>
     }
     return ret;
+  }
+
+  setResetAfter(ms?: number): void {
+    if (this.resetAfterTimer) {
+      clearTimeout(this.resetAfterTimer);
+    }
+    if (typeof ms === "number" && ms > 0) {
+      this.#opts.resetAfter = ms;
+    } else {
+      this.#opts.resetAfter = undefined;
+    }
   }
 }
 
@@ -993,7 +1067,7 @@ export class KeyedResolvOnce<
    */
   unget(key: K): void {
     const item = this._keyed.getItem(key);
-    item.value.reset?.();
+    void item.value.reset?.();
     return this._keyed.delete(item.givenKey);
   }
 
@@ -1005,7 +1079,7 @@ export class KeyedResolvOnce<
    */
   reset(): void {
     for (const v of this._keyed.values()) {
-      v.value.reset?.();
+      void v.value.reset?.();
     }
   }
 

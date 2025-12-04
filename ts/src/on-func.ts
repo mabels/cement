@@ -1,4 +1,5 @@
 import { isPromise } from "./is-promise.js";
+import { exception2Result, Result } from "./result.js";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 class OnFuncInstance<Args extends any[]> {
@@ -11,7 +12,20 @@ class OnFuncInstance<Args extends any[]> {
     };
   }
 
+  once(fn: (...a: Args) => void): () => void {
+    return this.addFunction((...a: Args): OnFuncReturn => {
+      exception2Result(() => fn(...a));
+      return OnFuncReturn.ONCE;
+    });
+  }
+
   private unreg(ret: unknown, fn: (...a: Args) => unknown): unknown {
+    if (Result.Is(ret)) {
+      if (ret.isErr()) {
+        return undefined;
+      }
+      ret = ret.unwrap();
+    }
     // console.log("unreg", ret, OnFuncReturn, OnFuncReturn[ret as keyof typeof OnFuncReturn]);
     if (ret === OnFuncReturn.UNREGISTER || ret === OnFuncReturn.ONCE) {
       this.#fns.delete(fn);
@@ -23,7 +37,7 @@ class OnFuncInstance<Args extends any[]> {
   public invoke(...a: Args): void {
     for (const fn of this.#fns) {
       try {
-        const couldByPlainOrPromise = fn(...a);
+        const couldByPlainOrPromise = exception2Result(() => fn(...a));
         if (isPromise(couldByPlainOrPromise)) {
           void couldByPlainOrPromise.then((ret) => {
             this.unreg(ret, fn);
@@ -61,6 +75,7 @@ export interface ReturnOnFunc<Args extends any[], X = unknown> {
   invoke(...a: Args): void;
   invokeAsync(...a: Args): Promise<void>;
   clear(): void;
+  once(fn: (...a: Args) => void): () => unknown;
 }
 
 type ExtractArgs<T, X> = T extends (...args: infer A) => OnFuncReturn | X ? A : never;
@@ -101,6 +116,28 @@ type ExtractArgs<T, X> = T extends (...args: infer A) => OnFuncReturn | X ? A : 
  *
  * // Clear all listeners
  * onUserLogin.clear();
+ *
+ * // Auto-unregister with ONCE (listener runs only once)
+ * const onDataLoad = OnFunc<(data: string) => void>();
+ * onDataLoad((data) => {
+ *   console.log(`Data loaded: ${data}`);
+ *   return OnFuncReturn.ONCE; // Automatically unregisters after first invocation
+ * });
+ * onDataLoad.invoke('first'); // Logs "Data loaded: first"
+ * onDataLoad.invoke('second'); // No output - listener already removed
+ *
+ * // Conditional unregister with UNREGISTER
+ * const onMessage = OnFunc<(msg: string) => void>();
+ * onMessage((msg) => {
+ *   console.log(`Received: ${msg}`);
+ *   if (msg === 'stop') {
+ *     return OnFuncReturn.UNREGISTER; // Unregisters when condition is met
+ *   }
+ * });
+ * onMessage.invoke('hello'); // Logs "Received: hello"
+ * onMessage.invoke('world'); // Logs "Received: world"
+ * onMessage.invoke('stop');  // Logs "Received: stop" and unregisters
+ * onMessage.invoke('ignored'); // No output - listener was unregistered
  * ```
  */
 
@@ -111,5 +148,6 @@ export function OnFunc<Fn extends (...args: any[]) => OnFuncReturn | X, X = unkn
   ret.invoke = instance.invoke.bind(instance) as ReturnOnFunc<ExtractArgs<Fn, X>>["invoke"];
   ret.invokeAsync = instance.invokeAsync.bind(instance) as ReturnOnFunc<ExtractArgs<Fn, X>>["invokeAsync"];
   ret.clear = instance.clear.bind(instance) as ReturnOnFunc<ExtractArgs<Fn, X>>["clear"];
+  ret.once = instance.once.bind(instance) as ReturnOnFunc<ExtractArgs<Fn, X>>["once"];
   return ret;
 }

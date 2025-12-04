@@ -57,6 +57,13 @@ export abstract class Result<T, E = Error> {
     return false;
   }
 
+  static AsyncOk<T = void, E = Error>(...args: T[]): Promise<Result<T, E>> {
+    return Promise.resolve(Result.Ok<T, E>(...args));
+  }
+  static AsyncErr<T, E extends Error = Error>(t: E | string | Result<unknown, E>): Promise<Result<T, E>> {
+    return Promise.resolve(Result.Err<T, E>(t));
+  }
+
   isOk(): boolean {
     return this.is_ok();
   }

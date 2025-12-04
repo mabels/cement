@@ -142,3 +142,41 @@ it("OnFunctionTest unregister from the callback", async () => {
     [2, "23"],
   ]);
 });
+
+it("OnFunctionTest exception", () => {
+  const test = new OnFunctionTest();
+  const fn1 = vi.fn(() => {
+    throw new Error("fn1 error");
+  });
+  test.onFunAction(fn1);
+  const fn2 = vi.fn();
+  test.onFunAction(fn2);
+  const fn3 = vi.fn(() => {
+    return Promise.reject(new Error("fn3 error"));
+  });
+  test.onFunAction(fn3);
+  const fn4 = vi.fn();
+  test.onFunAction(fn4);
+
+  test.onFunAction.invoke(1, "13");
+  expect(fn1.mock.calls).toEqual([[1, "13"]]);
+  expect(fn2.mock.calls).toEqual([[1, "13"]]);
+  expect(fn3.mock.calls).toEqual([[1, "13"]]);
+  expect(fn4.mock.calls).toEqual([[1, "13"]]);
+});
+
+it("OnFunctionTest once", () => {
+  const test = new OnFunctionTest();
+  const fn1 = vi.fn();
+  test.onFunAction.once(fn1);
+  const fn2 = vi.fn();
+  test.onFunAction(fn2);
+
+  test.onFunAction.invoke(1, "13");
+  test.onFunAction.invoke(2, "23");
+  expect(fn1.mock.calls).toEqual([[1, "13"]]);
+  expect(fn2.mock.calls).toEqual([
+    [1, "13"],
+    [2, "23"],
+  ]);
+});

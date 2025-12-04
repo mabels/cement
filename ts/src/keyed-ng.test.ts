@@ -35,17 +35,18 @@ describe("KeyedFactory with ResolveOnce", () => {
       key2string: (givenKey: TestKeyType): string => givenKey.x + "---" + givenKey.y,
       ctx: { bla: true },
     });
-    const once = my.get({ x: 3, y: 4 }, { bla: false }).once(({ refKey: key, givenKey, ctx }) => {
+    const once = my.get({ x: 3, y: 4 }, { bla: false }).once((ronce) => {
+      const { refKey, givenKey, ctx } = ronce.ctx;
       return {
         resX: givenKey.x * 2,
         resY: givenKey.y * 3,
         keyItem: {
-          key,
+          refKey,
           givenKey,
           value: {
             X: givenKey.x,
             Y: givenKey.y,
-            key,
+            refKey,
           },
           ctx,
         },
@@ -55,9 +56,9 @@ describe("KeyedFactory with ResolveOnce", () => {
       resX: 6,
       resY: 12,
       keyItem: {
-        key: "3---4",
+        refKey: "3---4",
         givenKey: { x: 3, y: 4 },
-        value: { X: 3, Y: 4, key: "3---4" },
+        value: { X: 3, Y: 4, refKey: "3---4" },
         ctx: { bla: false },
       },
     });

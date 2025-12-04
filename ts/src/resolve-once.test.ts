@@ -8,6 +8,8 @@ import {
   KeyedResolvSeq,
   KeyedNgItem,
   runtimeFn,
+  OnceActionArg,
+  KeyedNgItemWithoutValue,
 } from "@adviser/cement";
 import { isPromise } from "./is-promise.js";
 import { sleep } from "./promise-sleep.js";
@@ -243,30 +245,26 @@ describe("resolve-once", () => {
       keyed.get(() => "b").once(b_orderFn),
     ]);
     expect(a_orderFn).toHaveBeenCalledTimes(1);
-    expect(a_orderFn).toHaveBeenCalledWith(
-      {
-        refKey: "a",
-        givenKey: "a",
-        value: undefined,
-        ctx: {},
-      },
-      undefined,
-    );
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    expect(a_orderFn.mock.calls[0][0].ctx).toEqual({
+      refKey: "a",
+      givenKey: "a",
+      value: undefined,
+      ctx: {},
+    });
     expect(b_orderFn).toHaveBeenCalledTimes(1);
-    expect(b_orderFn).toHaveBeenCalledWith(
-      {
-        refKey: "b",
-        givenKey: "b",
-        value: undefined,
-        ctx: {},
-      },
-      undefined,
-    );
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    expect(b_orderFn.mock.calls[0][0].ctx).toEqual({
+      refKey: "b",
+      givenKey: "b",
+      value: undefined,
+      ctx: {},
+    });
   });
 
   it("keyedResolvOnce with pass ctx & {key: K}", () => {
     const my = new KeyedResolvOnce<{ hello: string }, number, { wurst: string }>({ ctx: { wurst: "world" } });
-    my.get(1).once((item) => {
+    my.get(1).once(({ ctx: item }) => {
       assertType<{ givenKey: number }>(item);
       assertType<{ ctx: { wurst: string } }>(item);
       assertType<number>(item.givenKey);
@@ -294,21 +292,22 @@ describe("resolve-once", () => {
     my.once(() => {
       return { hello: "world" };
     });
-    my.once((x) => {
-      return { hello: x.wurst };
+    my.once(({ ctx }) => {
+      return { hello: ctx.wurst };
     });
   });
 
   it("keyedResolvOnce with pass decompose", () => {
     const my = new KeyedResolvOnce<{ hello: string }>();
-    my.get("1").once(({ refKey }) => {
+    my.get("1").once(({ ctx }) => {
+      const { refKey } = ctx;
       assertType<string>(refKey);
       return { hello: "world" };
     });
     my.get("2").once(() => {
       return { hello: "world" };
     });
-    my.get("3").once((ctx) => {
+    my.get("3").once(({ ctx }) => {
       assertType<{ refKey: string }>(ctx);
       return { hello: "world" };
     });
@@ -341,25 +340,21 @@ describe("resolve-once", () => {
         .then((resolveOnce) => resolveOnce.once(b_orderFn)),
     ]);
     expect(a_orderFn).toHaveBeenCalledTimes(1);
-    expect(a_orderFn).toHaveBeenCalledWith(
-      {
-        ctx: {},
-        givenKey: "a",
-        refKey: "a",
-        value: undefined,
-      },
-      undefined,
-    );
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    expect(a_orderFn.mock.calls[0][0].ctx).toEqual({
+      ctx: {},
+      givenKey: "a",
+      refKey: "a",
+      value: undefined,
+    });
     expect(b_orderFn).toHaveBeenCalledTimes(1);
-    expect(b_orderFn).toHaveBeenCalledWith(
-      {
-        ctx: {},
-        givenKey: "b",
-        refKey: "b",
-        value: undefined,
-      },
-      undefined,
-    );
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    expect(b_orderFn.mock.calls[0][0].ctx).toEqual({
+      ctx: {},
+      givenKey: "b",
+      refKey: "b",
+      value: undefined,
+    });
   });
 
   function shuffle<T>(array: T[]): T[] {
@@ -434,7 +429,7 @@ describe("resolve-once", () => {
   it.each([(): Promise<void> => new Promise((resolve) => setTimeout(resolve, 10)), (): Promise<void> => Promise.resolve()])(
     "async with unget",
     async (sleeper) => {
-      const once = new KeyedResolvOnce();
+      const once = new KeyedResolvOnce<string>();
       let triggerUnget = true;
       const fn = vitest.fn();
       async function onceFn(): Promise<string> {
@@ -463,7 +458,7 @@ describe("resolve-once", () => {
   );
 
   it("sync with unget", () => {
-    const once = new KeyedResolvOnce();
+    const once = new KeyedResolvOnce<string>();
     let triggerUnget = true;
     const fn = vitest.fn();
     function onceFn(): string {
@@ -999,12 +994,15 @@ describe("KeyToHash", () => {
       key2string: (key: Key2Hash): string => `${key.id}:${key.name}`,
       ctx: { ctx: "test" },
     });
-    const onceFn = vi.fn().mockImplementation((item: KeyedNgItem<Key2Hash, { value: Key2Hash }, { ctx: string }>) => {
-      return {
-        id: item.givenKey.id,
-        name: item.givenKey.name,
-      };
-    });
+    const onceFn = vi
+      .fn()
+      .mockImplementation(({ ctx }: OnceActionArg<Key2Value, KeyedNgItemWithoutValue<Key2Hash, { ctx: string }>>) => {
+        // item: KeyedNgItem<Key2Hash, { value: Key2Hash }, { ctx: string }>)
+        return {
+          id: ctx.givenKey.id,
+          name: ctx.givenKey.name,
+        };
+      });
     for (let i = 0; i < 3; i++) {
       const res = await keyed.get({ id: 1, name: "test" }).once((item): Promise<Key2Value> => {
         return Promise.resolve(onceFn(item) as Key2Value);
@@ -1012,7 +1010,8 @@ describe("KeyToHash", () => {
       expect(res).toEqual({ id: 1, name: "test" });
     }
     expect(onceFn).toHaveBeenCalledTimes(1);
-    expect(onceFn).toHaveBeenCalledWith({
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    expect(onceFn.mock.calls[0][0].ctx).toEqual({
       refKey: "1:test",
       givenKey: { id: 1, name: "test" },
       value: undefined,
@@ -1032,15 +1031,15 @@ it("ResolveOnce gets is prev value if reset", () => {
     stats: 1,
   }));
 
-  once.reset();
+  void once.reset();
 
-  const res1 = once.once((_, prev) => {
-    if (!prev) {
+  const res1 = once.once((my) => {
+    if (!my.self.value) {
       throw new Error("prev is undefined");
     }
     return {
       value: 45,
-      stats: prev.stats + 1,
+      stats: my.self.value.stats + 1,
     };
   });
   expect(res1).toEqual({
@@ -1048,20 +1047,43 @@ it("ResolveOnce gets is prev value if reset", () => {
     stats: 2,
   });
 
-  once.reset();
+  void once.reset();
 
-  const res2 = once.once((_, prev) => {
-    if (!prev) {
+  const res2 = once.once((my) => {
+    if (!my.self.value) {
       throw new Error("prev is undefined");
     }
-    prev.stats++;
-    prev.value += 3;
-    return prev;
+    my.self.value.stats++;
+    my.self.value.value += 3;
+    return my.self.value;
   });
   expect(res2).toEqual({
     value: 48,
     stats: 3,
   });
+});
+
+it("dynamic setting of resetAfter switch off", async () => {
+  const once = new ResolveOnce<number>(undefined, { resetAfter: 30 });
+  once.once((my) => {
+    my.self.setResetAfter();
+    return 42;
+  });
+  await sleep(40);
+  expect(once.once(() => 43)).toBe(42);
+});
+
+it("dynamic setting of resetAfter change time", async () => {
+  const once = new ResolveOnce<number>(undefined, { resetAfter: 30 });
+  once.once((my) => {
+    my.self.setResetAfter(10);
+    return 42;
+  });
+  await sleep(15);
+  expect(once.once(() => 43)).toBe(43);
+  // reset timer stay on the setValue
+  await sleep(15);
+  expect(once.once(() => 44)).toBe(44);
 });
 
 it("does not block node on process exit", async () => {
