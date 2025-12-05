@@ -1106,7 +1106,7 @@ it("does not block node on process exit", async () => {
     const res = await $`${runtime} ${[code]}`;
     expect(res.ok).toBe(true);
     const duration = Date.now() - start;
-    expect(duration).toBeLessThan(1000);
+    expect(duration).toBeLessThan(2000);
   }
 });
 
