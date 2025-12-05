@@ -57,8 +57,15 @@ export class WaitingForValue<T = void> {
    */
   init(presetValue: Option<T> = Option.None()): void {
     this.#value = presetValue;
+    if (presetValue.IsSome() && this.#waitFuture) {
+      this.#waitFuture.resolve(presetValue.unwrap());
+    }
     if (this.#value.IsSome()) {
-      return this.setValue(this.#value);
+      // console.log("setValue: 3-Some:", this.#value, value)
+      this.#waitFuture = undefined;
+      const resolveOnce = new ResolveOnce();
+      this.#waitValue = (): Promise<T> => resolveOnce.once(() => Promise.resolve(presetValue.unwrap()));
+      return;
     }
     const myFuture = (this.#waitFuture = new Future<T>());
     const resolveOnce = new ResolveOnce<T>();
@@ -74,23 +81,30 @@ export class WaitingForValue<T = void> {
    * @param value - The value to set (wrapped in Option)
    */
   setValue(value: Option<T>): void {
-    if (value.IsNone()) {
-      return;
-    }
+    // console.log("setValue", value, this.#value)
     switch (true) {
       case this.#value.IsNone():
-        // need to resolve waiters
+        // console.log("setValue: 2")
         this.#value = value;
-        this.#waitFuture?.resolve(value.unwrap());
+        if (value.IsSome()) {
+          this.#waitFuture?.resolve(value.unwrap());
+        }
         break;
-      case this.#value.IsSome(): {
-        this.#value = value;
-        this.#waitFuture = undefined;
-        const resolveOnce = new ResolveOnce<T>();
-        this.#waitValue = (): Promise<T> => resolveOnce.once(() => Promise.resolve(value.unwrap()));
+      case this.#value.IsSome():
+        this.init(value);
         break;
-      }
     }
+  }
+
+  setError(err: Error): void {
+    if (this.#value.IsSome()) {
+      // ignore error if value is already set
+      // eslint-disable-next-line no-console
+      console.warn("WaitingForValue.setError called but value is already set, ignoring error", err);
+      return;
+    }
+    this.#waitFuture?.reject(err);
+    this.init();
   }
 
   /**

@@ -38,11 +38,26 @@ export abstract class Option<T> {
     return t instanceof Option;
   }
 
-  static From<T>(t?: T): Option<T> {
-    if (!t) {
-      return new None();
+  static From<T = void>(...args: (T | undefined | null)[]): Option<T> {
+    const t = args.length >= 1 ? args[0] : undefined;
+    switch (typeof t) {
+      case "undefined":
+        return new None();
+      // case "boolean":
+      // case "number":
+      // case "bigint":
+      // case "string":
+      // case "symbol":
+      // case "function":
+      //   return new Some(t);
+      case "object":
+        if (t === null) {
+          return new None();
+        }
+        return new Some(t);
+      default:
+        return new Some(t);
     }
-    return new Some(t);
   }
 
   toValue(): T | undefined {
