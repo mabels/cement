@@ -6,7 +6,6 @@ export default defineConfig({
   test: {
     name: "browser",
     include: ["src/**/*test.?(c|m)[jt]s?(x)"],
-    globals: true,
     browser: {
       enabled: true,
       headless: process.env.BROWSER === "safari" ? false : true,

@@ -1,4 +1,5 @@
-import { array2stream, devnull, stream2array, streamMap } from "./stream-map.js";
+import { it, expect, vitest, describe } from "vitest";
+import { array2stream, devnull, stream2array, streamMap } from "@adviser/cement";
 import { receiveFromStream, sendToStream, streamingTestState } from "./stream-test-helper.js";
 
 it("array2stream", async () => {

@@ -269,22 +269,6 @@ export class SyncResolveOnce<T, CTX> implements SyncOrAsyncIf<T> {
     }
     return this.#value as ResultOnce<RET>;
   }
-
-  // /**
-  //  * Resets the cached state, allowing the function to be executed again.
-  //  *
-  //  * @param fn - Optional function to execute immediately after reset
-  //  * @returns The result if fn provided, undefined otherwise
-  //  */
-  // reset(fn?: () => RET): T | undefined {
-  //   this.#value = undefined;
-  //   this.#error = undefined;
-  //   if (fn) {
-  //     this.#state.setProcessing();
-  //     return this.resolve(fn);
-  //   }
-  //   return undefined as T;
-  // }
 }
 
 /**
@@ -488,20 +472,6 @@ export class AsyncResolveOnce<T, CTX> implements SyncOrAsyncIf<T> {
 
     return this.#active().resolve(fn);
   }
-
-  // /**
-  //  * Resets the cached state, allowing the function to be executed again.
-  //  *
-  //  * @param fn - Optional function to execute immediately after reset
-  //  * @returns The result if fn provided, undefined otherwise
-  //  */
-  // reset(fn?: () => ResultOnce<T>): T {
-  //   this.#state.setProcessing();
-  //   if (fn) {
-  //     return this.resolve(fn);
-  //   }
-  //   return undefined as T;
-  // }
 }
 
 /**
@@ -687,36 +657,12 @@ export class ResolveOnce<T, CTX = void> implements ResolveOnceIf<T, CTX> {
     return this.#syncOrAsync.Unwrap().error;
   }
 
-  // get state(): ResolveState {
-  //   return this.#state;
-  // }
-  // set state(value: ResolveState) {
-  //   console.log(`ResolveOnce.state ${this.#state} -> ${value}`);
-  //   if (value === "processed") {
-  //     if (this.resetAfterTimer) {
-  //       clearTimeout(this.resetAfterTimer);
-  //     }
-  //     if (typeof this.#opts.resetAfter === "number" && this.#opts.resetAfter > 0) {
-  //       console.log("setting reset timer for", this.#opts.resetAfter);
-  //       this.resetAfterTimer = setTimeout(() => {
-  //         console.log("resetting after", this.#opts.resetAfter);
-  //         this.reset();
-  //       }, this.#opts.resetAfter);
-  //     }
-  //   }
-  //   this.#state = value;
-  // }
-
   once<RET extends T | Promise<T>>(fn: (arg: OnceActionArg<T, CTX>) => RET): ResultOnce<RET> {
     let resultFn: () => RET;
     if (this.#state.isInitial()) {
       const state = this.#state;
       try {
         state.setProcessing();
-        // let prev: T | undefined = undefined;
-        // if (this.#syncOrAsync.IsSome()) {
-        //   prev = this.#syncOrAsync.Unwrap().value as T;
-        // }
         const isSyncOrAsync = fn(this._onceArg);
         if (isPromise(isSyncOrAsync)) {
           this.#syncOrAsync = Option.Some(new AsyncResolveOnce<T, CTX>(this, state, this.#syncOrAsync));
@@ -806,11 +752,14 @@ export type AddKeyedParam<K, V, CTX extends NonNullable<object>> = Omit<KeyedNgO
  */
 export type WithKey<X extends NonNullable<object>, K> = X & { readonly key: K };
 
+// interface ResetFunc {
+//   reset(): void;
+// }
 /**
  * Type helper that adds an optional reset method to a value type.
  * @template V - The value type
  */
-export type WithOptionalReset<V> = V & { readonly reset?: () => void };
+// export type WithOptionalReset<V> = V extends ResetFunc ? V & ResetFunc : V;
 
 /**
  * Represents an item in a KeyedResolvOnce collection with its resolved result.
@@ -824,7 +773,7 @@ export interface KeyedResolveOnceItem<K, T, CTX extends NonNullable<object>> {
   /** The resolved value wrapped in a Result (Ok or Err) */
   readonly value: Result<T>;
   /** The complete KeyedNgItem containing metadata */
-  readonly item: KeyedNgItem<K, ResolveOnce<WithOptionalReset<T>, KeyedNgItemWithoutValue<K, CTX>>, CTX>;
+  readonly item: KeyedNgItem<K, ResolveOnce<T, KeyedNgItemWithoutValue<K, CTX>>, CTX>;
 }
 
 /**
@@ -873,10 +822,12 @@ export interface KeyedResolveOnceItem<K, T, CTX extends NonNullable<object>> {
  * ```
  */
 export class KeyedResolvOnce<
-  T extends WithOptionalReset<PT>,
+  T,
+  //export type WithOptionalReset<V> = V extends ResetFunc ? V & ResetFunc : V;
+  // WithOptionalReset<PT>,
   K = string,
   CTX extends NonNullable<object> = object,
-  PT = T,
+  // PT = unknown,
 > implements Omit<
   // KeyedIf<ResolveOnce<T, KeyedNgItemWithoutValue<K, CTX>>, WithOptionalReset<T>, K>
   KeyedIf<
@@ -888,7 +839,7 @@ export class KeyedResolvOnce<
   "entries" | "forEach" | "onSet" | "onDelete" | "values" | "setParam"
 > {
   /** @internal */
-  readonly _keyed: KeyedNg<K, ResolveOnce<WithOptionalReset<T>, KeyedNgItemWithoutValue<K, CTX>>, CTX>;
+  readonly _keyed: KeyedNg<K, ResolveOnce<T, KeyedNgItemWithoutValue<K, CTX>>, CTX>;
 
   /**
    * Creates a new KeyedResolvOnce instance.
@@ -896,7 +847,7 @@ export class KeyedResolvOnce<
    * @param kp - Configuration options (key2string, ctx, lru)
    */
   constructor(kp: Partial<AddKeyedParam<K, T, CTX>> = {}) {
-    this._keyed = new KeyedNg({
+    this._keyed = new KeyedNg<K, ResolveOnce<T, KeyedNgItemWithoutValue<K, CTX>>, CTX>({
       createValue: (
         item: KeyedNgItem<K, ResolveOnce<T, KeyedNgItemWithoutValue<K, CTX>>, CTX>,
       ): ResolveOnce<T, KeyedNgItemWithoutValue<K, CTX>> => {

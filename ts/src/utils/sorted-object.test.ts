@@ -1,4 +1,5 @@
-import { toSortedObjectArray, toSortedArray, toSortedObject } from "./sorted-object.js";
+import { it, expect } from "vitest";
+import { toSortedObjectArray, toSortedArray, toSortedObject } from "@adviser/cement";
 
 it("should sort object to object-array", () => {
   const set = { b: 2, a: 1 };

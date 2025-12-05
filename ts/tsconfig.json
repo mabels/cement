@@ -10,7 +10,7 @@
       "@adviser/cement/deno-fs": ["./src/deno-fs/index.js"],
       "@adviser/cement/import-meta-env": ["./src/import-meta-env.module.js"]
     },
-    "types": ["vitest/globals"],
+    "types": [],
     "allowImportingTsExtensions": false,
     "strict": true,
     "declaration": true,

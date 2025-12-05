@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { toSorted } from "./to-sorted.js";
+import { describe, it, expect, vi } from "vitest";
+import { toSorted } from "@adviser/cement";
 
 describe("toSorted", () => {
   describe("primitive values", () => {

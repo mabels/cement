@@ -1,4 +1,5 @@
-import { exception2Result, Result, WithoutResult } from "@adviser/cement";
+import { exception2Result, Result, WithoutResult, Option } from "@adviser/cement";
+import { it, expect } from "vitest";
 // import { it } from "vitest/globals";
 
 it("ResultOk", () => {
@@ -102,10 +103,29 @@ it("Result.Err receive Result", () => {
   expect(Result.Err(err.Err())).toStrictEqual(err);
 });
 
-// it("Result.OK with void", () => {
-//   const result = Result.Ok();
-//   expect(result.isOk()).toBe(true);
-//   expect(result.is_ok()).toBe(true);
-//   expect(result.isErr()).toBe(false);
-//   expect(result.is_err()).toBe(false);
-// }
+it("Result.OK with void", () => {
+  const result = Result.Ok();
+  expect(result.isOk()).toBe(true);
+  expect(result.is_ok()).toBe(true);
+  expect(result.isErr()).toBe(false);
+  expect(result.is_err()).toBe(false);
+});
+
+it("Option.Some with void", () => {
+  const result = Option.Some();
+  expect(result.IsSome()).toBe(true);
+  expect(result.IsNone()).toBe(false);
+  expect(result.Unwrap()).toBeUndefined();
+});
+
+it("Option.From with void", () => {
+  const result = Option.From();
+  expect(result.IsNone()).toBe(true);
+  expect(result.IsSome()).toBe(false);
+});
+
+it("Option.From with value", () => {
+  const result = Option.None();
+  expect(result.IsSome()).toBe(false);
+  expect(result.IsNone()).toBe(true);
+});

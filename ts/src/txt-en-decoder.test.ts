@@ -1,5 +1,5 @@
-import { Result } from "./result.js";
-import { TxtEnDecoderSingleton } from "./txt-en-decoder.js";
+import { it, expect } from "vitest";
+import { Result, TxtEnDecoderSingleton } from "@adviser/cement";
 
 const utf8 = TxtEnDecoderSingleton();
 it("there should be one Utf8EnDecoder", () => {

@@ -1,4 +1,5 @@
 import { to_arraybuf, to_blob, to_uint8, top_uint8 } from "@adviser/cement";
+import { describe, it, expect } from "vitest";
 
 describe("to_uint8", () => {
   it("string to Uint8Array", () => {

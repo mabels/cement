@@ -1,4 +1,5 @@
-import { stripper } from "./stripper.js";
+import { it, expect, expectTypeOf } from "vitest";
+import { stripper } from "@adviser/cement";
 
 const toStrip = {
   main: "main",

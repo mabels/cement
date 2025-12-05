@@ -10,9 +10,10 @@ import {
   runtimeFn,
   OnceActionArg,
   KeyedNgItemWithoutValue,
+  isPromise,
+  sleep,
 } from "@adviser/cement";
-import { isPromise } from "./is-promise.js";
-import { sleep } from "./promise-sleep.js";
+import { describe, it, vi, expect, assertType, vitest, assert } from "vitest";
 
 describe("resolve-once", () => {
   it("sequence", async () => {
@@ -1107,4 +1108,11 @@ it("does not block node on process exit", async () => {
     const duration = Date.now() - start;
     expect(duration).toBeLessThan(1000);
   }
+});
+
+it("KeyedResolvOnce in void", () => {
+  const keyed = new KeyedResolvOnce();
+  keyed.get("a").once(() => {
+    void 0;
+  });
 });

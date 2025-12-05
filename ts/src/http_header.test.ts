@@ -1,4 +1,4 @@
-import { HttpHeader } from "./http_header.js";
+import { HttpHeader } from "@adviser/cement";
 import { describe, it, expect } from "vitest";
 
 class OnlyForEach {

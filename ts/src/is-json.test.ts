@@ -1,4 +1,5 @@
-import { isJSON } from "./is-json.js";
+import { describe, it, expect } from "vitest";
+import { isJSON } from "@adviser/cement";
 
 describe("isJSON", () => {
   it("should detect valid JSON object", () => {

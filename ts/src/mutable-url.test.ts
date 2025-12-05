@@ -1,4 +1,4 @@
-import { ReadonlyURL, WritableURL, URLSearchParamsEntries } from "./mutable-url.js";
+import { ReadonlyURL, WritableURL, URLSearchParamsEntries } from "@adviser/cement";
 import { describe, it, expect, beforeEach } from "vitest";
 
 describe("URLSearchParamsEntries", () => {

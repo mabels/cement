@@ -1,4 +1,5 @@
-import { rebuffer, rebufferArray } from "./rebuffer.js";
+import { it, expect, describe, vitest } from "vitest";
+import { rebuffer, rebufferArray } from "@adviser/cement";
 import { receiveFromStream, sendToStream, streamingTestState } from "./stream-test-helper.js";
 
 it("rechunk empty", async () => {

@@ -1,4 +1,5 @@
-import { PartType, pathJoin, relativePath, splitPath } from "./relative-path.js";
+import { describe, it, expect } from "vitest";
+import { PartType, pathJoin, relativePath, splitPath } from "@adviser/cement";
 
 describe("relativePath", () => {
   describe("splitPath", () => {

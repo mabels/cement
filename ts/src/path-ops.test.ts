@@ -1,4 +1,5 @@
-import { pathOps } from "./path-ops.js";
+import { it, expect } from "vitest";
+import { pathOps } from "@adviser/cement";
 
 it("basename", () => {
   expect(pathOps.basename("a/b/c")).toBe("c");

@@ -1,4 +1,5 @@
 import { Time, TraceNode, MockLogger, BasicSysAbstractionFactory, TimeMode } from "@adviser/cement";
+import { describe, beforeEach, it, expect, assert } from "vitest";
 
 describe("trace", () => {
   let time: Time;

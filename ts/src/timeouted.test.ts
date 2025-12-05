@@ -1,5 +1,5 @@
-import { sleep } from "./promise-sleep.js";
-import { runtimeFn } from "./runtime.js";
+import { describe, it, expect, vi, expectTypeOf, assert } from "vitest";
+import { sleep, runtimeFn } from "@adviser/cement";
 import {
   timeouted,
   isSuccess,

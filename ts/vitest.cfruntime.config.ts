@@ -5,7 +5,6 @@ export default defineWorkersConfig({
   plugins: [tsconfigPaths()],
   test: {
     name: "cf-runtime",
-    globals: true,
     poolOptions: {
       workers: {
         wrangler: { configPath: "./wrangler.test.toml" },

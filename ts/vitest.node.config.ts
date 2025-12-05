@@ -6,6 +6,5 @@ export default defineConfig({
   test: {
     name: "node",
     include: ["src/**/*test.?(c|m)[jt]s?(x)"],
-    globals: true,
   },
 });

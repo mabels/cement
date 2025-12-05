@@ -1,5 +1,5 @@
-import { TxtEnDecoderSingleton } from "@adviser/cement";
-import { stream2string } from "./stream2string.js";
+import { TxtEnDecoderSingleton, stream2string } from "@adviser/cement";
+import { it, expect } from "vitest";
 
 it("stream2string", async () => {
   expect(

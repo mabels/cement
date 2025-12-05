@@ -1,4 +1,5 @@
-import { toCryptoRuntime } from "./crypto.js";
+import { it, expect, assert } from "vitest";
+import { toCryptoRuntime } from "@adviser/cement";
 
 it("not extractable import -> export", async () => {
   const cp = toCryptoRuntime();

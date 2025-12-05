@@ -1,5 +1,5 @@
-import { isPromise, UnPromisify } from "./is-promise.js";
-import { runtimeFn } from "./runtime.js";
+import { it, expect } from "vitest";
+import { isPromise, UnPromisify, runtimeFn } from "@adviser/cement";
 
 it("unpromisify", () => {
   type T1 = UnPromisify<Promise<number>>;

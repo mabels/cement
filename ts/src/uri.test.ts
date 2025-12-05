@@ -1,5 +1,5 @@
-import { BuildURI, HostURIObject, PathURIObject, URI, isCoerceURI, param } from "@adviser/cement";
-import { ReadonlyURL } from "./mutable-url.js";
+import { ReadonlyURL, BuildURI, HostURIObject, PathURIObject, URI, isCoerceURI, param } from "@adviser/cement";
+import { describe, beforeEach, it, expect, expectTypeOf } from "vitest";
 
 describe("BuildURI", () => {
   let uri: BuildURI;

@@ -1,6 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { loadAsset, urlDirname } from "./load-asset.js";
-import { runtimeFn } from "./runtime.js";
+import { describe, it, expect, assert } from "vitest";
+import { loadAsset, urlDirname, runtimeFn } from "@adviser/cement";
 
 describe("loadAsset", () => {
   if (!runtimeFn().isCFWorker) {

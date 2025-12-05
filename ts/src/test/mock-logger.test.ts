@@ -1,4 +1,5 @@
 import { LogWriteStream, MockLogger, TxtEnDecoderSingleton } from "@adviser/cement";
+import { describe, it, expect } from "vitest";
 
 describe("logger", () => {
   it("with logcollector", async () => {

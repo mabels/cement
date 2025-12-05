@@ -1,5 +1,5 @@
-import { KeyedNgItem, KeyedNg } from "./keyed-ng.js";
-import { ResolveOnce, ResolveSeq } from "./resolve-once.js";
+import { describe, it, expect } from "vitest";
+import { KeyedNgItem, KeyedNg, ResolveOnce, ResolveSeq } from "@adviser/cement";
 
 interface TestKeyType {
   x: number;

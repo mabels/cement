@@ -1,5 +1,6 @@
 import type { ExecException, exec } from "node:child_process";
 import { runtimeFn } from "@adviser/cement";
+import { expect, beforeAll, describe, it } from "vitest";
 
 function exitHandler(errCode: number, larg: string, done: () => void) {
   return (err: ExecException | null, stdout: string | Buffer, stderr: string | Buffer): void => {

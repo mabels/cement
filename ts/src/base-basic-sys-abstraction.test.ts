@@ -1,11 +1,16 @@
 import { WebBasicSysAbstraction } from "./web-env/index.js";
 import { CFBasicSysAbstraction } from "./cf-env/index.js";
-import { runtimeFn } from "./runtime.js";
-import { IDMode, TimeMode, RandomMode, BasicSysAbstraction } from "./sys-abstraction.js";
 import { NodeBasicSysAbstraction } from "./node-env/index.js";
 import { DenoBasicSysAbstraction } from "./deno-env/index.js";
 import { describe, it, expect } from "vitest";
-import { BaseBasicRuntimeSysAbstractionParams } from "./base-sys-abstraction.js";
+import {
+  runtimeFn,
+  IDMode,
+  TimeMode,
+  RandomMode,
+  BasicSysAbstraction,
+  BaseBasicRuntimeSysAbstractionParams,
+} from "@adviser/cement";
 import { addCement } from "./add-cement-do-not-export.js";
 
 const abstractions: { name: string; fn: (id?: Partial<BaseBasicRuntimeSysAbstractionParams>) => BasicSysAbstraction }[] = [];

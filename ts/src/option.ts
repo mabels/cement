@@ -26,8 +26,8 @@
  * ```
  */
 export abstract class Option<T> {
-  static Some<T>(t: T): Option<T> {
-    return new Some(t);
+  static Some<T = void>(...args: T[]): Option<T> {
+    return args.length >= 1 ? new Some<T>(args[0]) : new Some<T>(undefined as unknown as T);
   }
 
   static None<T>(): Option<T> {

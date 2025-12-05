@@ -1,4 +1,5 @@
-import { JSONEnDecoderSingleton } from "./json-en-decoder.js";
+import { it, expect } from "vitest";
+import { JSONEnDecoderSingleton } from "@adviser/cement";
 
 const jsonEnCoder = JSONEnDecoderSingleton();
 

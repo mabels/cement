@@ -17,9 +17,10 @@ import {
   BasicSysAbstractionFactory,
   TxtEnDecoderSingleton,
   ReadonlyURL,
+  ConsoleWriterStream,
+  stripper,
 } from "@adviser/cement";
-import { ConsoleWriterStream } from "./utils/console-write-stream.js";
-import { stripper } from "./utils/stripper.js";
+import { describe, beforeEach, it, expect, vi } from "vitest";
 
 describe("TestLogger", () => {
   let logCollector: LogCollector;

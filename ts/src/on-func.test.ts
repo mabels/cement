@@ -1,6 +1,5 @@
-import { Future } from "./future.js";
-import { OnFunc, OnFuncReturn } from "./on-func.js";
-import { sleep } from "./promise-sleep.js";
+import { OnFunc, OnFuncReturn, sleep, Future } from "@adviser/cement";
+import { vi, it, expect } from "vitest";
 
 // Base message interface
 export interface FPCCMsgBase {

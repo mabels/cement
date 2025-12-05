@@ -1,4 +1,5 @@
-import { sleep, SleepAbort } from "./promise-sleep.js";
+import { it, expect } from "vitest";
+import { sleep, SleepAbort } from "@adviser/cement";
 
 it("sleeps for the specified duration", async () => {
   const start = performance.now();

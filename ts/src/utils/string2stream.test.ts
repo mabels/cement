@@ -1,5 +1,5 @@
-import { stream2string } from "./stream2string.js";
-import { string2stream } from "./string2stream.js";
+import { expect, it } from "vitest";
+import { stream2string, string2stream } from "@adviser/cement";
 
 it("string2stream", async () => {
   const inStr = string2stream("Hello World!");

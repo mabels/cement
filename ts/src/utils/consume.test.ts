@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from "vitest";
-import { consumeStream, consumeIterator } from "./consume.js";
+import { describe, it, expect, vi, assertType } from "vitest";
+import { consumeStream, consumeIterator } from "@adviser/cement";
 
 describe("consumeStream", () => {
   it("should consume an empty stream", async () => {

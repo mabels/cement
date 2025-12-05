@@ -2,6 +2,7 @@
 import { Env, EnvActions, EnvFactoryOpts, EnvImpl, envFactory, registerEnvAction, runtimeFn, param } from "@adviser/cement";
 import { CFEnvActions } from "./cf-env/index.js";
 import { BrowserEnvActions } from "./web-env/index.js";
+import { describe, beforeEach, it, expect, vi } from "vitest";
 
 describe("sys_env", () => {
   let key: string;

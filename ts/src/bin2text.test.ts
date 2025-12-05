@@ -1,4 +1,5 @@
-import { bin2string, bin2text } from "./bin2text.js";
+import { it, expect } from "vitest";
+import { bin2string, bin2text } from "@adviser/cement";
 
 it("bin2hex empty", () => {
   expect(bin2string(new Uint8Array())).toEqual("");

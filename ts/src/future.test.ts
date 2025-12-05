@@ -1,4 +1,5 @@
 import { Future } from "@adviser/cement";
+import { it, expect } from "vitest";
 
 it("Create Future Happy", async () => {
   const future = new Future();

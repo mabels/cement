@@ -1,3 +1,4 @@
+import { describe, beforeAll, it, expect } from "vitest";
 import { MockFileService } from "./mock-file-service.js";
 import { runtimeFn, TxtEnDecoderSingleton } from "@adviser/cement";
 
