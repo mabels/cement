@@ -104,6 +104,40 @@ it("waitFor preset value", async () => {
   expect(results.mock.calls).toEqual([[Array(size).fill(7)], [Array(size).fill(42)]]);
 });
 
+
+it("waitfor throw", async () => {
+  const wfv = new WaitingForValue<number>();
+  const size = 10;
+
+  const promiseWaits = Promise.allSettled(
+    Array(size)
+      .fill(0)
+      .map(() => wfv.waitValue()),
+  );
+  const results = vi.fn();
+  const errors = vi.fn();
+  void promiseWaits.then(results);
+  await sleep(10);
+  expect(results).not.toHaveBeenCalled();
+  expect(errors).not.toHaveBeenCalled();
+
+  await sleep(10);
+  await promiseWaits;
+  expect(results).toHaveBeenCalledTimes(1);
+  expect(results.mock.calls).toEqual([
+    [
+      Array(size).fill(
+        expect.objectContaining({
+          status: "rejected",
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          reason: expect.objectContaining({ message: "Test Error" }),
+        }),
+      ),
+    ],
+  ]);
+});
+
+
 it("waitfor setError", async () => {
   const wfv = new WaitingForValue<number>();
   const size = 10;
