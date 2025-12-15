@@ -20,7 +20,7 @@ importers:
         version: 0.10.14(@vitest/runner@3.2.4)(@vitest/snapshot@4.0.4)(vitest@3.2.4)
       '@eslint/js':
         specifier: ^9.39.1
-        version: 9.39.1
+        version: 9.39.2
       '@types/deno':
         specifier: ^2.3.0
         version: 2.5.0
