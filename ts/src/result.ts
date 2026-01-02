@@ -127,7 +127,8 @@ export class ResultError<T extends Error> extends Result<never, T> {
 export type WithoutResult<T> = T extends Result<infer U> ? U : T;
 
 // type WithoutPromise<T> = T extends Promise<infer U> ? U : T;
-type WithResult<T> = T extends Promise<infer U> ? Promise<Result<U>> : Result<T>;
+type WithResult<T> =
+  T extends Promise<infer U> ? Promise<U extends Result<unknown> ? U : Result<U>> : T extends Result<unknown> ? T : Result<T>;
 
 /**
  * Wraps a function to convert thrown exceptions into Result.Err values.
@@ -152,13 +153,17 @@ type WithResult<T> = T extends Promise<infer U> ? Promise<Result<U>> : Result<T>
  * });
  * ```
  */
-export function exception2Result<FN extends () => Promise<T> | T, T>(fn: FN): WithResult<ReturnType<FN>> {
+export function exception2Result<FN extends () => Promise<TT> | TT, TT>(fn: FN): WithResult<ReturnType<FN>> {
   try {
     const res = fn();
     if (isPromise(res)) {
-      return res.then((value) => Result.Ok(value)).catch((e) => Result.Err(e)) as WithResult<ReturnType<FN>>;
+      return res
+        .then((value) => {
+          return (Result.Is(value) ? value : Result.Ok(value)) as WithResult<ReturnType<FN>>;
+        })
+        .catch((e) => Result.Err(e)) as WithResult<ReturnType<FN>>;
     }
-    return Result.Ok(res) as WithResult<ReturnType<FN>>;
+    return (Result.Is(res) ? res : Result.Ok(res)) as WithResult<ReturnType<FN>>;
   } catch (e) {
     return Result.Err(e as Error) as WithResult<ReturnType<FN>>;
   }

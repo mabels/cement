@@ -85,6 +85,16 @@ it("async exception2Result throw", async () => {
   expect(await exception2Result(() => Promise.reject(new Error("x")))).toEqual(Result.Err("x"));
 });
 
+it("avoid double wrap", () => {
+  expect(exception2Result(() => Result.Ok(1))).toEqual(Result.Ok(1));
+  expect(exception2Result(() => Result.Err("xxx"))).toEqual(Result.Err("xxx"));
+});
+
+it("async avoid double wrap", async () => {
+  expect(await exception2Result(() => Promise.resolve(Result.Ok(1)))).toEqual(Result.Ok(1));
+  expect(await exception2Result(() => Promise.resolve(Result.Err("xxx")))).toEqual(Result.Err("xxx"));
+});
+
 it("result typ", () => {
   function ok(): Result<number> {
     return Result.Ok(1);
@@ -128,4 +138,82 @@ it("Option.From with value", () => {
   const result = Option.None();
   expect(result.IsSome()).toBe(false);
   expect(result.IsNone()).toBe(true);
+});
+
+// Type-level tests for exception2Result to ensure no double wrapping
+it("exception2Result type safety - sync function returning value", () => {
+  const fn = (): number => 42;
+  const result = exception2Result(fn);
+
+  // Type check: result should be Result<number>, not Result<Result<number>>
+  expect(result.isOk()).toBe(true);
+  expect(result.unwrap()).toBe(42);
+
+  // Verify the type at compile time
+  type Expected = Result<number>;
+  type Actual = typeof result;
+  const typeCheck: Actual extends Expected ? true : false = true;
+  expect(typeCheck).toBe(true);
+});
+
+it("exception2Result type safety - sync function returning Result", () => {
+  const fn = (): Result<number> => Result.Ok(42);
+  const result = exception2Result(fn);
+
+  // Type check: result should be Result<number>, not Result<Result<number>>
+  expect(result.isOk()).toBe(true);
+  expect(result.unwrap()).toBe(42);
+
+  // Should not be double-wrapped
+  const unwrapped = result.unwrap();
+  expect(typeof unwrapped).toBe("number");
+  expect(Result.Is(unwrapped)).toBe(false);
+});
+
+it("exception2Result type safety - async function returning value", async () => {
+  const fn = (): Promise<number> => Promise.resolve(42);
+  const resultPromise = exception2Result(fn);
+
+  // Type check: resultPromise should be Promise<Result<number>>, not Promise<Result<Result<number>>>
+  const result = await resultPromise;
+  expect(result.isOk()).toBe(true);
+  expect(result.unwrap()).toBe(42);
+
+  // Verify the type at compile time
+  type Expected = Promise<Result<number>>;
+  type Actual = typeof resultPromise;
+  const typeCheck: Actual extends Expected ? true : false = true;
+  expect(typeCheck).toBe(true);
+});
+
+it("exception2Result type safety - async function returning Result", async () => {
+  const fn = (): Promise<Result<number>> => Promise.resolve(Result.Ok(42));
+  const resultPromise = exception2Result(fn);
+
+  // Type check: resultPromise should be Promise<Result<number>>, not Promise<Result<Result<number>>>
+  const result = await resultPromise;
+  expect(result.isOk()).toBe(true);
+  expect(result.unwrap()).toBe(42);
+
+  // Should not be double-wrapped
+  const unwrapped = result.unwrap();
+  expect(typeof unwrapped).toBe("number");
+  expect(Result.Is(unwrapped)).toBe(false);
+});
+
+it("exception2Result type safety - complex return types", () => {
+  interface User {
+    id: number;
+    name: string;
+  }
+
+  const fn = (): Result<User> => Result.Ok({ id: 1, name: "Alice" });
+  const result = exception2Result(fn);
+
+  // Should preserve the inner type without double wrapping
+  expect(result.isOk()).toBe(true);
+  const user = result.unwrap();
+  expect(user.id).toBe(1);
+  expect(user.name).toBe("Alice");
+  expect(Result.Is(user)).toBe(false);
 });
