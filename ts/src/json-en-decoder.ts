@@ -64,7 +64,7 @@ class JSONOps implements JSONEnDecoder {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   parse<T>(input: ToDecoder, reviver?: (this: any, key: string, value: any) => any): Result<T> {
-    return exception2Result(() => JSON.parse(this.txtOps.decode(input), reviver) as T) as Result<T>;
+    return exception2Result(() => JSON.parse(this.txtOps.decode(input), reviver) as T); //as Result<T>;
   }
 }
 

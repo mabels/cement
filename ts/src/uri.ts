@@ -619,7 +619,7 @@ export class URI implements URIInterface<URI> {
       from((url) => uriInstances.get(url.toString()).once(() => new URI(url)), strURLUri, defaultProtocol, {
         fromThrow: ReadonlyURL.fromThrow,
       }),
-    ) as Result<URI>;
+    ); //as Result<URI>;
   }
 
   readonly _url: ReadonlyURL;

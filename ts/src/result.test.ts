@@ -1,5 +1,5 @@
 import { exception2Result, Result, WithoutResult, Option } from "@adviser/cement";
-import { it, expect } from "vitest";
+import { it, expect, expectTypeOf } from "vitest";
 // import { it } from "vitest/globals";
 
 it("ResultOk", () => {
@@ -216,4 +216,18 @@ it("exception2Result type safety - complex return types", () => {
   expect(user.id).toBe(1);
   expect(user.name).toBe("Alice");
   expect(Result.Is(user)).toBe(false);
+});
+
+it("exception2Result type safety - error cases", () => {
+  async function request<S, Q>(_req: Q): Promise<Result<S>> {
+    return exception2Result(async () => {
+      const response = await fetch("http://example.com/api");
+      if (response.ok) {
+        return {} as S;
+      }
+      throw new Error(`Request failed`);
+    });
+  }
+  const resultPromise = request<{ x: string }, { y: string }>({ y: "test" });
+  expectTypeOf(resultPromise).toEqualTypeOf<Promise<Result<{ x: string }>>>();
 });

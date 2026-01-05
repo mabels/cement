@@ -128,7 +128,11 @@ export type WithoutResult<T> = T extends Result<infer U> ? U : T;
 
 // type WithoutPromise<T> = T extends Promise<infer U> ? U : T;
 type WithResult<T> =
-  T extends Promise<infer U> ? Promise<U extends Result<unknown> ? U : Result<U>> : T extends Result<unknown> ? T : Result<T>;
+  T extends Promise<infer U>
+    ? Promise<Result<U extends Result<infer Inner> ? Inner : U>>
+    : T extends Result<infer Inner>
+      ? Result<Inner>
+      : Result<T>;
 
 /**
  * Wraps a function to convert thrown exceptions into Result.Err values.
@@ -153,7 +157,18 @@ type WithResult<T> =
  * });
  * ```
  */
-export function exception2Result<FN extends () => Promise<TT> | TT, TT>(fn: FN): WithResult<ReturnType<FN>> {
+// Overload: when function returns Promise<Result<T>>, return Promise<Result<T>> (preserving the Result)
+export function exception2Result<T0, E = Error>(fn: () => Promise<Result<T0, E>>): Promise<Result<T0, E>>;
+// Overload: when function returns Promise<T> where T is not a Result, return Promise<Result<T>>
+export function exception2Result<T1, E = Error>(fn: () => Promise<T1>): Promise<Result<T1, E>>;
+// Overload: when function returns Result<T> synchronously, return Result<T> (preserving the Result)
+export function exception2Result<T2, E = Error>(fn: () => Result<T2, E>): Result<T2, E>;
+// Overload: when function returns T synchronously where T is not a Result, return Result<T>
+export function exception2Result<T3, E = Error>(fn: () => T3): Result<T3, E>;
+// Implementation signature
+export function exception2Result<FN extends () => Promise<TT> | TT, TT>(
+  fn: FN,
+): WithResult<ReturnType<FN>> | Promise<Result<WithoutResult<TT>>> {
   try {
     const res = fn();
     if (isPromise(res)) {
