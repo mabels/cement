@@ -126,14 +126,6 @@ export class ResultError<T extends Error> extends Result<never, T> {
 
 export type WithoutResult<T> = T extends Result<infer U> ? U : T;
 
-// type WithoutPromise<T> = T extends Promise<infer U> ? U : T;
-type WithResult<T> =
-  T extends Promise<infer U>
-    ? Promise<Result<U extends Result<infer Inner> ? Inner : U>>
-    : T extends Result<infer Inner>
-      ? Result<Inner>
-      : Result<T>;
-
 /**
  * Wraps a function to convert thrown exceptions into Result.Err values.
  *
@@ -157,94 +149,24 @@ type WithResult<T> =
  * });
  * ```
  */
-// Overload: when function returns Promise<Result<T>>, return Promise<Result<T>> (preserving the Result)
-export function exception2Result<T0, E = Error>(fn: () => Promise<Result<T0, E>>): Promise<Result<T0, E>>;
-// Overload: when function returns Promise<T> where T is not a Result, return Promise<Result<T>>
-export function exception2Result<T1, E = Error>(fn: () => Promise<T1>): Promise<Result<T1, E>>;
-// Overload: when function returns Result<T> synchronously, return Result<T> (preserving the Result)
-export function exception2Result<T2, E = Error>(fn: () => Result<T2, E>): Result<T2, E>;
-// Overload: when function returns T synchronously where T is not a Result, return Result<T>
-export function exception2Result<T3, E = Error>(fn: () => T3): Result<T3, E>;
-// Implementation signature
-export function exception2Result<FN extends () => Promise<TT> | TT, TT>(
-  fn: FN,
-): WithResult<ReturnType<FN>> | Promise<Result<WithoutResult<TT>>> {
+type UnwrapResult<T, E> = T extends Result<infer U, E> ? U : T;
+
+type ReturnType<TT, EE> = TT extends Promise<infer A> ? Promise<Result<UnwrapResult<A, EE>, EE>> : Result<UnwrapResult<TT, EE>, EE>;
+
+export function exception2Result<T, E extends Error = Error>(fn: () => Promise<T>): Promise<Result<UnwrapResult<T, E>, E>>;
+export function exception2Result<T, E extends Error = Error>(fn: () => T): Result<UnwrapResult<T, E>, E>;
+export function exception2Result<TT, EE extends Error>(fn: () => TT): ReturnType<TT, EE> {
   try {
     const res = fn();
     if (isPromise(res)) {
       return res
         .then((value) => {
-          return (Result.Is(value) ? value : Result.Ok(value)) as WithResult<ReturnType<FN>>;
+          return Result.Is(value) ? (value as Result<TT, EE>) : Result.Ok<TT, EE>(value as TT);
         })
-        .catch((e) => Result.Err(e)) as WithResult<ReturnType<FN>>;
+        .catch((e) => Result.Err<TT, EE>(e as EE)) as ReturnType<TT, EE>;
     }
-    return (Result.Is(res) ? res : Result.Ok(res)) as WithResult<ReturnType<FN>>;
+    return (Result.Is(res) ? res : Result.Ok<TT, EE>(res)) as ReturnType<TT, EE>;
   } catch (e) {
-    return Result.Err(e as Error) as WithResult<ReturnType<FN>>;
+    return Result.Err<TT, EE>(e as EE) as ReturnType<TT, EE>;
   }
 }
-
-/*
-
-type FinalizedResult<T> = {
-  result: T;
-  scopeResult?: Result<void>;
-  finally: () => Promise<void>;
-}
-
-type exection2ResultParam<T> = {
-  init: () => Promise<T>;
-  inScope?: (t: T) => Promise<void>;
-  cleanup: (t: T) => Promise<void>;
-
-}
-
-async function expection2Result<T>({fn, inScope, cleanup}: exection2ResultParam<T>): Promise<Result<FinalizedResult<T>>> {
-  try {
-    const res = await fn();
-    if (inScope) {
-      try {
-        await inScope?.(res)
-      } catch (err) {
-        return Result.Err(err as Error)
-      }
-      await cleanup(res)
-      return Result.Ok({
-        result: res,
-        finally: async () => { }
-      })
-    }
-    return Result.Ok({
-      result: res ,
-      finally: async () => {
-        return cleanup(res)
-      }
-    })
-  } catch (err) {
-    return Result.Err(err as Error)
-  }
-}
-*/
-
-// await expection2Result({
-//   init: openDB,
-//   inScope: (res) => {
-//     res.query()
-//   },
-//   cleanup: async (y) => {
-//     await y.close()
-//  }
-// })
-// async function openDB() {
-//   try {
-//     const opendb = await openDB()
-//     return Result.Ok({
-//       openDB,
-//       finally: async () => {
-//         await opendb.close()
-//     }})
-//   } catch (err) {
-//     return Result.Err(err)
-//   }
-// }
-// }

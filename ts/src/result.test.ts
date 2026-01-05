@@ -219,15 +219,77 @@ it("exception2Result type safety - complex return types", () => {
 });
 
 it("exception2Result type safety - error cases", () => {
-  async function request<S, Q>(_req: Q): Promise<Result<S>> {
+  async function request<S extends NonNullable<unknown>, Q>(_req: Q): Promise<Result<S>> {
     return exception2Result(async () => {
       const response = await fetch("http://example.com/api");
       if (response.ok) {
         return {} as S;
       }
       throw new Error(`Request failed`);
-    });
+    }) as Promise<Result<S>>;
   }
   const resultPromise = request<{ x: string }, { y: string }>({ y: "test" });
   expectTypeOf(resultPromise).toEqualTypeOf<Promise<Result<{ x: string }>>>();
 });
+
+it("exception2Result usage in async function", () => {
+  async function request<S, Q>(_req: Q): Promise<Result<S>> {
+    return exception2Result(() =>
+      fetch("http://example.com/api")
+        .then((response) => response.json())
+        .then((data) => data as S),
+    ) as Promise<Result<S>>;
+  }
+  const resultPromise = request<{ x: string }, { y: string }>({ y: "test" });
+  expectTypeOf(resultPromise).toEqualTypeOf<Promise<Result<{ x: string }>>>();
+});
+
+it("exception2Result usage in async function returns Result", () => {
+  async function request<S, Q>(_req: Q): Promise<Result<S>> {
+    const whatTheFunc = async (): Promise<S | Result<S>> => {
+      try {
+        return fetch("http://example.com/api")
+          .then((response) => response.json())
+          .then((data) => data as unknown as S)
+          .catch((err) => Result.Err<S>(err as Error));
+      } catch (e) {
+        return Result.Ok({} as unknown as S);
+      }
+    };
+    return exception2Result(whatTheFunc) as Promise<Result<S>>;
+  }
+  const resultPromise = request<{ x: string }, { y: string }>({ y: "test" });
+  expectTypeOf(resultPromise).toEqualTypeOf<Promise<Result<{ x: string }>>>();
+});
+
+it("exception2Result usage in async inline function returns Result", () => {
+  async function request<S, Q>(_req: Q): Promise<Result<S>> {
+    return exception2Result(async () => {
+      try {
+        return fetch("http://example.com/api")
+          .then((response) => response.json())
+          .then((data) => data as unknown as S)
+          .catch((err) => Result.Err<S>(err as Error));
+      } catch (e) {
+        return Result.Ok({} as unknown as S);
+      }
+    }) as Promise<Result<S>>;
+  }
+  const resultPromise = request<{ x: string }, { y: string }>({ y: "test" });
+  expectTypeOf(resultPromise).toEqualTypeOf<Promise<Result<{ x: string }>>>();
+});
+
+//  return this.#namedKeyItems.get(name).once((): Promise<Result<KeyedJwtKeyBagItem>> => {
+//       return exception2Result(() =>
+//         this.provider().then((prov) => {
+//           const item: KeyedJwtKeyBagItem = {
+//             id: name,
+//             clazz: "JwtKeyBagItem",
+//             item: {
+//               jwtStr,
+//             },
+//           };
+//           return prov.set(name, item).then((_) => item);
+//         }),
+//       );
+//     });
