@@ -120,6 +120,22 @@ export class AppContext {
     return this.ctx.get(key) as T;
   }
 
+  getOrDefault<T>(key: string, defaultValue: T): T {
+    const value = this.ctx.get(key);
+    if (value === undefined) {
+      return defaultValue;
+    }
+    return value as T;
+  }
+
+  getOrThrow<T>(key: string): T {
+    const value = this.ctx.get(key);
+    if (value === undefined) {
+      throw new Error(`AppContext: Key '${key}' not found`);
+    }
+    return value as T;
+  }
+
   /**
    * Deletes a value from the context.
    *
