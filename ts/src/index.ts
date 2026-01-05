@@ -33,6 +33,7 @@ export * from "./on-func.js";
 export * from "./timeouted.js";
 export * from "./promise-sleep.js";
 export * from "./keyed-ng.js";
+export * from "./evento.js";
 
 // ugly not really esm but how could that work otherwise?
 // export * as utils from "@adviser/cement/utils"
