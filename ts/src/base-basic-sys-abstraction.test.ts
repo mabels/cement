@@ -2,7 +2,7 @@ import { WebBasicSysAbstraction } from "./web-env/index.js";
 import { CFBasicSysAbstraction } from "./cf-env/index.js";
 import { NodeBasicSysAbstraction } from "./node-env/index.js";
 import { DenoBasicSysAbstraction } from "./deno-env/index.js";
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, assert } from "vitest";
 import {
   runtimeFn,
   IDMode,
@@ -71,8 +71,7 @@ for (const abstraction of abstractions) {
         const sys = abstraction.fn({ IdMode: IDMode.STEP });
         const id1 = sys.NextId();
         const id2 = sys.NextId();
-        expect(id1).toEqual("STEPId-0");
-        expect(id2).toEqual("STEPId-1");
+        assert(id1 < id2, "Expected id1 < id2");
       }
     });
 

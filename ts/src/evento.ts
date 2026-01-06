@@ -1,4 +1,5 @@
 import { AppContext } from "./app-context.js";
+import { IdService } from "./base-service.js";
 import { Option } from "./option.js";
 import { ResolveOnce } from "./resolve-once.js";
 import { exception2Result, Result } from "./result.js";
@@ -155,6 +156,7 @@ export type TriggerCtxBaseParams<INREQ, REQ, RES> = Partial<Omit<ReadonlyTrigger
   Partial<Pick<ReadonlyTriggerCtxBase<INREQ, REQ, RES>, "ctx" | "encoder">> & {
     send: EventoSendProvider<INREQ, REQ, RES>;
     stats?: TriggerStats;
+    idService?: IdService;
   };
 
 /**
@@ -174,6 +176,7 @@ export type TriggerCtx<INREQ, REQ, RES> =
 export type TriggerResult<INREQ, REQ, RES> = Omit<ReadonlyTriggerCtxBase<INREQ, REQ, RES>, "send"> & {
   readonly send: EventoSend<INREQ, REQ, RES>;
   readonly stats: TriggerStats;
+  readonly id: string;
 } & Partial<MutableHandleTriggerCtx<INREQ, REQ>>;
 
 export class TriggerResultError<INREQ, REQ, RES> extends Error {
@@ -538,6 +541,7 @@ export class Evento {
       const ctx: Omit<ReadonlyTriggerCtxBase<INREQ, REQ, RES>, "send"> & {
         readonly send: EventoSend<INREQ, REQ, RES>;
         readonly stats: TriggerStats;
+        readonly id: string;
       } & Partial<MutableHandleTriggerCtx<INREQ, REQ>> = {
         ...ictx,
         encoder: ictx.encoder ?? (this.encoder as EventoEnDecoder<INREQ, RES>),
@@ -559,6 +563,7 @@ export class Evento {
         },
         send: new EventoSend(ictx.send),
         ctx: ictx.ctx ?? new AppContext(),
+        id: (ictx.idService ?? IdService.create()).NextId(),
       };
       stepCtx = ctx;
       const results: string[] = [];

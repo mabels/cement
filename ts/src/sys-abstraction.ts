@@ -9,20 +9,6 @@ export const TimeMode = {
 };
 export type TimeMode = (typeof TimeMode)[keyof typeof TimeMode];
 
-export const RandomMode = {
-  CONST: "const",
-  STEP: "step",
-  RANDOM: "random",
-};
-export type RandomMode = (typeof RandomMode)[keyof typeof RandomMode];
-
-export const IDMode = {
-  UUID: "uuid",
-  CONST: "const",
-  STEP: "step",
-};
-export type IDMode = (typeof IDMode)[keyof typeof IDMode];
-
 export function String2TimeMode(s?: string): TimeMode {
   switch (s?.toLowerCase()) {
     case "real":
