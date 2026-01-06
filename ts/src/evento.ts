@@ -36,7 +36,7 @@ export interface EventoEnDecoder<REQ, RES> {
  * @typeParam REQ - The validated request type
  * @typeParam RES - The response type
  */
-export interface EventoSend<INREQ, REQ, RES> {
+export interface EventoSendProvider<INREQ, REQ, RES> {
   /**
    * Optional hook called once before the first handler processes the event.
    *
@@ -65,14 +65,67 @@ export interface EventoSend<INREQ, REQ, RES> {
   done?(trigger: HandleTriggerCtx<INREQ, REQ, RES>): Promise<Result<void>>;
 }
 
-// export interface ActiveTriggerCtx<INREQ, REQ, RES> {
-//   request?: INREQ;
-//   ctx: AppContext;
-//   enRequest?: unknown;
-//   validated?: REQ;
-//   send: EventoSend<INREQ, REQ, RES>;
-//   encoder: EventoEnDecoder<INREQ, RES>;
-// }
+export interface ActionStat {
+  startTime: Date;
+  doneTime: Date;
+}
+export interface SendStatItem<T> extends ActionStat {
+  readonly item: Result<T>;
+}
+export interface SendStat extends ActionStat {
+  items: SendStatItem<unknown>[];
+}
+
+export type RequestStat = ActionStat;
+
+export interface TriggerStats {
+  readonly request: RequestStat;
+  readonly encode: ActionStat;
+  readonly handlers: {
+    readonly handler: EventoHandler;
+    readonly total: ActionStat;
+    readonly validated: ActionStat;
+    readonly handled: ActionStat;
+  }[];
+  readonly send: SendStat;
+}
+
+export class EventoSend<INREQ, REQ, RES> {
+  readonly provider: EventoSendProvider<INREQ, REQ, RES>;
+
+  constructor(provider: EventoSendProvider<INREQ, REQ, RES>) {
+    this.provider = provider;
+  }
+
+  start(trigger: HandleTriggerCtx<INREQ, REQ, RES>): Promise<Result<void>> {
+    trigger.stats.send.startTime = new Date();
+    if (this.provider.start) {
+      return this.provider.start(trigger);
+    }
+    return Promise.resolve(Result.Ok());
+  }
+
+  done(trigger: HandleTriggerCtx<INREQ, REQ, RES>): Promise<Result<void>> {
+    trigger.stats.send.doneTime = new Date();
+    if (this.provider.done) {
+      return this.provider.done(trigger);
+    }
+    return Promise.resolve(Result.Ok());
+  }
+
+  async send<IS, OS>(trigger: HandleTriggerCtx<INREQ, REQ, RES>, data: IS): Promise<Result<SendStatItem<OS>>> {
+    const start = new Date();
+    const rSend = await this.provider.send<IS, OS>(trigger, data);
+    const done = new Date();
+    const item: SendStatItem<OS> = {
+      startTime: start,
+      doneTime: done,
+      item: rSend,
+    };
+    trigger.stats.send.items.push(item);
+    return Result.Ok(item);
+  }
+}
 
 /**
  * Base interface for trigger context containing core dependencies.
@@ -81,8 +134,7 @@ export interface EventoSend<INREQ, REQ, RES> {
  * @typeParam REQ - The validated request type
  * @typeParam RES - The response type
  */
-export interface TriggerCtxBase<INREQ, REQ, RES> {
-  send: EventoSend<INREQ, REQ, RES>;
+export interface TriggerCtxBase<INREQ, RES> {
   ctx: AppContext;
   encoder: EventoEnDecoder<INREQ, RES>;
 }
@@ -90,14 +142,20 @@ export interface TriggerCtxBase<INREQ, REQ, RES> {
 /**
  * Readonly version of the base trigger context.
  */
-export type ReadonlyTriggerCtxBase<INREQ, REQ, RES> = Readonly<TriggerCtxBase<INREQ, REQ, RES>>;
+export type ReadonlyTriggerCtxBase<INREQ, REQ, RES> = Readonly<TriggerCtxBase<INREQ, RES>> & {
+  readonly send: EventoSend<INREQ, REQ, RES>;
+  readonly stats: TriggerStats;
+};
 
 /**
  * Parameters for creating a trigger context.
  * Requires send, but ctx and encoder are optional and will use defaults.
  */
-export type TriggerCtxBaseParams<INREQ, REQ, RES> = Pick<ReadonlyTriggerCtxBase<INREQ, REQ, RES>, "send"> &
-  Partial<Pick<ReadonlyTriggerCtxBase<INREQ, REQ, RES>, "ctx" | "encoder">>;
+export type TriggerCtxBaseParams<INREQ, REQ, RES> = Partial<Omit<ReadonlyTriggerCtxBase<INREQ, REQ, RES>, "send">> &
+  Partial<Pick<ReadonlyTriggerCtxBase<INREQ, REQ, RES>, "ctx" | "encoder">> & {
+    send: EventoSendProvider<INREQ, REQ, RES>;
+    stats?: TriggerStats;
+  };
 
 /**
  * Complete parameters for triggering an event, including optional request data.
@@ -112,6 +170,19 @@ export type TriggerCtx<INREQ, REQ, RES> =
   | (ReadonlyTriggerCtxBase<INREQ, REQ, RES> & { request: INREQ })
   | (ReadonlyTriggerCtxBase<INREQ, REQ, RES> & { enRequest: unknown })
   | (ReadonlyTriggerCtxBase<INREQ, REQ, RES> & { enRequest: unknown; request: INREQ });
+
+export type TriggerResult<INREQ, REQ, RES> = Omit<ReadonlyTriggerCtxBase<INREQ, REQ, RES>, "send"> & {
+  readonly send: EventoSend<INREQ, REQ, RES>;
+  readonly stats: TriggerStats;
+} & Partial<MutableHandleTriggerCtx<INREQ, REQ>>;
+
+export class TriggerResultError<INREQ, REQ, RES> extends Error {
+  readonly ctx: TriggerResult<INREQ, REQ, RES>;
+  constructor(message: string, ctx: TriggerResult<INREQ, REQ, RES>) {
+    super(message);
+    this.ctx = ctx;
+  }
+}
 
 /**
  * Context provided to validation handlers.
@@ -131,7 +202,6 @@ export interface MutableHandleTriggerCtx<INREQ, REQ> {
   enRequest: unknown;
   validated: REQ;
   error?: Error;
-  triggerResult?: string[];
 }
 
 /**
@@ -458,25 +528,45 @@ export class Evento {
    * @param ictx - The trigger context parameters
    * @returns A Result containing an array of handler hashes that processed the event
    */
-  async trigger<INREQ, REQ, RES>(ictx: TriggerCtxParams<INREQ, REQ, RES>): Promise<Result<string[]>> {
-    let stepCtx:
-      | HandleTriggerCtx<INREQ, REQ, RES>
-      | ValidateTriggerCtx<INREQ, REQ, RES>
-      | (ReadonlyTriggerCtxBase<INREQ, REQ, RES> & Partial<MutableHandleTriggerCtx<INREQ, REQ>>)
-      | object = {};
+
+  async trigger<INREQ, REQ, RES>(ictx: TriggerCtxParams<INREQ, REQ, RES>): Promise<Result<TriggerResult<INREQ, REQ, RES>>> {
+    let stepCtx: TriggerResult<INREQ, REQ, RES> | null = null;
     const toPost: EventoHandler[] = [];
     const startOnce = new ResolveOnce<Result<HandleTriggerCtx<INREQ, REQ, RES>>>();
     const res = await exception2Result(async (): Promise<Result<string[]>> => {
-      const ctx: ReadonlyTriggerCtxBase<INREQ, REQ, RES> & Partial<MutableHandleTriggerCtx<INREQ, REQ>> = {
+      const nullDate = new Date(0);
+      const ctx: Omit<ReadonlyTriggerCtxBase<INREQ, REQ, RES>, "send"> & {
+        readonly send: EventoSend<INREQ, REQ, RES>;
+        readonly stats: TriggerStats;
+      } & Partial<MutableHandleTriggerCtx<INREQ, REQ>> = {
         ...ictx,
         encoder: ictx.encoder ?? (this.encoder as EventoEnDecoder<INREQ, RES>),
+        stats: ictx.stats ?? {
+          request: {
+            startTime: new Date(),
+            doneTime: nullDate,
+          },
+          encode: {
+            startTime: nullDate,
+            doneTime: nullDate,
+          },
+          handlers: [],
+          send: {
+            startTime: nullDate,
+            doneTime: nullDate,
+            items: [],
+          },
+        },
+        send: new EventoSend(ictx.send),
         ctx: ictx.ctx ?? new AppContext(),
       };
       stepCtx = ctx;
       const results: string[] = [];
       // this skips encoding if already encoded
       if (!ctx.enRequest) {
+        ctx.stats.encode.startTime = new Date();
         const rUnk = await this.encoder.encode(ctx.request as never);
+        ctx.stats.encode.doneTime = new Date();
         if (rUnk.isErr()) {
           return Result.Err(rUnk);
         }
@@ -499,8 +589,27 @@ export class Evento {
         if (hdl.post) {
           toPost.push(hdl);
         }
+        const stat = {
+          handler: hdl,
+          total: {
+            startTime: new Date(),
+            doneTime: nullDate,
+          },
+          validated: {
+            startTime: nullDate,
+            doneTime: nullDate,
+          },
+          handled: {
+            startTime: nullDate,
+            doneTime: nullDate,
+          },
+        };
+        ctx.stats.handlers.push(stat);
+        stat.validated.startTime = new Date();
         const rData = await Promise.resolve(hdl.validate ? hdl.validate(validateCtx) : Result.Ok(Option.Some(ctx.enRequest)));
+        stat.validated.doneTime = new Date();
         if (rData.isErr()) {
+          stat.total.doneTime = new Date();
           return Result.Err(rData);
         }
         const data = rData.Ok();
@@ -513,22 +622,24 @@ export class Evento {
           request: ctx.request as INREQ,
           enRequest: ctx.enRequest,
         }); // satisfies HandleTriggerCtx<INREQ, REQ, RES>;
-        if (ctx.send.start) {
-          const rStart = await startOnce.once(() =>
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            ctx.send.start!(hdlCtx).then((rv): Result<HandleTriggerCtx<INREQ, REQ, RES>> => {
-              if (rv.isErr()) {
-                return Result.Err(rv);
-              }
-              return Result.Ok(hdlCtx);
-            }),
-          );
-          if (rStart.isErr()) {
-            return Result.Err(rStart);
-          }
+        const rStart = await startOnce.once(() =>
+          ctx.send.start(hdlCtx).then((rv): Result<HandleTriggerCtx<INREQ, REQ, RES>> => {
+            if (rv.isErr()) {
+              return Result.Err(rv);
+            }
+            return Result.Ok(hdlCtx);
+          }),
+        );
+        if (rStart.isErr()) {
+          stat.total.doneTime = new Date();
+          return Result.Err(rStart);
         }
+        stat.handled.startTime = new Date();
         const rHandle = await hdl.handle(hdlCtx);
+        stat.handled.doneTime = new Date();
+        stat.total.doneTime = new Date();
         if (rHandle.isErr()) {
+          stat.total.doneTime = new Date();
           return Result.Err(rHandle);
         }
         results.push(hdl.hash);
@@ -536,13 +647,12 @@ export class Evento {
           break;
         }
       }
-
       return Result.Ok(results);
     });
+    if (!stepCtx) {
+      throw new Error("Internal error: stepCtx is null");
+    }
     for (const hdl of toPost) {
-      if (res.isOk()) {
-        (stepCtx as MutableHandleTriggerCtx<INREQ, REQ>).triggerResult = res.Ok();
-      }
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       await exception2Result(() => hdl.post!(stepCtx as HandleTriggerCtx<INREQ, REQ, RES>));
     }
@@ -552,12 +662,11 @@ export class Evento {
         await exception2Result(() => hdl.handle(stepCtx as HandleTriggerCtx<INREQ, REQ, RES>));
       }
     }
-    const send = stepCtx && "send" in stepCtx ? (stepCtx.send as HandleTriggerCtx<INREQ, REQ, RES>["send"]) : undefined;
-    if (send && send.done && startOnce.state === "processed" && startOnce.value) {
-      if (startOnce.value.isOk()) {
-        await send.done(startOnce.value.Ok());
-      }
+    if (startOnce.value?.isOk()) {
+      const ctx = startOnce.value.Ok();
+      ctx.stats.request.doneTime = new Date();
+      await startOnce.value.Ok().send.done(ctx);
     }
-    return res;
+    return Result.Ok(stepCtx);
   }
 }
