@@ -1145,4 +1145,78 @@ describe("Evento", () => {
       );
     }
   });
+
+  it("exposes ctx id", async () => {
+    const evo = new Evento(reqRes);
+    const send = new TestSend();
+    evo.push({
+      hash: "regular-handler-0",
+      validate: async (ctx: ValidateTriggerCtx<Request, ReqTestType, ResType>): Promise<Result<Option<ReqTestType>>> => {
+        send.fn("regular-handler-0-validate", ctx.id);
+        return sleep(10).then(() => Result.Ok(Option.Some<ReqTestType>({ x: 2, stop: true } as ReqTestType)));
+      },
+      handle: async (ctx: HandleTriggerCtx<Request, ReqTestType, ResType>): Promise<Result<EventoResultType>> => {
+        send.fn("regular-handler-0-handle", ctx.id);
+        return Promise.resolve(Result.Ok(EventoResult.Continue));
+      },
+      post: (ctx: HandleTriggerCtx<Request, ReqTestType, ResType>): Promise<void> => {
+        send.fn("regular-handler-0-post", ctx.id);
+        return Promise.resolve();
+      },
+    });
+    const request = new Request("http://example.com", { method: "POST", body: JSON.stringify({ x: 2, stop: true }) });
+    const ret = await evo.trigger({
+      send,
+      request,
+    });
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    expect(send.fn.mock.calls.map((i) => i[0])).toEqual([
+      "regular-handler-0-validate",
+      "start",
+      "regular-handler-0-handle",
+      "regular-handler-0-post",
+      "done",
+    ]);
+    for (const checkId of [send.fn.mock.calls[0][1], send.fn.mock.calls[2][1], send.fn.mock.calls[3][1]]) {
+      expect(checkId).toBe(ret.Ok().id);
+    }
+  });
+
+  it("use ctx id", async () => {
+    const evo = new Evento(reqRes);
+    const send = new TestSend();
+    evo.push({
+      hash: "regular-handler-0",
+      validate: async (ctx: ValidateTriggerCtx<Request, ReqTestType, ResType>): Promise<Result<Option<ReqTestType>>> => {
+        send.fn("regular-handler-0-validate", ctx.id);
+        return sleep(10).then(() => Result.Ok(Option.Some<ReqTestType>({ x: 2, stop: true } as ReqTestType)));
+      },
+      handle: async (ctx: HandleTriggerCtx<Request, ReqTestType, ResType>): Promise<Result<EventoResultType>> => {
+        send.fn("regular-handler-0-handle", ctx.id);
+        return Promise.resolve(Result.Ok(EventoResult.Continue));
+      },
+      post: (ctx: HandleTriggerCtx<Request, ReqTestType, ResType>): Promise<void> => {
+        send.fn("regular-handler-0-post", ctx.id);
+        return Promise.resolve();
+      },
+    });
+    const request = new Request("http://example.com", { method: "POST", body: JSON.stringify({ x: 2, stop: true }) });
+    const ret = await evo.trigger({
+      id: "test-ctx-id-123",
+      send,
+      request,
+    });
+    expect(ret.Ok().id).toBe("test-ctx-id-123");
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    expect(send.fn.mock.calls.map((i) => i[0])).toEqual([
+      "regular-handler-0-validate",
+      "start",
+      "regular-handler-0-handle",
+      "regular-handler-0-post",
+      "done",
+    ]);
+    for (const checkId of [send.fn.mock.calls[0][1], send.fn.mock.calls[2][1], send.fn.mock.calls[3][1]]) {
+      expect(checkId).toBe("test-ctx-id-123");
+    }
+  });
 });

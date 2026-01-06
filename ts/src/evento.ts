@@ -144,6 +144,7 @@ export interface TriggerCtxBase<INREQ, RES> {
  * Readonly version of the base trigger context.
  */
 export type ReadonlyTriggerCtxBase<INREQ, REQ, RES> = Readonly<TriggerCtxBase<INREQ, RES>> & {
+  readonly id: string;
   readonly send: EventoSend<INREQ, REQ, RES>;
   readonly stats: TriggerStats;
 };
@@ -157,6 +158,7 @@ export type TriggerCtxBaseParams<INREQ, REQ, RES> = Partial<Omit<ReadonlyTrigger
     send: EventoSendProvider<INREQ, REQ, RES>;
     stats?: TriggerStats;
     idService?: IdService;
+    id?: string;
   };
 
 /**
@@ -563,7 +565,7 @@ export class Evento {
         },
         send: new EventoSend(ictx.send),
         ctx: ictx.ctx ?? new AppContext(),
-        id: (ictx.idService ?? IdService.create()).NextId(),
+        id: ictx.id ?? (ictx.idService ?? IdService.create()).NextId(),
       };
       stepCtx = ctx;
       const results: string[] = [];
