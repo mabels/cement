@@ -130,6 +130,8 @@ export interface MutableHandleTriggerCtx<INREQ, REQ> {
   request: INREQ;
   enRequest: unknown;
   validated: REQ;
+  error?: Error;
+  triggerResult?: string[];
 }
 
 /**
@@ -171,6 +173,8 @@ export enum EventoType {
   WildCard = "wildcard",
   /** Regular handlers run first */
   Regular = "regular",
+  /** Error handlers run on errors */
+  Error = "error",
 }
 
 // export type EventoOrderType = typeof EventoOrder[keyof typeof EventoOrder];
@@ -204,6 +208,13 @@ export interface EventoHandler<INREQ = unknown, REQ = unknown, RES = unknown> {
    * @returns A Result containing Option of validated data
    */
   validate?(trigger: ValidateTriggerCtx<INREQ, REQ, RES>): Promise<Result<Option<REQ>>>;
+
+  /** Optional hook called after handling the event.
+   *
+   * @param trigger - The trigger context
+   * @returns A Promise that resolves when post-processing is complete
+   */
+  post?(trigger: HandleTriggerCtx<INREQ, REQ, RES>): Promise<void>;
 }
 
 /**
@@ -323,6 +334,7 @@ function unregFunc(item: EventoHandler, actions: EventoHandler[]): () => void {
 export class Evento {
   private actions: EventoHandler[] = [];
   private wildcards: EventoHandler[] = [];
+  private errors: EventoHandler[] = [];
 
   private encoder: EventoEnDecoder<unknown, unknown>;
 
@@ -397,7 +409,19 @@ export class Evento {
    */
   register(...hdls: EventoHandlerOp[]): (() => void)[] {
     return hdls.map((item) => {
-      const handlers = item.type === EventoType.WildCard ? this.wildcards : this.actions;
+      let handlers: EventoHandler[];
+      switch (item.type) {
+        case EventoType.WildCard:
+          handlers = this.wildcards;
+          break;
+        case EventoType.Error:
+          handlers = this.errors;
+          break;
+        case EventoType.Regular:
+        default:
+          handlers = this.actions;
+          break;
+      }
       const hasHandler = handlers.find((h) => h.hash === item.handler.hash);
       if (hasHandler) {
         return unregFunc(hasHandler, handlers);
@@ -435,12 +459,20 @@ export class Evento {
    * @returns A Result containing an array of handler hashes that processed the event
    */
   async trigger<INREQ, REQ, RES>(ictx: TriggerCtxParams<INREQ, REQ, RES>): Promise<Result<string[]>> {
-    return exception2Result(async (): Promise<Result<string[]>> => {
+    let stepCtx:
+      | HandleTriggerCtx<INREQ, REQ, RES>
+      | ValidateTriggerCtx<INREQ, REQ, RES>
+      | (ReadonlyTriggerCtxBase<INREQ, REQ, RES> & Partial<MutableHandleTriggerCtx<INREQ, REQ>>)
+      | object = {};
+    const toPost: EventoHandler[] = [];
+    const startOnce = new ResolveOnce<Result<HandleTriggerCtx<INREQ, REQ, RES>>>();
+    const res = await exception2Result(async (): Promise<Result<string[]>> => {
       const ctx: ReadonlyTriggerCtxBase<INREQ, REQ, RES> & Partial<MutableHandleTriggerCtx<INREQ, REQ>> = {
         ...ictx,
         encoder: ictx.encoder ?? (this.encoder as EventoEnDecoder<INREQ, RES>),
         ctx: ictx.ctx ?? new AppContext(),
       };
+      stepCtx = ctx;
       const results: string[] = [];
       // this skips encoding if already encoded
       if (!ctx.enRequest) {
@@ -451,12 +483,11 @@ export class Evento {
         const unk = rUnk.unwrap();
         ctx.enRequest = unk;
       }
-      const validateCtx = {
+      const validateCtx = (stepCtx = {
         ...ctx,
         enRequest: ctx.enRequest,
         request: ctx.request,
-      };
-      const startOnce = new ResolveOnce<Result<HandleTriggerCtx<INREQ, REQ, RES>>>();
+      });
       for (const hdl of [...this.actions, "breakpoint", ...this.wildcards]) {
         if (typeof hdl === "string") {
           if (results.length > 0) {
@@ -464,6 +495,9 @@ export class Evento {
             break;
           }
           continue;
+        }
+        if (hdl.post) {
+          toPost.push(hdl);
         }
         const rData = await Promise.resolve(hdl.validate ? hdl.validate(validateCtx) : Result.Ok(Option.Some(ctx.enRequest)));
         if (rData.isErr()) {
@@ -473,12 +507,12 @@ export class Evento {
         if (data.IsNone()) {
           continue;
         }
-        const hdlCtx = {
+        const hdlCtx = (stepCtx = {
           ...ctx,
           validated: data.Unwrap() as REQ,
           request: ctx.request as INREQ,
           enRequest: ctx.enRequest,
-        }; // satisfies HandleTriggerCtx<INREQ, REQ, RES>;
+        }); // satisfies HandleTriggerCtx<INREQ, REQ, RES>;
         if (ctx.send.start) {
           const rStart = await startOnce.once(() =>
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -502,12 +536,28 @@ export class Evento {
           break;
         }
       }
-      if (ctx.send.done && startOnce.state === "processed" && startOnce.value) {
-        if (startOnce.value.isOk()) {
-          await ctx.send.done(startOnce.value.Ok());
-        }
-      }
+
       return Result.Ok(results);
     });
+    for (const hdl of toPost) {
+      if (res.isOk()) {
+        (stepCtx as MutableHandleTriggerCtx<INREQ, REQ>).triggerResult = res.Ok();
+      }
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      await exception2Result(() => hdl.post!(stepCtx as HandleTriggerCtx<INREQ, REQ, RES>));
+    }
+    if (res.isErr()) {
+      (stepCtx as MutableHandleTriggerCtx<INREQ, REQ>).error = res.Err();
+      for (const hdl of this.errors) {
+        await exception2Result(() => hdl.handle(stepCtx as HandleTriggerCtx<INREQ, REQ, RES>));
+      }
+    }
+    const send = stepCtx && "send" in stepCtx ? (stepCtx.send as HandleTriggerCtx<INREQ, REQ, RES>["send"]) : undefined;
+    if (send && send.done && startOnce.state === "processed" && startOnce.value) {
+      if (startOnce.value.isOk()) {
+        await send.done(startOnce.value.Ok());
+      }
+    }
+    return res;
   }
 }

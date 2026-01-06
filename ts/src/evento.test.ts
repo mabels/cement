@@ -600,4 +600,423 @@ describe("Evento", () => {
       Result.Ok(EventoResult.Stop),
     ]);
   });
+
+  it("validate throw encode error trigger", async () => {
+    class ErrorEncoder implements EventoEnDecoder<Request, string> {
+      encode(_args: Request): Promise<Result<unknown>> {
+        throw new Error("test encode error");
+      }
+      decode(data: unknown): Promise<Result<string>> {
+        return Promise.resolve(Result.Ok(JSON.stringify(data)));
+      }
+    }
+    const evo = new Evento(new ErrorEncoder());
+    const send = new TestSend();
+    evo.push({
+      type: EventoType.Error,
+      hash: "error-handler-0",
+      handle: async (ctx: HandleTriggerCtx<Request, ReqTestType, ResType>): Promise<Result<EventoResultType>> => {
+        send.fn("error-handler-0-handle", ctx);
+        return Promise.resolve(Result.Ok(EventoResult.Continue));
+      },
+    });
+    evo.push({
+      type: EventoType.Error,
+      hash: "error-handler-1",
+      handle: async (ctx: HandleTriggerCtx<Request, ReqTestType, ResType>): Promise<Result<EventoResultType>> => {
+        send.fn("error-handler-1-handle", ctx);
+        return Promise.resolve(Result.Ok(EventoResult.Continue));
+      },
+    });
+    evo.push({
+      hash: "regular-handler-0",
+      handle: async (ctx: HandleTriggerCtx<Request, ReqTestType, ResType>): Promise<Result<EventoResultType>> => {
+        send.fn("regular-handler-0-handle", ctx);
+        return Promise.reject(new Error("test error"));
+      },
+    });
+    const request = new Request("http://example.com", { method: "GET" });
+    await evo.trigger({
+      send,
+      request,
+    });
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    expect(send.fn.mock.calls.map((i) => i[0])).toEqual(["error-handler-0-handle", "error-handler-1-handle"]);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    expect(send.fn.mock.calls[0][1].error.message).toContain("test encode error");
+
+    expect(send.fn.mock.calls[0]).toEqual([
+      "error-handler-0-handle",
+      expect.objectContaining({
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        ctx: expect.anything(),
+        encoder: reqRes,
+        request,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+        error: send.fn.mock.calls[0][1].error,
+        send,
+      }),
+    ]);
+  });
+
+  it("validate result encode error trigger", async () => {
+    class ErrorEncoder implements EventoEnDecoder<Request, string> {
+      encode(_args: Request): Promise<Result<unknown>> {
+        return Promise.resolve(Result.Err(new Error("test encode error")));
+      }
+      decode(data: unknown): Promise<Result<string>> {
+        return Promise.resolve(Result.Ok(JSON.stringify(data)));
+      }
+    }
+    const evo = new Evento(new ErrorEncoder());
+    const send = new TestSend();
+    evo.push({
+      type: EventoType.Error,
+      hash: "error-handler-0",
+      handle: async (ctx: HandleTriggerCtx<Request, ReqTestType, ResType>): Promise<Result<EventoResultType>> => {
+        send.fn("error-handler-0-handle", ctx);
+        return Promise.resolve(Result.Ok(EventoResult.Continue));
+      },
+    });
+    evo.push({
+      type: EventoType.Error,
+      hash: "error-handler-1",
+      handle: async (ctx: HandleTriggerCtx<Request, ReqTestType, ResType>): Promise<Result<EventoResultType>> => {
+        send.fn("error-handler-1-handle", ctx);
+        return Promise.resolve(Result.Ok(EventoResult.Continue));
+      },
+    });
+    evo.push({
+      hash: "regular-handler-0",
+      handle: async (ctx: HandleTriggerCtx<Request, ReqTestType, ResType>): Promise<Result<EventoResultType>> => {
+        send.fn("regular-handler-0-handle", ctx);
+        return Promise.reject(new Error("test error"));
+      },
+    });
+    const request = new Request("http://example.com", { method: "GET" });
+    await evo.trigger({
+      send,
+      request,
+    });
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    expect(send.fn.mock.calls.map((i) => i[0])).toEqual(["error-handler-0-handle", "error-handler-1-handle"]);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    expect(send.fn.mock.calls[0][1].error.message).toContain("test encode error");
+
+    expect(send.fn.mock.calls[0]).toEqual([
+      "error-handler-0-handle",
+      expect.objectContaining({
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        ctx: expect.anything(),
+        encoder: reqRes,
+        request,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+        error: send.fn.mock.calls[0][1].error,
+        send,
+      }),
+    ]);
+  });
+
+  it("validate throw error trigger", async () => {
+    const evo = new Evento(reqRes);
+    const send = new TestSend();
+    evo.push({
+      type: EventoType.Error,
+      hash: "error-handler-0",
+      handle: async (ctx: HandleTriggerCtx<Request, ReqTestType, ResType>): Promise<Result<EventoResultType>> => {
+        send.fn("error-handler-0-handle", ctx);
+        return Promise.resolve(Result.Ok(EventoResult.Continue));
+      },
+    });
+    evo.push({
+      type: EventoType.Error,
+      hash: "error-handler-1",
+      handle: async (ctx: HandleTriggerCtx<Request, ReqTestType, ResType>): Promise<Result<EventoResultType>> => {
+        send.fn("error-handler-1-handle", ctx);
+        return Promise.resolve(Result.Ok(EventoResult.Continue));
+      },
+    });
+    const error = new Error("test validate error");
+    evo.push({
+      hash: "regular-handler-0",
+      validate: async (ctx: ValidateTriggerCtx<Request, ReqTestType, ResType>): Promise<Result<Option<ReqTestType>>> => {
+        send.fn("regular-handler-0-validate", ctx);
+        return Promise.reject(error);
+      },
+      handle: async (ctx: HandleTriggerCtx<Request, ReqTestType, ResType>): Promise<Result<EventoResultType>> => {
+        send.fn("regular-handler-0-handle", ctx);
+        return Promise.reject(new Error("test error"));
+      },
+    });
+    const request = new Request("http://example.com", { method: "POST", body: JSON.stringify({ x: 2, stop: true }) });
+    await evo.trigger({
+      send,
+      request,
+    });
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    expect(send.fn.mock.calls.map((i) => i[0])).toEqual([
+      "regular-handler-0-validate",
+      "error-handler-0-handle",
+      "error-handler-1-handle",
+    ]);
+
+    expect(send.fn.mock.calls[1]).toEqual([
+      "error-handler-0-handle",
+      expect.objectContaining({
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        ctx: expect.anything(),
+        encoder: reqRes,
+        enRequest: { x: 2, stop: true },
+        request,
+        error,
+        send,
+      }),
+    ]);
+  });
+
+  it("validate result error trigger", async () => {
+    const evo = new Evento(reqRes);
+    const send = new TestSend();
+    evo.push({
+      type: EventoType.Error,
+      hash: "error-handler-0",
+      handle: async (ctx: HandleTriggerCtx<Request, ReqTestType, ResType>): Promise<Result<EventoResultType>> => {
+        send.fn("error-handler-0-handle", ctx);
+        return Promise.resolve(Result.Ok(EventoResult.Continue));
+      },
+    });
+    evo.push({
+      type: EventoType.Error,
+      hash: "error-handler-1",
+      handle: async (ctx: HandleTriggerCtx<Request, ReqTestType, ResType>): Promise<Result<EventoResultType>> => {
+        send.fn("error-handler-1-handle", ctx);
+        return Promise.resolve(Result.Ok(EventoResult.Continue));
+      },
+    });
+    const error = new Error("test validate error");
+    evo.push({
+      hash: "regular-handler-0",
+      validate: async (ctx: ValidateTriggerCtx<Request, ReqTestType, ResType>): Promise<Result<Option<ReqTestType>>> => {
+        send.fn("regular-handler-0-validate", ctx);
+        return Promise.resolve(Result.Err(error));
+      },
+      handle: async (ctx: HandleTriggerCtx<Request, ReqTestType, ResType>): Promise<Result<EventoResultType>> => {
+        send.fn("regular-handler-0-handle", ctx);
+        return Promise.reject(new Error("test error"));
+      },
+    });
+    const request = new Request("http://example.com", { method: "POST", body: JSON.stringify({ x: 2, stop: true }) });
+    await evo.trigger({
+      send,
+      request,
+    });
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    expect(send.fn.mock.calls.map((i) => i[0])).toEqual([
+      "regular-handler-0-validate",
+      "error-handler-0-handle",
+      "error-handler-1-handle",
+    ]);
+
+    expect(send.fn.mock.calls[1]).toEqual([
+      "error-handler-0-handle",
+      expect.objectContaining({
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        ctx: expect.anything(),
+        encoder: reqRes,
+        enRequest: { x: 2, stop: true },
+        request,
+        error,
+        send,
+      }),
+    ]);
+  });
+
+  it("handle throw error trigger", async () => {
+    const evo = new Evento(reqRes);
+    const send = new TestSend();
+    evo.push({
+      type: EventoType.Error,
+      hash: "error-handler-0",
+      handle: async (ctx: HandleTriggerCtx<Request, ReqTestType, ResType>): Promise<Result<EventoResultType>> => {
+        send.fn("error-handler-0-handle", ctx);
+        return Promise.resolve(Result.Ok(EventoResult.Continue));
+      },
+    });
+    evo.push({
+      type: EventoType.Error,
+      hash: "error-handler-1",
+      handle: async (ctx: HandleTriggerCtx<Request, ReqTestType, ResType>): Promise<Result<EventoResultType>> => {
+        send.fn("error-handler-1-handle", ctx);
+        return Promise.resolve(Result.Ok(EventoResult.Continue));
+      },
+    });
+    const error = new Error("test handle error");
+    evo.push({
+      hash: "regular-handler-0",
+      handle: async (ctx: HandleTriggerCtx<Request, ReqTestType, ResType>): Promise<Result<EventoResultType>> => {
+        send.fn("regular-handler-0-handle", ctx);
+        return Promise.reject(error);
+      },
+    });
+    const request = new Request("http://example.com", { method: "POST", body: JSON.stringify({ x: 2, stop: true }) });
+    await evo.trigger({
+      send,
+      request,
+    });
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    expect(send.fn.mock.calls.map((i) => i[0])).toEqual([
+      "start",
+      "regular-handler-0-handle",
+      "error-handler-0-handle",
+      "error-handler-1-handle",
+      "done",
+    ]);
+
+    expect(send.fn.mock.calls[2]).toEqual([
+      "error-handler-0-handle",
+      expect.objectContaining({
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        ctx: expect.anything(),
+        encoder: reqRes,
+        enRequest: { x: 2, stop: true },
+        request,
+        error,
+        send,
+        validated: {
+          stop: true,
+          x: 2,
+        },
+      }),
+    ]);
+  });
+
+  it("handle result error trigger", async () => {
+    const evo = new Evento(reqRes);
+    const send = new TestSend();
+    evo.push({
+      type: EventoType.Error,
+      hash: "error-handler-0",
+      handle: async (ctx: HandleTriggerCtx<Request, ReqTestType, ResType>): Promise<Result<EventoResultType>> => {
+        send.fn("error-handler-0-handle", ctx);
+        return Promise.resolve(Result.Ok(EventoResult.Continue));
+      },
+    });
+    evo.push({
+      type: EventoType.Error,
+      hash: "error-handler-1",
+      handle: async (ctx: HandleTriggerCtx<Request, ReqTestType, ResType>): Promise<Result<EventoResultType>> => {
+        send.fn("error-handler-1-handle", ctx);
+        return Promise.resolve(Result.Ok(EventoResult.Continue));
+      },
+    });
+    const error = new Error("test handle error");
+    evo.push({
+      hash: "regular-handler-0",
+      handle: async (ctx: HandleTriggerCtx<Request, ReqTestType, ResType>): Promise<Result<EventoResultType>> => {
+        send.fn("regular-handler-0-handle", ctx);
+        return Promise.resolve(Result.Err(error));
+      },
+      post: async (ctx: HandleTriggerCtx<Request, ReqTestType, ResType>): Promise<void> => {
+        send.fn("regular-handler-0-post", ctx);
+        return Promise.resolve();
+      },
+    });
+    const request = new Request("http://example.com", { method: "POST", body: JSON.stringify({ x: 2, stop: true }) });
+    await evo.trigger({
+      send,
+      request,
+    });
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    expect(send.fn.mock.calls.map((i) => i[0])).toEqual([
+      "start",
+      "regular-handler-0-handle",
+      "regular-handler-0-post",
+      "error-handler-0-handle",
+      "error-handler-1-handle",
+      "done",
+    ]);
+
+    expect(send.fn.mock.calls[3]).toEqual([
+      "error-handler-0-handle",
+      expect.objectContaining({
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        ctx: expect.anything(),
+        encoder: reqRes,
+        enRequest: { x: 2, stop: true },
+        request,
+        error,
+        send,
+        validated: {
+          stop: true,
+          x: 2,
+        },
+      }),
+    ]);
+  });
+
+  it("call post", async () => {
+    const evo = new Evento(reqRes);
+    const send = new TestSend();
+    evo.push({
+      hash: "regular-handler-0",
+      handle: async (ctx: HandleTriggerCtx<Request, ReqTestType, ResType>): Promise<Result<EventoResultType>> => {
+        send.fn("regular-handler-0-handle", ctx);
+        return Promise.resolve(Result.Ok(EventoResult.Continue));
+      },
+      post: async (ctx: HandleTriggerCtx<Request, ReqTestType, ResType>): Promise<void> => {
+        send.fn("regular-handler-0-post", ctx);
+        return Promise.reject(new Error("test post-0 error"));
+      },
+    });
+    evo.push({
+      hash: "regular-handler-1",
+      handle: async (ctx: HandleTriggerCtx<Request, ReqTestType, ResType>): Promise<Result<EventoResultType>> => {
+        send.fn("regular-handler-1-handle", ctx);
+        return Promise.resolve(Result.Ok(EventoResult.Continue));
+      },
+    });
+    evo.push({
+      hash: "regular-handler-2",
+      handle: async (ctx: HandleTriggerCtx<Request, ReqTestType, ResType>): Promise<Result<EventoResultType>> => {
+        send.fn("regular-handler-2-handle", ctx);
+        return Promise.resolve(Result.Ok(EventoResult.Continue));
+      },
+      post: async (ctx: HandleTriggerCtx<Request, ReqTestType, ResType>): Promise<void> => {
+        send.fn("regular-handler-2-post", ctx);
+        return Promise.resolve();
+      },
+    });
+
+    const request = new Request("http://example.com", { method: "POST", body: JSON.stringify({ x: 2, stop: true }) });
+    await evo.trigger({
+      send,
+      request,
+    });
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    expect(send.fn.mock.calls.map((i) => i[0])).toEqual([
+      "start",
+      "regular-handler-0-handle",
+      "regular-handler-1-handle",
+      "regular-handler-2-handle",
+      "regular-handler-0-post",
+      "regular-handler-2-post",
+      "done",
+    ]);
+
+    // expect(send.fn.mock.calls[2]).toEqual([
+    //   "error-handler-0-handle",
+    //   expect.objectContaining({
+    //     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    //     ctx: expect.anything(),
+    //     encoder: reqRes,
+    //     enRequest: { x: 2, stop: true },
+    //     request,
+    //     send,
+    //     validated: {
+    //       stop: true,
+    //       x: 2,
+    //     },
+    //   }),
+    // ]);
+  });
 });
