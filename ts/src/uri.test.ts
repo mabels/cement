@@ -779,4 +779,19 @@ describe("URI", () => {
       expect(uriFromBuildURI).toBe(ruriFromBuildURI);
     }
   });
+
+  it("Test Host", () => {
+    const uri = URI.from("http://example.com:8080/path/name?key=value#hash");
+    expect(uri.host).toBe("example.com:8080");
+    expect(uri.hostname).toBe("example.com");
+    expect(uri.port).toBe("8080");
+    const buri = uri.build();
+    buri.port("9090");
+    buri.hostname("example.org");
+    expect(buri.toString()).toBe("http://example.org:9090/path/name?key=value#hash");
+
+    const bhuri = uri.build();
+    bhuri.host("example.net:7070");
+    expect(bhuri.toString()).toBe("http://example.net:7070/path/name?key=value#hash");
+  });
 });

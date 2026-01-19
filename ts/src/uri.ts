@@ -328,6 +328,11 @@ export class BuildURI implements URIInterface<BuildURI> {
     return this;
   }
 
+  host(h: string): BuildURI {
+    this._url.host = h;
+    return this;
+  }
+
   hostname(h: string): BuildURI {
     this._url.hostname = h;
     return this;
