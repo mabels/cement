@@ -1,0 +1,63 @@
+import { TestWSPair } from "./test-ws-pair.js";
+import { it, expect } from "vitest";
+
+it("should record messages from both sides in the msgs array", () => {
+  const pair = TestWSPair.create();
+
+  const receivedByP1: Uint8Array[] = [];
+  const receivedByP2: Uint8Array[] = [];
+
+  pair.p1.onMessage = (e): void => {
+    receivedByP1.push(e.data as Uint8Array);
+  };
+  pair.p2.onMessage = (e): void => {
+    receivedByP2.push(e.data as Uint8Array);
+  };
+
+  pair.p1.send(new Uint8Array([1, 2, 3]));
+  pair.p2.send(new Uint8Array([4, 5, 6]));
+  pair.p1.send(new Uint8Array([7, 8, 9]));
+
+  expect(pair.msgs).toHaveLength(3);
+
+  expect(pair.msgs[0].from).toBe("p1");
+  expect(pair.msgs[0].data).toEqual(new Uint8Array([1, 2, 3]));
+
+  expect(pair.msgs[1].from).toBe("p2");
+  expect(pair.msgs[1].data).toEqual(new Uint8Array([4, 5, 6]));
+
+  expect(pair.msgs[2].from).toBe("p1");
+  expect(pair.msgs[2].data).toEqual(new Uint8Array([7, 8, 9]));
+
+  expect(receivedByP2).toHaveLength(2);
+  expect(receivedByP2[0]).toEqual(new Uint8Array([1, 2, 3]));
+  expect(receivedByP2[1]).toEqual(new Uint8Array([7, 8, 9]));
+
+  expect(receivedByP1).toHaveLength(1);
+  expect(receivedByP1[0]).toEqual(new Uint8Array([4, 5, 6]));
+});
+
+it("should handle string data via CoerceBinaryInput", () => {
+  const pair = TestWSPair.create();
+
+  pair.p1.onMessage = (_e): void => {
+    /* empty */
+  };
+  pair.p2.onMessage = (_e): void => {
+    /* empty */
+  };
+
+  pair.p1.send("hello");
+  pair.p2.send("world");
+
+  expect(pair.msgs).toHaveLength(2);
+  expect(pair.msgs[0].from).toBe("p1");
+  expect(new TextDecoder().decode(pair.msgs[0].data)).toBe("hello");
+  expect(pair.msgs[1].from).toBe("p2");
+  expect(new TextDecoder().decode(pair.msgs[1].data)).toBe("world");
+});
+
+it("should start with empty msgs array", () => {
+  const pair = TestWSPair.create();
+  expect(pair.msgs).toEqual([]);
+});
