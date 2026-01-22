@@ -7,13 +7,13 @@ export class ClientFetch {
     request: Request;
     response: Response;
   }[] = [];
-  async fetch(url: string, options?: RequestInit): Promise<Response> {
+  fetch: (url: string, options?: RequestInit) => Promise<Response> = async (url, options) => {
     const req = new Request(url, options);
     const callsReq = req.clone();
     const res = await this.#server.serve(req);
     this.calls.push({ request: callsReq, response: res.clone() });
     return res;
-  }
+  };
 }
 
 export class ServerFetch {

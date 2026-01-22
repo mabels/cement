@@ -61,3 +61,26 @@ it("should start with empty msgs array", () => {
   const pair = TestWSPair.create();
   expect(pair.msgs).toEqual([]);
 });
+
+it("should work when send method is passed without bind", () => {
+  const pair = TestWSPair.create();
+
+  const receivedByP2: Uint8Array[] = [];
+  pair.p1.onMessage = (_e): void => {
+    /* empty */
+  };
+  pair.p2.onMessage = (e): void => {
+    receivedByP2.push(e.data as Uint8Array);
+  };
+
+  const unboundSend = pair.p1.send;
+
+  unboundSend(new Uint8Array([10, 20, 30]));
+
+  expect(pair.msgs).toHaveLength(1);
+  expect(pair.msgs[0].from).toBe("p1");
+  expect(pair.msgs[0].data).toEqual(new Uint8Array([10, 20, 30]));
+
+  expect(receivedByP2).toHaveLength(1);
+  expect(receivedByP2[0]).toEqual(new Uint8Array([10, 20, 30]));
+});

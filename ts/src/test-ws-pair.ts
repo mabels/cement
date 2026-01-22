@@ -34,13 +34,13 @@ class TestWSConnection implements WSConnectionWrapper {
     this.#other = other;
   }
 
-  send(data: CoerceBinaryInput): void {
+  send = (data: CoerceBinaryInput): void => {
     const uint8 = to_uint8(data);
     this.calls.push({ from: this.side, data: uint8 });
     this.#other.onMessage({
       data: uint8,
     } as unknown as MessageEvent<Uint8Array>);
-  }
+  };
 }
 
 export class TestWSPair {

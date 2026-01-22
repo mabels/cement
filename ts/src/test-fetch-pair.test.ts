@@ -46,3 +46,19 @@ it("should start with empty calls array", () => {
   const tfp = TestFetchPair.create();
   expect(tfp.client.calls).toEqual([]);
 });
+
+it("should work when fetch method is passed without bind", async () => {
+  const tfp = TestFetchPair.create();
+
+  tfp.server.onServe((req) => {
+    return Promise.resolve(new Response(`Response for ${req.url}`, { status: 200 }));
+  });
+
+  const unboundFetch = tfp.client.fetch;
+
+  await unboundFetch("http://example.com/unbound");
+
+  expect(tfp.client.calls).toHaveLength(1);
+  expect(tfp.client.calls[0].request.url).toBe("http://example.com/unbound");
+  expect(await tfp.client.calls[0].response.text()).toBe("Response for http://example.com/unbound");
+});
