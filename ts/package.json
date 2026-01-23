@@ -73,11 +73,13 @@
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.12.1",
+    "@cloudflare/workers-types": "^4.20260123.0",
     "@eslint/js": "^9.39.1",
     "@types/deno": "^2.3.0",
     "@types/fs-extra": "^11.0.4",
     "@types/node": "^25.0.2",
     "@types/semver": "^7.7.1",
+    "@types/ws": "^8.18.1",
     "@typescript-eslint/eslint-plugin": "^8.46.3",
     "@typescript-eslint/parser": "^8.46.3",
     "@typescript/native-preview": "7.0.0-dev.20260119.1",

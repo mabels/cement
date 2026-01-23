@@ -1,5 +1,18 @@
-import { TestWSPair } from "./test-ws-pair.js";
-import { it, expect } from "vitest";
+import { it, expect, vi } from "vitest";
+import { TestWSConnection, TestWSPair } from "./test-ws-pair.js";
+
+//import type { WebSocket as WSWebSocket } from "ws";
+//import type { WebSocket as CFWebSocket } from "@cloudflare/workers-types";
+
+/*
+it("test generic WSWebSocket type", () => {
+  const pair = TestWSPair<WSWebSocket>.create();
+})
+
+it("test generic CFWebSocket type", () => {
+  const pair = TestWSPair<CFWebSocket>.create();
+})
+*/
 
 it("should record messages from both sides in the msgs array", () => {
   const pair = TestWSPair.create();
@@ -7,10 +20,10 @@ it("should record messages from both sides in the msgs array", () => {
   const receivedByP1: Uint8Array[] = [];
   const receivedByP2: Uint8Array[] = [];
 
-  pair.p1.onMessage = (e): void => {
+  pair.p1.onmessage = (e): void => {
     receivedByP1.push(e.data as Uint8Array);
   };
-  pair.p2.onMessage = (e): void => {
+  pair.p2.onmessage = (e): void => {
     receivedByP2.push(e.data as Uint8Array);
   };
 
@@ -37,13 +50,21 @@ it("should record messages from both sides in the msgs array", () => {
   expect(receivedByP1[0]).toEqual(new Uint8Array([4, 5, 6]));
 });
 
+it("should emit onopen events upon setting the handler", () => {
+  const pair = new TestWSConnection("p1", []);
+  pair.onopen = vi.fn(() => {
+    /* empty */
+  });
+  expect(pair.onopen).toHaveBeenCalledTimes(1);
+});
+
 it("should handle string data via CoerceBinaryInput", () => {
   const pair = TestWSPair.create();
 
-  pair.p1.onMessage = (_e): void => {
+  pair.p1.onmessage = (_e): void => {
     /* empty */
   };
-  pair.p2.onMessage = (_e): void => {
+  pair.p2.onmessage = (_e): void => {
     /* empty */
   };
 
@@ -66,10 +87,10 @@ it("should work when send method is passed without bind", () => {
   const pair = TestWSPair.create();
 
   const receivedByP2: Uint8Array[] = [];
-  pair.p1.onMessage = (_e): void => {
+  pair.p1.onmessage = (_e): void => {
     /* empty */
   };
-  pair.p2.onMessage = (e): void => {
+  pair.p2.onmessage = (e): void => {
     receivedByP2.push(e.data as Uint8Array);
   };
 
