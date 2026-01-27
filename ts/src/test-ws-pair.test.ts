@@ -1,19 +1,6 @@
 import { it, expect, vi } from "vitest";
 import { TestWSConnection, TestWSPair } from "./test-ws-pair.js";
 
-//import type { WebSocket as WSWebSocket } from "ws";
-//import type { WebSocket as CFWebSocket } from "@cloudflare/workers-types";
-
-/*
-it("test generic WSWebSocket type", () => {
-  const pair = TestWSPair<WSWebSocket>.create();
-})
-
-it("test generic CFWebSocket type", () => {
-  const pair = TestWSPair<CFWebSocket>.create();
-})
-*/
-
 it("should record messages from both sides in the msgs array", () => {
   const pair = TestWSPair.create();
 
@@ -104,4 +91,33 @@ it("should work when send method is passed without bind", () => {
 
   expect(receivedByP2).toHaveLength(1);
   expect(receivedByP2[0]).toEqual(new Uint8Array([10, 20, 30]));
+});
+
+it("ws pair addEventListener integration test", () => {
+  const { p1, p2 } = TestWSPair.create();
+  const msgFn = vi.fn();
+  const onMsgFn = vi.fn();
+  const closeFn = vi.fn();
+  const errorFn = vi.fn();
+
+  p1.addEventListener("message", msgFn);
+  p1.addEventListener("close", closeFn);
+  p1.addEventListener("error", errorFn);
+  p1.onmessage = onMsgFn;
+
+  p2.send(new Uint8Array([1, 2, 3]));
+
+  expect(msgFn).toHaveBeenCalledTimes(1);
+  expect((msgFn.mock.calls[0][0] as MessageEvent).data).toEqual(new Uint8Array([1, 2, 3]));
+  expect((onMsgFn.mock.calls[0][0] as MessageEvent).data).toEqual(new Uint8Array([1, 2, 3]));
+  expect(closeFn).toHaveBeenCalledTimes(0);
+  expect(errorFn).toHaveBeenCalledTimes(0);
+
+  p1.removeEventListener("message", msgFn);
+  p1.removeEventListener("close", closeFn);
+  p1.removeEventListener("error", errorFn);
+
+  p2.send(new Uint8Array([1, 2, 3]));
+  expect(msgFn).toHaveBeenCalledTimes(1);
+  expect(onMsgFn).toHaveBeenCalledTimes(2);
 });

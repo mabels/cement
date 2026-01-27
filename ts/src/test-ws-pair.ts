@@ -6,11 +6,22 @@ export type OnErrorFn = (e: Event) => void;
 export type OnMessageFn = <T = unknown>(e: MessageEvent<T>) => void;
 export type OnCloseFn = (e: CloseEvent) => void;
 
+export type EventType = "message" | "error" | "close";
+
 export class TestWSConnection<WS extends WebSocketSimple = WebSocket> implements WebSocketSimple {
   #other!: TestWSConnection<WS>;
-  readonly side: string;
-
   #onopen!: () => void;
+  readonly side: string;
+  readonly #events: Map<EventType, Set<EventListenerOrEventListenerObject>> = new Map<
+    EventType,
+    Set<EventListenerOrEventListenerObject>
+  >();
+  readonly transfers?: { from: string; data: Uint8Array }[];
+
+  constructor(side: string, transfers?: { from: string; data: Uint8Array }[]) {
+    this.side = side;
+    this.transfers = transfers;
+  }
 
   get onopen(): () => void {
     return this.#onopen;
@@ -29,22 +40,29 @@ export class TestWSConnection<WS extends WebSocketSimple = WebSocket> implements
     throw new Error("OnClose Method not implemented.");
   };
 
-  readonly transfers?: { from: string; data: Uint8Array }[];
+  removeEventListener(key: EventType, listener: EventListenerOrEventListenerObject): void {
+    this.#events.get(key)?.delete(listener);
+  }
+  addEventListener(key: EventType, listener: EventListenerOrEventListenerObject): void {
+    this.#events.set(key, (this.#events.get(key) ?? new Set()).add(listener));
+  }
 
-  constructor(side: string, transfers?: { from: string; data: Uint8Array }[]) {
-    this.side = side;
-    this.transfers = transfers;
+  accept(): void {
+    // no-op for testing
   }
   connect(other: TestWSConnection<WS>): void {
     this.#other = other;
   }
-
   send = (data: CoerceBinaryInput): void => {
     const uint8 = to_uint8(data);
     this.transfers?.push({ from: this.side, data: uint8 });
-    this.#other.onmessage({
+    const msg = {
       data: uint8,
-    } as unknown as MessageEvent<Uint8Array>);
+    } as unknown as MessageEvent<Uint8Array>;
+    this.#other.onmessage(msg);
+    this.#other.#events
+      .get("message")
+      ?.forEach((listener) => (typeof listener === "function" ? listener(msg) : listener.handleEvent(msg)));
   };
 }
 
@@ -59,7 +77,6 @@ export class TestWSPair<WS extends WebSocketSimple = WebSocket> {
     pair.p2.connect(pair.p1);
     return pair;
   }
-
   private constructor() {
     /* empty */
   }
