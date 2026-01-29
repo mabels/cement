@@ -208,3 +208,26 @@ it("invoke on register to emit history of events", () => {
   expect(onReg1.mock.calls).toEqual([[onFunAction2, [onFunAction1]]]);
   expect(onReg2.mock.calls).toEqual([[onFunAction3, [onFunAction1, onFunAction2]]]);
 });
+
+it("type of onRegister are correct", () => {
+  const test = new OnFunctionTest();
+  test.onFunAction.onRegister((fn, fns) => {
+    fn(1, "23");
+    fns.forEach((f) => f(2, "34"));
+  });
+  test.onFunAction.onRegister((fn, fns) => {
+    fn(1, "23");
+    fns.forEach((f) => f(2, "34"));
+    return { x: 9 };
+  });
+  test.onFunAction.onRegister((fn, fns) => {
+    fn(1, "23");
+    fns.forEach((f) => f(2, "34"));
+    return OnFuncReturn.UNREGISTER;
+  });
+  test.onFunAction.onRegister((fn, fns) => {
+    fn(1, "23");
+    fns.forEach((f) => f(2, "34"));
+    return OnFuncReturn.ONCE;
+  });
+});

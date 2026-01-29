@@ -80,13 +80,13 @@ export const OnFuncReturn: {
 export type OnFuncReturn = (typeof OnFuncReturn)[keyof typeof OnFuncReturn];
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export interface ReturnOnFunc<Args extends any[], X = unknown> {
+export interface ReturnOnFunc<Args extends any[], X = unknown, Y = unknown> {
   (fn: (...a: Args) => OnFuncReturn | X): () => unknown; // returns unregister function
   invoke(...a: Args): void;
   invokeAsync(...a: Args): Promise<void>;
   clear(): void;
   once(fn: (...a: Args) => void): () => unknown;
-  onRegister(fn: (fn: (...a: Args) => unknown, fns: ((...a: Args) => unknown)[]) => OnFuncReturn): () => unknown;
+  onRegister(fn: (fn0: (...a: Args) => unknown, fns: ((...a: Args) => unknown)[]) => OnFuncReturn | Y): () => unknown;
 }
 
 type ExtractArgs<T, X> = T extends (...args: infer A) => OnFuncReturn | X ? A : never;
