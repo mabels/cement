@@ -179,3 +179,32 @@ it("OnFunctionTest once", () => {
     [2, "23"],
   ]);
 });
+
+it("invoke on register to emit history of events", () => {
+  const test = new OnFunctionTest();
+  const onReg0 = vi.fn();
+  const onReg1 = vi.fn();
+  const unreg0 = test.onFunAction.onRegister(onReg0);
+
+  const onFunAction1 = vi.fn();
+  test.onFunAction(onFunAction1);
+
+  const unreg1 = test.onFunAction.onRegister(onReg1);
+  const onFunAction2 = vi.fn();
+  test.onFunAction(onFunAction2);
+
+  unreg0();
+  unreg1();
+  const onReg2 = vi.fn();
+  test.onFunAction.onRegister(onReg2);
+
+  const onFunAction3 = vi.fn();
+  test.onFunAction(onFunAction3);
+
+  expect(onReg0.mock.calls).toEqual([
+    [onFunAction1, []],
+    [onFunAction2, [onFunAction1]],
+  ]);
+  expect(onReg1.mock.calls).toEqual([[onFunAction2, [onFunAction1]]]);
+  expect(onReg2.mock.calls).toEqual([[onFunAction3, [onFunAction1, onFunAction2]]]);
+});

@@ -2,11 +2,11 @@ import { isPromise } from "./is-promise.js";
 import { exception2Result, Result } from "./result.js";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-class OnFuncInstance<Args extends any[]> {
-  readonly #fns = new Set<(...a: Args) => unknown>();
+class OnFuncInstanceBase<Args extends any[]> {
+  readonly _fns = new Set<(...a: Args) => unknown>();
 
   addFunction(fn: (...a: Args) => unknown): () => void {
-    this.#fns.add(fn);
+    this._fns.add(fn);
     return () => {
       this.unreg(OnFuncReturn.UNREGISTER, fn);
     };
@@ -28,14 +28,14 @@ class OnFuncInstance<Args extends any[]> {
     }
     // console.log("unreg", ret, OnFuncReturn, OnFuncReturn[ret as keyof typeof OnFuncReturn]);
     if (ret === OnFuncReturn.UNREGISTER || ret === OnFuncReturn.ONCE) {
-      this.#fns.delete(fn);
+      this._fns.delete(fn);
       return undefined;
     }
     return ret;
   }
 
   public invoke(...a: Args): void {
-    for (const fn of this.#fns) {
+    for (const fn of this._fns) {
       try {
         const couldByPlainOrPromise = exception2Result(() => fn(...a));
         if (isPromise(couldByPlainOrPromise)) {
@@ -52,11 +52,21 @@ class OnFuncInstance<Args extends any[]> {
   }
 
   public clear(): void {
-    this.#fns.clear();
+    this._fns.clear();
   }
 
   public async invokeAsync(...a: Args): Promise<void> {
-    await Promise.allSettled(Array.from(this.#fns).map((fn) => Promise.resolve(fn(...a)).then((ret) => this.unreg(ret, fn))));
+    await Promise.allSettled(Array.from(this._fns).map((fn) => Promise.resolve(fn(...a)).then((ret) => this.unreg(ret, fn))));
+  }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+class OnFuncInstance<Args extends any[]> extends OnFuncInstanceBase<Args> {
+  readonly onRegister = new OnFuncInstanceBase<[fn: (...a0: Args) => unknown, fns: ((...a1: Args) => unknown)[]]>();
+  // (a: number, b: string) => unknown
+  addFunction(fn: (...a: Args) => unknown): () => void {
+    this.onRegister.invoke(fn, Array.from(this._fns));
+    return super.addFunction(fn);
   }
 }
 
@@ -76,6 +86,7 @@ export interface ReturnOnFunc<Args extends any[], X = unknown> {
   invokeAsync(...a: Args): Promise<void>;
   clear(): void;
   once(fn: (...a: Args) => void): () => unknown;
+  onRegister(fn: (fn: (...a: Args) => unknown, fns: ((...a: Args) => unknown)[]) => OnFuncReturn): () => unknown;
 }
 
 type ExtractArgs<T, X> = T extends (...args: infer A) => OnFuncReturn | X ? A : never;
@@ -149,5 +160,6 @@ export function OnFunc<Fn extends (...args: any[]) => OnFuncReturn | X, X = unkn
   ret.invokeAsync = instance.invokeAsync.bind(instance) as ReturnOnFunc<ExtractArgs<Fn, X>>["invokeAsync"];
   ret.clear = instance.clear.bind(instance) as ReturnOnFunc<ExtractArgs<Fn, X>>["clear"];
   ret.once = instance.once.bind(instance) as ReturnOnFunc<ExtractArgs<Fn, X>>["once"];
+  ret.onRegister = instance.onRegister.addFunction.bind(instance.onRegister) as ReturnOnFunc<ExtractArgs<Fn, X>>["onRegister"];
   return ret;
 }
