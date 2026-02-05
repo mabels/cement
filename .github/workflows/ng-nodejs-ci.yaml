@@ -45,6 +45,7 @@ jobs:
           cd ts
           pnpm remove playwright-chromium
           pnpm install
+          pnpm dedupe --check
           pnpm run prettier --check
           pnpm run lint
           pnpm run build
