@@ -55,8 +55,8 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4
       cmd-ts:
-        specifier: ^0.14.1
-        version: 0.14.3
+        specifier: ^0.15.0
+        version: 0.15.0
       deno:
         specifier: ^2.5.1
         version: 2.6.8
@@ -1457,8 +1457,8 @@ packages:
     resolution: {integrity: sha512-neHB9xuzh/wk0dIHweyAXv2aPGZIVk3pLMe+/RNzINf17fe0OG96QroktYAUm7SM1PBnzTabaLboqqxDyMU+SQ==}
     engines: {node: '>=6'}
 
-  cmd-ts@0.14.3:
-    resolution: {integrity: sha512-i9miaLBHGPn4T4vUFUdAdWoQ9HI8ato6usFrhubO21o/MQGqI6Nsqyd4ncZusT2chvPetNMmTt0JWkbaAOdWPg==}
+  cmd-ts@0.15.0:
+    resolution: {integrity: sha512-ASyAx+P6DNzNEZ6OYmvjjaLAQeI3L+4lm5rX2Jg8tondXdj06o9JTxi9mfC92KoVbrVFKhZ+j2TfBF8fcura6g==}
 
   color-convert@2.0.1:
     resolution: {integrity: sha512-RRECPsj7iu/xb5oKYcsFHSppFNnsj/52OVTRKb4zP5onXwVF3zVmmToNcOfGC+CRDpfK/U584fMg38ZHCaElKQ==}
@@ -3827,7 +3827,7 @@ snapshots:
       kind-of: 6.0.3
       shallow-clone: 3.0.1
 
-  cmd-ts@0.14.3:
+  cmd-ts@0.15.0:
     dependencies:
       chalk: 5.6.2
       debug: 4.4.3
