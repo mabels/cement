@@ -53,7 +53,7 @@ export function getParamsResult(
           ...Object.keys(i).map((k) => ({
             key: k,
             def: typeof i[k] === "string" ? i[k] : undefined,
-            isOptional: i[k] === param.OPTIONAL,
+            isOptional: i[k] === param.OPTIONAL || (i[k] as { type: string })?.type === param.OPTIONAL.type,
           })),
         );
       }
