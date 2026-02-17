@@ -1,4 +1,5 @@
-export class HeadersImpl implements Headers {
+// node iterator changed between version
+export class HeadersImpl implements Omit<Headers, "values" | "keys" | "entries" | typeof Symbol.iterator | "forEach"> {
   readonly impl: Headers = new Headers();
 
   constructor(init: Map<string, string | string[]>) {
@@ -29,7 +30,7 @@ export class HeadersImpl implements Headers {
     this.impl.set(name, value);
   }
 
-  *[Symbol.iterator](): IterableIterator<[string, string]> {
+  *[Symbol.iterator](): Iterable<[string, string]> {
     const keys: [string, string][] = [];
     this.impl.forEach((v, k) => {
       keys.push([k, v]);
@@ -39,10 +40,10 @@ export class HeadersImpl implements Headers {
     }
   }
 
-  entries(): IterableIterator<[string, string]> {
+  entries(): Iterable<[string, string]> {
     return this[Symbol.iterator]();
   }
-  *keys(): IterableIterator<string> {
+  *keys(): Iterable<string> {
     const keys: string[] = [];
     this.impl.forEach((_, k) => {
       keys.push(k);
@@ -51,7 +52,7 @@ export class HeadersImpl implements Headers {
       yield k;
     }
   }
-  *values(): IterableIterator<string> {
+  *values(): Iterable<string> {
     for (const k of this.keys()) {
       const v = this.impl.get(k);
       if (!v) {

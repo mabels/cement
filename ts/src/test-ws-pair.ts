@@ -53,8 +53,8 @@ export class TestWSConnection<WS extends WebSocketSimple = WebSocket> implements
   connect(other: TestWSConnection<WS>): void {
     this.#other = other;
   }
-  send = (data: CoerceBinaryInput): void => {
-    const uint8 = to_uint8(data);
+  send = (data: string | Blob | BufferSource): void => {
+    const uint8 = to_uint8(data as CoerceBinaryInput);
     this.transfers?.push({ from: this.side, data: uint8 });
     const msg = {
       data: uint8,
