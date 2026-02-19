@@ -447,6 +447,20 @@ describe("URI", () => {
     expect(URI.from("/bla").toString()).equal("file:///bla");
   });
 
+  it("hostpart protocol with no host returns Err in fromResult", () => {
+    for (const proto of ["http://", "https://", "ws://", "wss://"]) {
+      const rUri = URI.fromResult(proto);
+      expect(rUri.isErr(), `${proto} should be Err`).toBe(true);
+    }
+  });
+
+  it("non-hostpart protocol parses ok", () => {
+    for (const proto of ["sxy://", "file://", "custom://"]) {
+      const rUri = URI.fromResult(proto);
+      expect(rUri.isOk(), `${proto} should be Ok`).toBe(true);
+    }
+  });
+
   describe("applyBase", () => {
     let base: BuildURI;
     let ref: BuildURI;

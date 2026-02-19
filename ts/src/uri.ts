@@ -161,7 +161,13 @@ function ensureURLWithDefaultProto<T>(
   if (typeof url === "string") {
     try {
       return action.fromThrow(url);
-    } catch (_e) {
+    } catch (e) {
+      // Only re-throw for protocols that require a host part (http, https, ws, wss).
+      // Non-hostpart protocols (file://, custom://) still get the defaultProtocol fallback.
+      const protoMatch = url.match(/^([a-zA-Z][a-zA-Z0-9+.-]*):\/\//);
+      if (protoMatch && hasHostPartProtocols.has(protoMatch[1])) {
+        throw e;
+      }
       return action.fromThrow(`${defaultProtocol}//${url}`);
     }
   } else {
