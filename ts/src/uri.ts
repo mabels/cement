@@ -161,7 +161,11 @@ function ensureURLWithDefaultProto<T>(
   if (typeof url === "string") {
     try {
       return action.fromThrow(url);
-    } catch (_e) {
+    } catch (e) {
+      // Only fall back to defaultProtocol for strings without a protocol
+      if (/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(url)) {
+        throw e;
+      }
       return action.fromThrow(`${defaultProtocol}//${url}`);
     }
   } else {

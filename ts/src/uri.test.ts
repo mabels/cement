@@ -447,6 +447,11 @@ describe("URI", () => {
     expect(URI.from("/bla").toString()).equal("file:///bla");
   });
 
+  it("invalid absolute url returns Err in fromResult", () => {
+    const rUri = URI.fromResult("http://");
+    expect(rUri.isErr()).toBe(true);
+  });
+
   describe("applyBase", () => {
     let base: BuildURI;
     let ref: BuildURI;
