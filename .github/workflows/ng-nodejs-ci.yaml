@@ -49,6 +49,7 @@ jobs:
           pnpm run prettier --check
           pnpm run lint
           pnpm run build
+          pnpm why playwright --json
           PLAYWRIGHT_VERSION=$(pnpm why playwright --json | jq -r '.[0].devDependencies.playwright.version // empty')
           docker run --rm \
             -v $(pwd):/work \
