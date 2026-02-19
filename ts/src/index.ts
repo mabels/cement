@@ -60,3 +60,4 @@ export * from "./utils/relative-path.js";
 export * from "./node-env/index.js";
 export * from "./wait-for-value.js";
 export * from "./is-json.js";
+export * from "./npm-tools.js";
