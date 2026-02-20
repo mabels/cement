@@ -56,6 +56,7 @@ export * from "./utils/coerce-uint8.js";
 export * from "./utils/consume.js";
 export * from "./utils/to-sorted.js";
 export * from "./utils/relative-path.js";
+export * from "./utils/parallel-priority-tee.js";
 
 export * from "./node-env/index.js";
 export * from "./wait-for-value.js";
