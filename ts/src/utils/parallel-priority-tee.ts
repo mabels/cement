@@ -1,5 +1,5 @@
 import { Option } from "../option.js";
-import { Result } from "../result.js";
+import { exception2Result, Result } from "../result.js";
 
 export interface ParallelPriorityTeeRunArgs<TBackend> {
   readonly backend: TBackend;
@@ -64,9 +64,125 @@ function splitReadableStream(stream: ReadableStream<Uint8Array>, copies: number)
   return branches;
 }
 
+function asError(reason: unknown): Error {
+  switch (true) {
+    case typeof reason === "object" &&
+      reason !== null &&
+      "message" in reason &&
+      typeof reason.message === "string":
+      return new Error(reason.message);
+    case typeof reason === "string":
+      return new Error(reason);
+    default:
+      return new Error(String(reason));
+  }
+}
+
+function abortableBranch(branch: ReadableStream<Uint8Array>, signal: AbortSignal): ReadableStream<Uint8Array> {
+  const reader = branch.getReader();
+  let done = false;
+  let removeAbortListener: () => void = () => undefined;
+
+  return new ReadableStream<Uint8Array>({
+    start(controller): void {
+      function closeStream(): void {
+        if (done) {
+          return;
+        }
+        done = true;
+        controller.close();
+      }
+
+      function errorStream(error: unknown): void {
+        if (done) {
+          return;
+        }
+        done = true;
+        controller.error(error);
+      }
+
+      function onAbort(): void {
+        void exception2Result(() => reader.cancel(signal.reason)).then((rCancel) => {
+          if (rCancel.isErr()) {
+            // Reader may already be closed/cancelled by concurrent completion.
+          }
+        });
+        errorStream(signal.reason);
+      }
+
+      if (signal.aborted) {
+        onAbort();
+        return;
+      }
+
+      signal.addEventListener("abort", onAbort, { once: true });
+      removeAbortListener = (): void => {
+        signal.removeEventListener("abort", onAbort);
+      };
+
+      async function pump(): Promise<void> {
+        while (true) {
+          const { done: readDone, value } = await reader.read();
+          if (readDone) {
+            closeStream();
+            return;
+          }
+          controller.enqueue(value);
+        }
+      }
+
+      void pump()
+        .catch((error) => {
+          if (signal.aborted) {
+            errorStream(signal.reason);
+            return;
+          }
+          errorStream(error);
+        })
+        .finally(() => {
+          removeAbortListener();
+        });
+    },
+    cancel(reason): Promise<void> {
+      removeAbortListener();
+      return reader.cancel(reason).then(() => undefined);
+    },
+  });
+}
+
+function settleLosers<TBackend, TOutcome, TWinner>(
+  args: ParallelPriorityTeeArgs<TBackend, TOutcome, TWinner>,
+  pending: Promise<Result<TOutcome, Error>>[],
+  winnerIndex: number,
+): void {
+  const losers = pending.slice(winnerIndex + 1);
+  void Promise.all(
+    losers.map(async (pendingResult, loserOffset) => {
+      const loserIndex = winnerIndex + 1 + loserOffset;
+      const result = await pendingResult;
+      if (result.isErr()) {
+        args.onError({
+          backend: args.backends[loserIndex],
+          error: result.Err(),
+          index: loserIndex,
+        });
+        return;
+      }
+      args.onDecline({
+        backend: args.backends[loserIndex],
+        outcome: result.Ok(),
+        index: loserIndex,
+      });
+    }),
+  );
+}
+
 /**
  * Splits a ReadableStream into N tee branches, runs N async consumers in parallel,
  * and selects a winner in deterministic index order (not first-to-finish).
+ *
+ * Each tee branch is wrapped in an abort-aware stream, so aborting losers also
+ * unblocks branch reads for callers that simply drain the stream.
  *
  * After a winner is found, remaining branches are aborted and their settlements
  * are awaited in a fire-and-forget manner (does not block winner return).
@@ -103,12 +219,14 @@ export async function parallelPriorityTee<TBackend, TOutcome, TWinner>(
 
   try {
     const pending = args.backends.map((backend, index) =>
-      args.run({
-        backend,
-        branch: branches[index],
-        index,
-        signal: controllers[index].signal,
-      }),
+      args
+        .run({
+          backend,
+          branch: abortableBranch(branches[index], controllers[index].signal),
+          index,
+          signal: controllers[index].signal,
+        })
+        .catch((error) => Result.Err<TOutcome>(asError(error))),
     );
 
     for (let index = 0; index < pending.length; index++) {
@@ -134,7 +252,7 @@ export async function parallelPriorityTee<TBackend, TOutcome, TWinner>(
         for (let loserIndex = index + 1; loserIndex < controllers.length; loserIndex++) {
           controllers[loserIndex].abort(args.loserAbortReason(index));
         }
-        void Promise.allSettled(pending.slice(index + 1));
+        settleLosers(args, pending, index);
         return {
           type: "winner",
           winner: maybeWinner.unwrap(),
