@@ -49,6 +49,10 @@ export interface ParallelPriorityTeeNoWinner {
 export type ParallelPriorityTeeResult<TWinner> = ParallelPriorityTeeWinner<TWinner> | ParallelPriorityTeeNoWinner;
 
 function splitReadableStream(stream: ReadableStream<Uint8Array>, copies: number): ReadableStream<Uint8Array>[] {
+  if (copies <= 0) {
+    return [];
+  }
+
   if (copies === 1) {
     return [stream];
   }
@@ -66,10 +70,7 @@ function splitReadableStream(stream: ReadableStream<Uint8Array>, copies: number)
 
 function asError(reason: unknown): Error {
   switch (true) {
-    case typeof reason === "object" &&
-      reason !== null &&
-      "message" in reason &&
-      typeof reason.message === "string":
+    case typeof reason === "object" && reason !== null && "message" in reason && typeof reason.message === "string":
       return new Error(reason.message);
     case typeof reason === "string":
       return new Error(reason);
@@ -102,11 +103,8 @@ function abortableBranch(branch: ReadableStream<Uint8Array>, signal: AbortSignal
       }
 
       function onAbort(): void {
-        void exception2Result(() => reader.cancel(signal.reason)).then((rCancel) => {
-          if (rCancel.isErr()) {
-            // Reader may already be closed/cancelled by concurrent completion.
-          }
-        });
+        // Reader may already be closed/cancelled by concurrent completion.
+        void exception2Result(() => reader.cancel(signal.reason));
         errorStream(signal.reason);
       }
 
@@ -198,6 +196,12 @@ function settleLosers<TBackend, TOutcome, TWinner>(
 export async function parallelPriorityTee<TBackend, TOutcome, TWinner>(
   args: ParallelPriorityTeeArgs<TBackend, TOutcome, TWinner>,
 ): Promise<ParallelPriorityTeeResult<TWinner>> {
+  if (args.backends.length === 0) {
+    // Stream may already be closed/locked by caller-controlled lifecycle.
+    await exception2Result(() => args.stream.cancel("parallelPriorityTee:no-backends"));
+    return { type: "no-winner" };
+  }
+
   const branches = splitReadableStream(args.stream, args.backends.length);
   const controllers = args.backends.map(() => new AbortController());
   const removeEventListeners: (() => void)[] = [];

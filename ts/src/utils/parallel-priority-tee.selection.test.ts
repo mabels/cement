@@ -37,7 +37,19 @@ describe("parallelPriorityTee selection", () => {
 
   it("picks winner in index order, not first-to-finish", async () => {
     const onError = vi.fn();
-    const onDecline = vi.fn();
+    let resolveFastLoserFinished: (() => void) | undefined;
+    const fastLoserFinished = new Promise<void>((resolve) => {
+      resolveFastLoserFinished = resolve;
+    });
+    let resolveFastLoserDecline: (() => void) | undefined;
+    const fastLoserDeclined = new Promise<void>((resolve) => {
+      resolveFastLoserDecline = resolve;
+    });
+    const onDecline = vi.fn((args: { readonly backend: string }) => {
+      if (args.backend === "fast-loser") {
+        resolveFastLoserDecline?.();
+      }
+    });
 
     const result = await parallelPriorityTee({
       backends: ["slow-winner", "fast-loser"],
@@ -46,8 +58,10 @@ describe("parallelPriorityTee selection", () => {
       run: async ({ backend, branch }) => {
         const chunks = await drainBranch(branch);
         if (backend === "fast-loser") {
+          resolveFastLoserFinished?.();
           return Result.Ok(`fast:${chunks.length}`);
         }
+        await fastLoserFinished;
         await new Promise((r) => setTimeout(r, 10));
         return Result.Ok(`slow:${chunks.length}`);
       },
@@ -60,6 +74,7 @@ describe("parallelPriorityTee selection", () => {
     if (result.type === "winner") {
       expect(result.winner).toBe("winner-slow:1");
     }
+    await fastLoserDeclined;
     expect(onDecline).toHaveBeenCalledTimes(1);
     expect(onDecline).toHaveBeenCalledWith(expect.objectContaining({ backend: "fast-loser", outcome: "fast:1", index: 1 }));
   });
@@ -194,9 +209,21 @@ describe("parallelPriorityTee selection", () => {
   it("handles empty backends array", async () => {
     const onError = vi.fn();
     const onDecline = vi.fn();
+    let cancelled = false;
+    let cancelReason: unknown = undefined;
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller): void {
+        controller.enqueue(new Uint8Array([1]));
+      },
+      cancel(reason): void {
+        cancelled = true;
+        cancelReason = reason;
+      },
+    });
+
     const result = await parallelPriorityTee({
       backends: [],
-      stream: makeStream([1]),
+      stream,
       loserAbortReason: (i) => `loser of ${i}`,
       run: () => Promise.resolve(Result.Ok("unreachable")),
       pickWinner: () => Option.Some("unreachable"),
@@ -205,5 +232,9 @@ describe("parallelPriorityTee selection", () => {
     });
 
     expect(result.type).toBe("no-winner");
+    expect(cancelled).toBe(true);
+    expect(cancelReason).toBe("parallelPriorityTee:no-backends");
+    expect(onError).not.toHaveBeenCalled();
+    expect(onDecline).not.toHaveBeenCalled();
   });
 });

@@ -264,18 +264,14 @@ describe("parallelPriorityTee execution", () => {
     const loserErrorsObserved = new Promise<void>((resolve) => {
       resolveLoserErrorsObserved = resolve;
     });
-    const onError = vi.fn<
-      (args: {
-        readonly backend: string;
-        readonly error: Error;
-        readonly index: number;
-      }) => void
-    >(function handleOnError(_args) {
-      onErrorCount++;
-      if (onErrorCount === 2) {
-        resolveLoserErrorsObserved?.();
-      }
-    });
+    const onError = vi.fn<(args: { readonly backend: string; readonly error: Error; readonly index: number }) => void>(
+      function handleOnError(_args) {
+        onErrorCount++;
+        if (onErrorCount === 2) {
+          resolveLoserErrorsObserved?.();
+        }
+      },
+    );
     const onDecline = vi.fn();
 
     await parallelPriorityTee({
