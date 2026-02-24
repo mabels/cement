@@ -49,14 +49,6 @@ export interface ParallelPriorityTeeNoWinner {
 export type ParallelPriorityTeeResult<TWinner> = ParallelPriorityTeeWinner<TWinner> | ParallelPriorityTeeNoWinner;
 
 function splitReadableStream(stream: ReadableStream<Uint8Array>, copies: number): ReadableStream<Uint8Array>[] {
-  if (copies <= 0) {
-    return [];
-  }
-
-  if (copies === 1) {
-    return [stream];
-  }
-
   const branches: ReadableStream<Uint8Array>[] = [];
   let tail = stream;
   for (let index = 1; index < copies; index++) {
