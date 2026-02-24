@@ -3,7 +3,7 @@ set -e
 cd smoke
 rm -f package.json pnpm-lock.yaml tsconfig.json
 pnpm init
-pnpm install -f ../pubdir/adviser-cement-*.tgz
+pnpm install -f ../dist/pubdir/adviser-cement-*.tgz
 pnpm add tsx
 pnpm exec tsc --init
 npx tsx ./smoke.ts

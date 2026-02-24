@@ -18,6 +18,8 @@ export async function preparePubdir(pubdir: string, version: string, baseDir: st
   // Set shell options equivalent to 'set -ex'
   $.verbose = true;
 
+  const rootDir = process.cwd();
+
   // Build if not in CI
   if (process.env.IN_CI !== "in_ci") {
     await $`pnpm run build`;
@@ -33,12 +35,12 @@ export async function preparePubdir(pubdir: string, version: string, baseDir: st
   // Copy from dist/pkg
   cd("dist/pkg");
   await $`cp -pr . ../../${pubdir}/`;
-  cd("../..");
+  cd(rootDir);
 
   // Copy from src
   cd(srcDir);
   await $`cp -pr . ../${pubdir}/${srcDir}/`;
-  cd("..");
+  cd(rootDir);
 
   // Rename .js files to .cjs in pubdir/cjs
   const jsFiles = await glob(`${pubdir}/cjs/**/*.js`);
@@ -71,7 +73,7 @@ export async function preparePubdir(pubdir: string, version: string, baseDir: st
   await $`rm -f test/test-exit-handler.* ./utils/stream-test-helper.ts`.catch(() => {
     // Ignore errors if files don't exist
   });
-  cd("../..");
+  cd(rootDir);
 
   // Remove __screenshots__ directories
   const screenshotDirs = await glob(`${pubdir}/${srcDir}/**/__screenshots__`);
@@ -102,9 +104,10 @@ export async function preparePubdir(pubdir: string, version: string, baseDir: st
   // await $`node ./setup-jsr-json.cjs ./pubdir/deno.json`;
 
   // Pack and publish
-  cd("pubdir");
+  cd(pubdir);
   await $`pnpm pack 2>&1 | head -10 && echo "..."`;
   await $`deno publish --dry-run --unstable-sloppy-imports --allow-dirty --quiet`;
+  cd(rootDir);
 
   // eslint-disable-next-line no-console
   console.log(`Prepared ${pubdir} for version ${version}`);
@@ -119,10 +122,10 @@ export function preparePubdirCmd(): ReturnType<typeof command> {
       pubdir: option({
         long: "pubdir",
         short: "p",
-        defaultValue: () => "pubdir",
+        defaultValue: () => "dist/pubdir",
         defaultValueIsSerializable: true,
         type: string,
-        description: "Path to the pubdir, defaults to './pubdir'.",
+        description: "Path to the pubdir, defaults to './dist/pubdir'.",
       }),
       srcDir: option({
         long: "srcDir",

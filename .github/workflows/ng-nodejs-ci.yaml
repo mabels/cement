@@ -58,7 +58,7 @@ jobs:
             bash -c "npm run test:js"
           pnpm run test:deno 
           pnpm run smoke
-          cd pubdir && npx pkg-pr-new publish
+          cd dist/pubdir && npx pkg-pr-new publish
 
       - name: Build documentation
         run: |
@@ -84,7 +84,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
           cd ts
-          cd pubdir
+          cd dist/pubdir
           npm install -g npm@11
           npm --version
           bash ./src/cli/run.sh publishTags
