@@ -223,13 +223,15 @@ export async function parallelPriorityTee<TBackend, TOutcome, TWinner>(
 
   try {
     const pending = args.backends.map((backend, index) =>
-      args
-        .run({
-          backend,
-          branch: abortableBranch(branches[index], controllers[index].signal),
-          index,
-          signal: controllers[index].signal,
-        })
+      Promise.resolve()
+        .then(() =>
+          args.run({
+            backend,
+            branch: abortableBranch(branches[index], controllers[index].signal),
+            index,
+            signal: controllers[index].signal,
+          }),
+        )
         .catch((error) => Result.Err<TOutcome>(asError(error))),
     );
 

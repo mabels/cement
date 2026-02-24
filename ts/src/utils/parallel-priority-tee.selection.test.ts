@@ -83,6 +83,9 @@ describe("parallelPriorityTee selection", () => {
     const onError = vi.fn();
     const onDecline = vi.fn();
     const abortReasons: unknown[] = [];
+    const pickWinner = vi.fn(({ outcome }: { readonly outcome: string }) =>
+      outcome === "winner" ? Option.Some(outcome) : Option.None(),
+    );
 
     const result = await parallelPriorityTee({
       backends: ["low-0", "low-1", "winner-2", "high-3"],
@@ -110,7 +113,7 @@ describe("parallelPriorityTee selection", () => {
             return Result.Err("aborted");
         }
       },
-      pickWinner: ({ outcome }) => (outcome === "winner" ? Option.Some(outcome) : Option.None()),
+      pickWinner,
       onError,
       onDecline,
     });
@@ -123,6 +126,10 @@ describe("parallelPriorityTee selection", () => {
     expect(onDecline).toHaveBeenNthCalledWith(1, expect.objectContaining({ index: 0, outcome: "decline-0" }));
     expect(onDecline).toHaveBeenNthCalledWith(2, expect.objectContaining({ index: 1, outcome: "decline-1" }));
     expect(onError).not.toHaveBeenCalled();
+    expect(pickWinner).toHaveBeenCalledTimes(3);
+    expect(pickWinner).toHaveBeenNthCalledWith(1, expect.objectContaining({ index: 0 }));
+    expect(pickWinner).toHaveBeenNthCalledWith(2, expect.objectContaining({ index: 1 }));
+    expect(pickWinner).toHaveBeenNthCalledWith(3, expect.objectContaining({ index: 2 }));
     expect(abortReasons).toEqual(["defeated by 2"]);
   });
 
