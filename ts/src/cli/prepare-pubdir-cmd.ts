@@ -106,7 +106,7 @@ export async function preparePubdir(pubdir: string, version: string, baseDir: st
   // Pack and publish
   cd(pubdir);
   await $`pnpm pack 2>&1 | head -10 && echo "..."`;
-  await $`deno publish --dry-run --unstable-sloppy-imports --allow-dirty --quiet`;
+  await $`deno publish --dry-run --unstable-sloppy-imports --allow-dirty --allow-slow-types --quiet`;
   cd(rootDir);
 
   // eslint-disable-next-line no-console
