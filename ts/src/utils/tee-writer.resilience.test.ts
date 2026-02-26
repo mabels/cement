@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/unbound-method */
 import { describe, expect, it, vi } from "vitest";
 import { teeWriter, Peer, PeerStream } from "./tee-writer.js";
 
@@ -18,13 +17,14 @@ function makePeer(peerStream: PeerStream): Peer {
 describe("teeWriter resilience", () => {
   it("every active peer receives every chunk", async () => {
     const chunks = [new Uint8Array([10]), new Uint8Array([20]), new Uint8Array([30])];
-    const received: Map<string, Uint8Array[]> = new Map();
+    const received = new Map<string, Uint8Array[]>();
 
     function trackingPeerStream(name: string): PeerStream {
       received.set(name, []);
       return makePeerStream({
-        write: vi.fn<(chunk: Uint8Array) => Promise<void>>().mockImplementation(async (chunk) => {
-          received.get(name)!.push(chunk);
+        write: vi.fn<(chunk: Uint8Array) => Promise<void>>().mockImplementation((chunk) => {
+          received.get(name)?.push(chunk);
+          return Promise.resolve();
         }),
       });
     }
@@ -83,8 +83,9 @@ describe("teeWriter resilience", () => {
         .mockRejectedValueOnce(new Error("ps2 fail")),
     });
     const ps3 = makePeerStream({
-      write: vi.fn<(chunk: Uint8Array) => Promise<void>>().mockImplementation(async (chunk) => {
+      write: vi.fn<(chunk: Uint8Array) => Promise<void>>().mockImplementation((chunk) => {
         survivorChunks.push(chunk);
+        return Promise.resolve();
       }),
     });
 

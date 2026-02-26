@@ -1,13 +1,13 @@
 import { exception2Result, Result } from "../result.js";
 
 export interface PeerStream {
-  write(chunk: Uint8Array): Promise<void>;
-  cancel(): void;
-  commit(name?: string): Promise<{ url: string }>;
+  write: (chunk: Uint8Array) => Promise<void>;
+  cancel: () => void;
+  commit: (name?: string) => Promise<{ url: string }>;
 }
 
 export interface Peer {
-  begin(): Promise<PeerStream>;
+  begin: () => Promise<PeerStream>;
 }
 
 export interface TeeWriterOk {
@@ -16,51 +16,28 @@ export interface TeeWriterOk {
 }
 
 export async function teeWriter(peers: Peer[], inStream: ReadableStream<Uint8Array>): Promise<Result<TeeWriterOk>> {
-  const beginResults = await Promise.allSettled(peers.map((peer) => peer.begin()));
-  let activeStreams = beginResults
-    .filter((r): r is PromiseFulfilledResult<PeerStream> => r.status === "fulfilled")
-    .map((r) => r.value);
+  return exception2Result(async () => {
+    let activeStreams = (await Promise.allSettled(peers.map((p) => p.begin()))).flatMap((r) =>
+      r.status === "fulfilled" ? [r.value] : [],
+    );
 
-  if (activeStreams.length === 0) {
-    return Result.Err("all peers failed to begin");
-  }
-
-  const reader = inStream.getReader();
-  try {
-    while (true) {
-      const rRead = await exception2Result(() => reader.read());
-      if (rRead.isErr()) {
-        return Result.Err(rRead.Err());
-      }
-      const { done, value } = rRead.Ok();
-      if (done) {
-        break;
-      }
+    const reader = inStream.getReader();
+    while (activeStreams.length > 0) {
+      const { done, value } = await reader.read();
+      if (done) break;
 
       const writeResults = await Promise.allSettled(activeStreams.map((stream) => stream.write(value)));
-      const failedIndices = writeResults.map((r, i) => (r.status === "rejected" ? i : -1)).filter((i) => i >= 0);
-
-      for (const i of failedIndices) {
-        exception2Result(() => activeStreams[i].cancel());
+      for (const [i, r] of writeResults.entries()) {
+        if (r.status === "rejected") activeStreams[i].cancel();
       }
-
       activeStreams = activeStreams.filter((_, i) => writeResults[i].status === "fulfilled");
-
-      if (activeStreams.length === 0) {
-        return Result.Err("all peers failed during stream");
-      }
     }
-  } finally {
-    await exception2Result(() => reader.cancel("teeWriter:done"));
-  }
 
-  const [winner, ...losers] = activeStreams;
-  for (const stream of losers) {
-    exception2Result(() => stream.cancel());
-  }
-
-  return Result.Ok({
-    peer: winner,
-    commit: (name?: string) => winner.commit(name),
+    if (activeStreams.length === 0) throw new Error("all peers failed");
+    const [winner, ...losers] = activeStreams;
+    for (const stream of losers) {
+      stream.cancel();
+    }
+    return { peer: winner, commit: (name?: string) => winner.commit(name) };
   });
 }

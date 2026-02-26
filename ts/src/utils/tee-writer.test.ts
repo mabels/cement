@@ -121,7 +121,7 @@ describe("teeWriter", () => {
     const result = await teeWriter([failPeer, failPeer], makeStream([chunk1]));
 
     expect(result.isErr()).toBe(true);
-    expect(result.Err().message).toMatch(/all peers failed to begin/);
+    expect(result.Err().message).toMatch(/all peers failed/);
   });
 
   it("survives when some peers fail on begin", async () => {
