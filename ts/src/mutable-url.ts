@@ -215,6 +215,7 @@ export class ReadonlyURL extends URL {
 
 export class WritableURL extends ReadonlyURL {
   // override readonly hash: string;
+  portExplicitlySet = false;
 
   static override readonly fromThrow = (urlStr: string): WritableURL => {
     return new WritableURL(urlStr);
@@ -299,7 +300,16 @@ export class WritableURL extends ReadonlyURL {
     if (!this._hasHostpart) {
       throw new Error(`you can use hostname only if protocol is ${JSON.stringify(Array.from(hasHostPartProtocols.keys()))}`);
     }
-    this._sysURL.hostname = h;
+    const [host, port] = h.split(":");
+    if (port && !this.portExplicitlySet) {
+      const parsedPort = parseInt(port || "0", 10);
+      if (!(isNaN(parsedPort) || parsedPort < 0 || parsedPort > 65535)) {
+        if (!(parsedPort === 443 || parsedPort === 80)) {
+          this._sysURL.port = port;
+        }
+      }
+    }
+    this._sysURL.hostname = host;
   }
 
   // Pathname getter and setter
@@ -321,6 +331,7 @@ export class WritableURL extends ReadonlyURL {
       throw new Error(`you can use port only if protocol is ${JSON.stringify(Array.from(hasHostPartProtocols.keys()))}`);
     }
     this._sysURL.port = p;
+    this.portExplicitlySet = true;
   }
 
   // Protocol getter and setter

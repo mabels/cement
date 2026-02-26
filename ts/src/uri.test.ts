@@ -794,4 +794,40 @@ describe("URI", () => {
     bhuri.host("example.net:7070");
     expect(bhuri.toString()).toBe("http://example.net:7070/path/name?key=value#hash");
   });
+
+  it("vibes calculate preset Port", () => {
+    const protocol = "https";
+    const hostnameBase = ".localhost:8099";
+    const port = "8080";
+    const bindings = {
+      appSlug: "myapp",
+      userSlug: "myuser",
+      fsId: "12345",
+    };
+    const hostname = `${bindings.appSlug}--${bindings.userSlug}.${hostnameBase.replace(/^\./, "")}`;
+    const buri = BuildURI.from(`http://template`);
+    // if (port && port !== "80" && port !== "443") {
+    buri.port(port);
+    // }
+    const urlStr = buri.protocol(protocol).hostname(hostname).pathname(`~${bindings.fsId}~`).toString();
+    expect(urlStr).toBe(`https://${hostname.replace(/:.*$/, "")}:8080/~${bindings.fsId}~`);
+  });
+
+  it("vibes calculate implict port", () => {
+    const protocol = "https";
+    const hostnameBase = "localhost:8099";
+    const bindings = {
+      appSlug: "myapp",
+      userSlug: "myuser",
+      fsId: "12345",
+    };
+    const hostname = `${bindings.appSlug}--${bindings.userSlug}.${hostnameBase.replace(/^\./, "")}`;
+    const buri = BuildURI.from(`http://template`);
+    // if (port && port !== "80" && port !== "443") {
+    // buri.port(port);
+    // }
+    expect(buri.protocol(protocol).hostname(hostname).pathname(`~${bindings.fsId}~`).toString()).toBe(
+      `https://${hostname}/~${bindings.fsId}~`,
+    );
+  });
 });

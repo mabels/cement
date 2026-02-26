@@ -604,8 +604,7 @@ export class ResolveOnce<T, CTX = void> implements ResolveOnceIf<T, CTX> {
                       });
                       if (ret) {
                         id = this.resetAfterTimer[ret as keyof typeof this.resetAfterTimer] as unknown as number;
-                        // eslint-disable-next-line no-console
-                        console.warn("Deno.unrefTimer timerId from struct:", id, "version:", globalThis.Deno?.version);
+                        // console.warn("Deno.unrefTimer timerId from struct:", id, "version:", globalThis.Deno?.version);
                       }
                     } catch (e) {
                       // eslint-disable-next-line no-console
