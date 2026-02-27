@@ -830,4 +830,22 @@ describe("URI", () => {
       `https://${hostname}/~${bindings.fsId}~`,
     );
   });
+
+    it("vibes calculate http", () => {
+    const protocol = "http";
+    const hostnameBase = "localhost:8080";
+    const bindings = {
+      appSlug: "myapp",
+      userSlug: "myuser",
+      fsId: "12345",
+    };
+    const hostname = `${bindings.appSlug}--${bindings.userSlug}.${hostnameBase.replace(/^\./, "")}`;
+    const buri = BuildURI.from(`http://template`);
+    // if (port && port !== "80" && port !== "443") {
+    // buri.port(port);
+    // }
+    expect(buri.protocol(protocol).hostname(hostname).pathname(`~${bindings.fsId}~`).toString()).toBe(
+      `http://${hostname}/~${bindings.fsId}~`,
+    );
+  });
 });
