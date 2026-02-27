@@ -831,7 +831,7 @@ describe("URI", () => {
     );
   });
 
-    it("vibes calculate http", () => {
+  it("vibes calculate http", () => {
     const protocol = "http";
     const hostnameBase = "localhost:8080";
     const bindings = {
