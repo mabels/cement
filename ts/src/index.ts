@@ -53,6 +53,7 @@ export * from "./utils/stripper.js";
 export * from "./utils/sorted-object.js";
 export * from "./utils/uint8array-equal.js";
 export * from "./utils/coerce-uint8.js";
+export * from "./utils/concat-uint8.js";
 export * from "./utils/consume.js";
 export * from "./utils/to-sorted.js";
 export * from "./utils/relative-path.js";
