@@ -1,18 +1,18 @@
 import { exception2Result, Result } from "../result.js";
 
-export interface PeerStream {
-  write: (chunk: Uint8Array) => Promise<void>;
+export interface PeerStream<C = Uint8Array> {
+  write: (chunk: C) => Promise<void>;
   cancel: () => Promise<void>;
-  commit: (name?: string) => Promise<{ url: string }>;
+  close: () => Promise<void>;
+  // commit: () => Promise<void>;
 }
-
-export interface Peer {
-  begin: () => Promise<PeerStream>;
+export interface Peer<C = Uint8Array> {
+  begin: () => Promise<PeerStream<C>>;
 }
 
 export interface TeeWriterOk {
   readonly peer: PeerStream;
-  readonly commit: (name?: string) => Promise<{ url: string }>;
+  // readonly commit: () => Promise<void>;
 }
 
 export async function teeWriter(peers: Peer[], inStream: ReadableStream<Uint8Array>): Promise<Result<TeeWriterOk>> {
@@ -44,6 +44,6 @@ export async function teeWriter(peers: Peer[], inStream: ReadableStream<Uint8Arr
     return Result.Err(new Error("all peers failed"));
   }
   const [winner, ...losers] = activeStreams;
-  await Promise.allSettled(losers.map((stream) => stream.cancel()));
-  return Result.Ok({ peer: winner, commit: (name?: string) => winner.commit(name) });
+  await Promise.allSettled([winner.close(), ...losers.map((stream) => stream.cancel())]);
+  return Result.Ok({ peer: winner });
 }

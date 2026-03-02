@@ -16,7 +16,7 @@ function makePeerStream(overrides: Partial<PeerStream> = {}): PeerStream {
   return {
     write: vi.fn<(chunk: Uint8Array) => Promise<void>>().mockResolvedValue(undefined),
     cancel: vi.fn(),
-    commit: vi.fn<(name?: string) => Promise<{ url: string }>>().mockResolvedValue({ url: "https://example.com/blob" }),
+    close: vi.fn(),
     ...overrides,
   };
 }
@@ -36,15 +36,13 @@ describe("teeWriter", () => {
     const result = await teeWriter([peer], makeStream([chunk1, chunk2]));
 
     expect(result.isOk()).toBe(true);
-    const { peer: winnerPeer, commit } = result.Ok();
+    const { peer: winnerPeer } = result.Ok();
     expect(winnerPeer).toBe(ps);
     expect(ps.write).toHaveBeenCalledTimes(2);
     expect(ps.write).toHaveBeenNthCalledWith(1, chunk1);
     expect(ps.write).toHaveBeenNthCalledWith(2, chunk2);
 
-    const commitResult = await commit("my-key");
-    expect(commitResult).toEqual({ url: "https://example.com/blob" });
-    expect(ps.commit).toHaveBeenCalledWith("my-key");
+    expect(ps.close).toHaveBeenCalledOnce();
   });
 
   it("returns the first peer and cancels the rest when all succeed", async () => {
@@ -58,6 +56,7 @@ describe("teeWriter", () => {
     const { peer: winnerPeer } = result.Ok();
     expect(winnerPeer).toBe(ps1);
 
+    expect(ps1.close).toHaveBeenCalledOnce();
     expect(ps1.cancel).not.toHaveBeenCalled();
     expect(ps2.cancel).toHaveBeenCalled();
     expect(ps3.cancel).toHaveBeenCalled();
@@ -143,11 +142,8 @@ describe("teeWriter", () => {
     const result = await teeWriter([makePeer(ps)], makeStream([]));
 
     expect(result.isOk()).toBe(true);
-    await result.Ok().commit("my-name");
-    expect(ps.commit).toHaveBeenCalledWith("my-name");
-
-    await result.Ok().commit();
-    expect(ps.commit).toHaveBeenCalledWith(undefined);
+    expect(ps.cancel).not.toHaveBeenCalled();
+    expect(ps.close).toHaveBeenCalledOnce();
   });
 });
 
