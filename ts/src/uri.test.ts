@@ -848,4 +848,12 @@ describe("URI", () => {
       `http://${hostname}/~${bindings.fsId}~`,
     );
   });
+
+  it("coerceURI includes Request", () => {
+    const req = new Request("http://example.com/meno");
+    const coercedURI = URI.from(req);
+    const coercedBuildURI = BuildURI.from(req);
+    expect(coercedURI.toString()).toBe("http://example.com/meno");
+    expect(coercedBuildURI.toString()).toBe("http://example.com/meno");
+  });
 });

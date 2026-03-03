@@ -197,6 +197,10 @@ export function isURL(value: unknown): value is URL {
   );
 }
 
+export function isRequestLike(value: unknown): value is { url: string | URL } {
+  return !!value && (typeof (value as { url: unknown }).url === "string" || isURL((value as { url: unknown }).url));
+}
+
 function from<R, T extends ReadonlyURL | WritableURL>(
   fac: (url: T) => R,
   strURLUri: CoerceURI | undefined,
@@ -217,6 +221,8 @@ function from<R, T extends ReadonlyURL | WritableURL>(
         return fac(action.fromThrow(strURLUri._url.toString()));
       } else if (isURL(strURLUri)) {
         return fac(action.fromThrow(strURLUri.toString()));
+      } else if (isRequestLike(strURLUri)) {
+        return fac(action.fromThrow(strURLUri.url.toString()));
       }
       throw new Error(`unknown object type: ${strURLUri}`);
     default:
@@ -372,6 +378,9 @@ export class BuildURI implements URIInterface<BuildURI> {
         return this.appendRelative(p);
       }
     }
+    if (isRequestLike(p)) {
+      return this.resolve(p.url);
+    }
     this._url = WritableURL.fromThrow(p.toString());
     return this;
   }
@@ -511,7 +520,8 @@ export class BuildURI implements URIInterface<BuildURI> {
   }
 }
 
-export type CoerceURI = string | URI | ReadonlyURL | WritableURL | URL | BuildURI | NullOrUndef;
+// { url: CoerceURI } that is Request-like
+export type CoerceURI = string | URI | ReadonlyURL | WritableURL | URL | BuildURI | NullOrUndef | { url: URL | string };
 
 export function isCoerceURI(value: unknown): value is CoerceURI {
   if (!value) {
