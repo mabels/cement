@@ -215,7 +215,7 @@ export class EnvImpl implements Env {
   }
   _applyOnSet(onSet: OnSetItem[], key?: string, value?: string): void {
     onSet.forEach((item) => {
-      let keys: string[] = [];
+      let keys!: string[];
       if (key) {
         keys = [key];
       } else {
