@@ -1,4 +1,6 @@
 import { isPromise } from "../is-promise.js";
+import { top_uint8 } from "../coerce-binary.js";
+import { TxtEnDecoderSingleton } from "@adviser/cement";
 
 export interface StreamMap<T, U> {
   Map(s: T, idx: number): U | Promise<U>;
@@ -156,4 +158,26 @@ export async function stream2array<T>(a: ReadableStream<T>): Promise<T[]> {
     ret.push(value);
   }
   return ret;
+}
+
+export function coerceStreamUint8(
+  stream: ReadableStream<Uint8Array | string>,
+  encoder?: (x: unknown) => Uint8Array,
+): ReadableStream<Uint8Array> {
+  return streamMap(stream, {
+    Map: (chunk) => top_uint8(chunk, encoder),
+  });
+}
+
+export function coerceStreamString(
+  stream: ReadableStream<Uint8Array | string>,
+  decode?: (x: unknown) => string,
+): ReadableStream<string> {
+  let decodeFn!: (x: unknown) => string;
+  if (!decode) {
+    decodeFn = (x: unknown): string => (typeof x === "string" ? x : TxtEnDecoderSingleton().decode(x as Uint8Array));
+  } else {
+    decodeFn = decode;
+  }
+  return streamMap(stream, { Map: (chunk) => decodeFn(chunk) });
 }

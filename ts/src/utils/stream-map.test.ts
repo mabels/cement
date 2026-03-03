@@ -1,5 +1,5 @@
 import { it, expect, vitest, describe } from "vitest";
-import { array2stream, devnull, stream2array, streamMap } from "@adviser/cement";
+import { array2stream, devnull, stream2array, streamMap, coerceStreamUint8, coerceStreamString } from "@adviser/cement";
 import { receiveFromStream, sendToStream, streamingTestState } from "./stream-test-helper.js";
 
 it("array2stream", async () => {
@@ -103,5 +103,65 @@ describe("test streaming through streamMap", () => {
       );
       lastfillCalls = fillCalls;
     }
+  });
+});
+
+describe("coerceStreamUint8", () => {
+  it("default: encodes string chunks to Uint8Array", async () => {
+    const result = await stream2array(coerceStreamUint8(array2stream<Uint8Array | string>(["Hello", " ", "World"])));
+    expect(new TextDecoder().decode(new Uint8Array(result.flatMap((c) => [...c])))).toBe("Hello World");
+  });
+
+  it("default: passes Uint8Array chunks through unchanged", async () => {
+    const chunks = ["foo", "bar"].map((s) => new TextEncoder().encode(s));
+    const result = await stream2array(coerceStreamUint8(array2stream<Uint8Array | string>(chunks)));
+    expect(result).toEqual(chunks);
+  });
+
+  it("default: handles mixed string and Uint8Array chunks", async () => {
+    const stream = array2stream<Uint8Array | string>(["Hello", new TextEncoder().encode(" World")]);
+    const result = await stream2array(coerceStreamUint8(stream));
+    expect(new TextDecoder().decode(new Uint8Array(result.flatMap((c) => [...c])))).toBe("Hello World");
+  });
+
+  it("custom encoder: is called for string chunks", async () => {
+    const encodeSpy = vitest.fn((x: unknown): Uint8Array => {
+      return new TextEncoder().encode(x as string);
+    });
+    await stream2array(coerceStreamUint8(array2stream<Uint8Array | string>(["a", "b", new Uint8Array([99])]), encodeSpy));
+    expect(encodeSpy).toBeCalledTimes(2);
+  });
+});
+
+describe("coerceStreamString", () => {
+  it("default: decodes Uint8Array chunks to string", async () => {
+    const enc = new TextEncoder();
+    const result = await stream2array(
+      coerceStreamString(array2stream<Uint8Array | string>([enc.encode("Hello"), enc.encode(" World")])),
+    );
+    expect(result.join("")).toBe("Hello World");
+  });
+
+  it("default: passes string chunks through unchanged", async () => {
+    const result = await stream2array(coerceStreamString(array2stream<Uint8Array | string>(["foo", "bar"])));
+    expect(result).toEqual(["foo", "bar"]);
+  });
+
+  it("default: handles mixed Uint8Array and string chunks", async () => {
+    const stream = array2stream<Uint8Array | string>([new TextEncoder().encode("Hello"), " World"]);
+    const result = await stream2array(coerceStreamString(stream));
+    expect(result.join("")).toBe("Hello World");
+  });
+
+  it("custom decoder: is called for Uint8Array chunks", async () => {
+    const decodeSpy = vitest.fn((x: unknown): string => {
+      if (x instanceof Uint8Array) {
+        return new TextDecoder().decode(x);
+      }
+      return x as string;
+    });
+    const enc = new TextEncoder();
+    await stream2array(coerceStreamString(array2stream<Uint8Array | string>([enc.encode("a"), enc.encode("b"), "c"]), decodeSpy));
+    expect(decodeSpy).toBeCalledTimes(3);
   });
 });

@@ -28,11 +28,11 @@ export function isUint8Array(value: unknown): value is Uint8Array {
  * @param input - String, ArrayBuffer, ArrayBufferView, Uint8Array, or Blob to convert
  * @returns Promise resolving to Uint8Array
  */
-export async function top_uint8(input: CoerceBinaryInput | Blob): Promise<Uint8Array> {
+export async function top_uint8(input: CoerceBinaryInput | Blob, encode?: (x: unknown) => Uint8Array): Promise<Uint8Array> {
   if (input instanceof Blob) {
     return new Uint8Array(await input.arrayBuffer());
   }
-  return to_uint8(input);
+  return to_uint8(input, encode);
 }
 
 /**
@@ -44,16 +44,28 @@ export async function top_uint8(input: CoerceBinaryInput | Blob): Promise<Uint8A
  * @param encoder - Optional TextEncoder instance (uses singleton if not provided)
  * @returns Uint8Array representation of the input
  */
-export function to_uint8(input: CoerceBinaryInput, encoder?: TextEncoder): Uint8Array {
-  if (typeof input === "string") {
-    return (encoder ?? TxtEnDecoderSingleton()).encode(input);
-  }
+export function to_uint8(input: CoerceBinaryInput, encoder?: TextEncoder | ((x: unknown) => Uint8Array)): Uint8Array {
   if (isArrayBuffer(input)) {
     return new Uint8Array(input);
   }
-
   if (isUint8Array(input)) {
     return input;
+  }
+  let encodeFn: (x: unknown) => Uint8Array;
+  let isDefaultTxtEncoder = false;
+  if (typeof encoder === "function") {
+    encodeFn = encoder;
+  } else if (!encoder) {
+    isDefaultTxtEncoder = true;
+    encodeFn = TxtEnDecoderSingleton().encode as (x: unknown) => Uint8Array;
+  } else {
+    encodeFn = (x: unknown): Uint8Array => encoder.encode(x as string);
+  }
+  if (typeof input === "string" || isDefaultTxtEncoder) {
+    return encodeFn(input);
+  }
+  if (encoder) {
+    return encodeFn(input);
   }
   // not nice but we make the cloudflare types happy
   return new Uint8Array(input as unknown as ArrayBufferLike);
