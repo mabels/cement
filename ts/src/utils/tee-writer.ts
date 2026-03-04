@@ -7,7 +7,7 @@ export interface PeerStream<C = Uint8Array> {
   // commit: () => Promise<void>;
 }
 export interface Peer<C = Uint8Array> {
-  begin: () => Promise<PeerStream<C>>;
+  begin: () => Promise<Result<PeerStream<C>>>;
 }
 
 export interface TeeWriterOk {
@@ -17,7 +17,7 @@ export interface TeeWriterOk {
 
 export async function teeWriter(peers: Peer[], inStream: ReadableStream<Uint8Array>): Promise<Result<TeeWriterOk>> {
   let activeStreams = await Promise.allSettled(peers.map((p) => p.begin())).then((r) =>
-    r.flatMap((r) => (r.status === "fulfilled" ? [r.value] : [])),
+    r.flatMap((r) => (r.status === "fulfilled" && r.value.isOk() ? [r.value.Ok()] : [])),
   );
   const reader = inStream.getReader();
   while (activeStreams.length > 0) {

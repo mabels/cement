@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { teeWriter, Peer, PeerStream } from "./tee-writer.js";
+import { Result } from "../result.js";
 
 function makeStream(chunks: Uint8Array[]): ReadableStream<Uint8Array> {
   return new ReadableStream<Uint8Array>({
@@ -22,7 +23,7 @@ function makePeerStream(overrides: Partial<PeerStream> = {}): PeerStream {
 }
 
 function makePeer(peerStream: PeerStream): Peer {
-  return { begin: vi.fn<() => Promise<PeerStream>>().mockResolvedValue(peerStream) };
+  return { begin: vi.fn<() => Promise<Result<PeerStream>>>().mockResolvedValue(Result.Ok(peerStream)) };
 }
 
 describe("teeWriter", () => {
@@ -115,7 +116,7 @@ describe("teeWriter", () => {
   });
 
   it("returns Err when all peers fail on begin", async () => {
-    const failPeer: Peer = { begin: vi.fn<() => Promise<PeerStream>>().mockRejectedValue(new Error("begin failed")) };
+    const failPeer: Peer = { begin: vi.fn<() => Promise<Result<PeerStream>>>().mockRejectedValue(new Error("begin failed")) };
 
     const result = await teeWriter([failPeer, failPeer], makeStream([chunk1]));
 
@@ -126,7 +127,7 @@ describe("teeWriter", () => {
   it("survives when some peers fail on begin", async () => {
     const ps = makePeerStream();
     const goodPeer = makePeer(ps);
-    const badPeer: Peer = { begin: vi.fn<() => Promise<PeerStream>>().mockRejectedValue(new Error("begin failed")) };
+    const badPeer: Peer = { begin: vi.fn<() => Promise<Result<PeerStream>>>().mockRejectedValue(new Error("begin failed")) };
 
     const result = await teeWriter([badPeer, goodPeer], makeStream([chunk1]));
 
