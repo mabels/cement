@@ -241,3 +241,26 @@ describe("teeWriter resilience", () => {
     expect(ps2.cancel).toHaveBeenCalled();
   });
 });
+
+// ---------------------------------------------------------------------------
+// Regression: sync throw in write() bypasses Promise.allSettled
+// ---------------------------------------------------------------------------
+
+describe("teeWriter sync-throw regression", () => {
+  it("sync throw in write() crashes teeWriter instead of falling over to surviving peer", async () => {
+    // BUG: write() that throws synchronously escapes Promise.allSettled because
+    // .map() runs synchronously — the throw happens before allSettled is invoked.
+    // The surviving peer never gets a chance.
+    const throwingStream = makePeerStream({
+      write(_chunk: Uint8Array): Promise<void> {
+        throw new Error("sync throw in write");
+      },
+    });
+    const survivor = makePeerStream();
+
+    const result = await teeWriter([makePeer(throwingStream), makePeer(survivor)], makeStream([new Uint8Array([1, 2, 3])]));
+
+    expect(result.isOk()).toBe(true);
+    expect(result.Ok().peer).toBe(survivor);
+  });
+});
