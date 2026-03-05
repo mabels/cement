@@ -1,17 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { teeWriter, Peer, PeerStream } from "./tee-writer.js";
 import { Result } from "../result.js";
-
-function makeStream(chunks: Uint8Array[]): ReadableStream<Uint8Array> {
-  return new ReadableStream<Uint8Array>({
-    start(controller): void {
-      for (const chunk of chunks) {
-        controller.enqueue(chunk);
-      }
-      controller.close();
-    },
-  });
-}
+import { uint8array2stream } from "./string2stream.js";
 
 function makePeerStream(overrides: Partial<PeerStream> = {}): PeerStream {
   return {
@@ -22,8 +12,8 @@ function makePeerStream(overrides: Partial<PeerStream> = {}): PeerStream {
   };
 }
 
-function makePeer(peerStream: PeerStream): Peer {
-  return { begin: vi.fn<() => Promise<Result<PeerStream>>>().mockResolvedValue(Result.Ok(peerStream)) };
+function makePeer(peerStream: PeerStream, overrides: Partial<Peer> = {}): Peer {
+  return { begin: vi.fn<() => Promise<Result<PeerStream>>>().mockResolvedValue(Result.Ok(peerStream)), ...overrides };
 }
 
 describe("teeWriter", () => {
@@ -34,7 +24,7 @@ describe("teeWriter", () => {
     const ps = makePeerStream();
     const peer = makePeer(ps);
 
-    const result = await teeWriter([peer], makeStream([chunk1, chunk2]));
+    const result = await teeWriter([peer], uint8array2stream(chunk1, chunk2));
 
     expect(result.isOk()).toBe(true);
     const { peer: winnerPeer } = result.Ok();
@@ -51,7 +41,7 @@ describe("teeWriter", () => {
     const ps2 = makePeerStream();
     const ps3 = makePeerStream();
 
-    const result = await teeWriter([makePeer(ps1), makePeer(ps2), makePeer(ps3)], makeStream([chunk1]));
+    const result = await teeWriter([makePeer(ps1), makePeer(ps2), makePeer(ps3)], uint8array2stream(chunk1));
 
     expect(result.isOk()).toBe(true);
     const { peer: winnerPeer } = result.Ok();
@@ -77,7 +67,7 @@ describe("teeWriter", () => {
     });
     const ps2 = makePeerStream();
 
-    const result = await teeWriter([makePeer(ps1), makePeer(ps2)], makeStream([chunk1, chunk2]));
+    const result = await teeWriter([makePeer(ps1), makePeer(ps2)], uint8array2stream(chunk1, chunk2));
 
     expect(result.isOk()).toBe(true);
     const { peer: winnerPeer } = result.Ok();
@@ -95,7 +85,7 @@ describe("teeWriter", () => {
       write: vi.fn<(chunk: Uint8Array) => Promise<void>>().mockRejectedValue(new Error("fail")),
     });
 
-    const result = await teeWriter([makePeer(ps1), makePeer(ps2)], makeStream([chunk1]));
+    const result = await teeWriter([makePeer(ps1), makePeer(ps2)], uint8array2stream(chunk1));
 
     expect(result.isErr()).toBe(true);
     expect(result.Err().message).toMatch(/all peers failed/);
@@ -105,7 +95,7 @@ describe("teeWriter", () => {
     const ps1 = makePeerStream();
     const ps2 = makePeerStream();
 
-    const result = await teeWriter([makePeer(ps1), makePeer(ps2)], makeStream([]));
+    const result = await teeWriter([makePeer(ps1), makePeer(ps2)], uint8array2stream());
 
     expect(result.isOk()).toBe(true);
     const { peer: winnerPeer } = result.Ok();
@@ -118,7 +108,7 @@ describe("teeWriter", () => {
   it("returns Err when all peers fail on begin", async () => {
     const failPeer: Peer = { begin: vi.fn<() => Promise<Result<PeerStream>>>().mockRejectedValue(new Error("begin failed")) };
 
-    const result = await teeWriter([failPeer, failPeer], makeStream([chunk1]));
+    const result = await teeWriter([failPeer, failPeer], uint8array2stream(chunk1));
 
     expect(result.isErr()).toBe(true);
     expect(result.Err().message).toMatch(/all peers failed/);
@@ -129,7 +119,7 @@ describe("teeWriter", () => {
     const goodPeer = makePeer(ps);
     const badPeer: Peer = { begin: vi.fn<() => Promise<Result<PeerStream>>>().mockRejectedValue(new Error("begin failed")) };
 
-    const result = await teeWriter([badPeer, goodPeer], makeStream([chunk1]));
+    const result = await teeWriter([badPeer, goodPeer], uint8array2stream(chunk1));
 
     expect(result.isOk()).toBe(true);
     const { peer: winnerPeer } = result.Ok();
@@ -140,7 +130,7 @@ describe("teeWriter", () => {
   it("commit delegates name argument to the winning peer", async () => {
     const ps = makePeerStream();
 
-    const result = await teeWriter([makePeer(ps)], makeStream([]));
+    const result = await teeWriter([makePeer(ps)], uint8array2stream());
 
     expect(result.isOk()).toBe(true);
     expect(ps.cancel).not.toHaveBeenCalled();
@@ -246,7 +236,20 @@ describe("teeWriter resilience", () => {
 // Regression: sync throw in write() bypasses Promise.allSettled
 // ---------------------------------------------------------------------------
 
-describe("teeWriter sync-throw in write()", () => {
+describe("teeWriter sync-throw", () => {
+  it("sync throw in begin() bypasses Promise.allSettled", async () => {
+    const survivor = makePeer(makePeerStream());
+    const throwing = makePeer(makePeerStream(), {
+      begin(): Promise<Result<PeerStream>> {
+        throw new Error("sync throw in begin");
+      },
+    });
+    const result = await teeWriter([throwing, survivor], uint8array2stream(new Uint8Array([1, 2, 3])));
+
+    expect(result.isOk()).toBe(true);
+    expect(result.Ok().peer.write).toHaveBeenCalledWith(new Uint8Array([1, 2, 3]));
+  });
+
   it("sync throw in write() bypasses Promise.allSettled", async () => {
     const throwing = makePeerStream({
       write(): Promise<void> {
@@ -255,17 +258,11 @@ describe("teeWriter sync-throw in write()", () => {
     });
     const survivor = makePeerStream();
 
-    const result = await teeWriter(
-      [makePeer(throwing), makePeer(survivor)],
-      makeStream([new Uint8Array([1, 2, 3])]),
-    );
+    const result = await teeWriter([makePeer(throwing), makePeer(survivor)], uint8array2stream(new Uint8Array([1, 2, 3])));
 
     expect(result.isOk()).toBe(true);
-    expect(result.Ok().peer).toBe(survivor);
+    expect(result.Ok().peer.write).toHaveBeenCalledWith(new Uint8Array([1, 2, 3]));
   });
-});
-
-describe("teeWriter sync-throw in cancel()", () => {
   it("sync throw in cancel() after a write failure bypasses Promise.allSettled", async () => {
     const failThenThrowCancel = makePeerStream({
       write(): Promise<void> {
@@ -279,25 +276,23 @@ describe("teeWriter sync-throw in cancel()", () => {
 
     const result = await teeWriter(
       [makePeer(failThenThrowCancel), makePeer(survivor)],
-      makeStream([new Uint8Array([1, 2, 3])]),
+      uint8array2stream(new Uint8Array([1, 2, 3])),
     );
 
     expect(result.isOk()).toBe(true);
-    expect(result.Ok().peer).toBe(survivor);
+    expect(result.Ok().peer.write).toHaveBeenCalledWith(new Uint8Array([1, 2, 3]));
   });
-});
-
-describe("teeWriter sync-throw in close()", () => {
   it("sync throw in close() on the winner bypasses Promise.allSettled", async () => {
+    const survivor = makePeerStream();
     const throwOnClose = makePeerStream({
       close(): Promise<void> {
         throw new Error("sync throw in close");
       },
     });
 
-    const result = await teeWriter([makePeer(throwOnClose)], makeStream([new Uint8Array([1, 2, 3])]));
+    const result = await teeWriter([makePeer(throwOnClose), makePeer(survivor)], uint8array2stream(new Uint8Array([1, 2, 3])));
 
     expect(result.isOk()).toBe(true);
-    expect(result.Ok().peer).toBe(throwOnClose);
+    expect(result.Ok().peer.write).toHaveBeenCalledWith(new Uint8Array([1, 2, 3]));
   });
 });

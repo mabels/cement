@@ -16,8 +16,12 @@ import { TxtEnDecoder, TxtEnDecoderSingleton } from "../txt-en-decoder.js";
  * await stream.pipeTo(writable);
  * ```
  */
-export function string2stream(str: string, ende: TxtEnDecoder = TxtEnDecoderSingleton()): ReadableStream<Uint8Array> {
-  return uint8array2stream(ende.encode(str));
+export function string2stream(
+  strOrArray: string | string[],
+  ende: TxtEnDecoder = TxtEnDecoderSingleton(),
+): ReadableStream<Uint8Array> {
+  const sa = Array.isArray(strOrArray) ? strOrArray : [strOrArray];
+  return uint8array2stream(...sa.map((s) => ende.encode(s)));
 }
 
 /**
@@ -34,10 +38,12 @@ export function string2stream(str: string, ende: TxtEnDecoder = TxtEnDecoderSing
  * const stream = uint8array2stream(bytes);
  * ```
  */
-export function uint8array2stream(str: Uint8Array): ReadableStream<Uint8Array> {
+export function uint8array2stream(...uint8: Uint8Array[]): ReadableStream<Uint8Array> {
   return new ReadableStream<Uint8Array>({
     start(controller): void {
-      controller.enqueue(str);
+      for (const chunk of uint8) {
+        controller.enqueue(chunk);
+      }
       controller.close();
     },
   });

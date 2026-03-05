@@ -11,7 +11,54 @@ env:
   IN_CI: "in_ci"
 
 jobs:
-  build:
+  ci:
+    permissions:
+      contents: read
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [22.x]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        name: Install pnpm
+        with:
+          run_install: false
+          version: 10
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'pnpm'
+          cache-dependency-path: 'ts/pnpm-lock.yaml'
+
+      - name: Build & Test @adviser/cement
+        run: |
+          cd ts
+          pnpm remove playwright-chromium
+          pnpm install
+          pnpm dedupe --check
+          pnpm run prettier --check
+          pnpm run lint
+          pnpm run build
+          pnpm why playwright --json
+          PLAYWRIGHT_VERSION=$(pnpm why playwright --json | jq -r '.[] | select(.name == "playwright") | .version // empty')
+          docker run --rm \
+            -v $(pwd):/work \
+            -w /work \
+            mcr.microsoft.com/playwright:v${PLAYWRIGHT_VERSION}-noble \
+            bash -c "npm run test:js"
+          pnpm run test:deno
+          pnpm run smoke
+
+  publish:
+    needs: ci
+    if: github.event_name == 'push'
     permissions:
       contents: read
       id-token: write
@@ -40,24 +87,11 @@ jobs:
           cache-dependency-path: 'ts/pnpm-lock.yaml'
           registry-url: 'https://registry.npmjs.org'
 
-      - name: Build JS @adviser/cement
+      - name: pkg-pr-new preview
         run: |
           cd ts
           pnpm remove playwright-chromium
           pnpm install
-          pnpm dedupe --check
-          pnpm run prettier --check
-          pnpm run lint
-          pnpm run build
-          pnpm why playwright --json
-          PLAYWRIGHT_VERSION=$(pnpm why playwright --json | jq -r '.[] | select(.name == "playwright") | .version // empty') 
-          docker run --rm \
-            -v $(pwd):/work \
-            -w /work \
-            mcr.microsoft.com/playwright:v${PLAYWRIGHT_VERSION}-noble \
-            bash -c "npm run test:js"
-          pnpm run test:deno 
-          pnpm run smoke
           cd dist/pubdir && npx pkg-pr-new publish
 
       - name: Build documentation
@@ -96,5 +130,3 @@ jobs:
         run: |
           cd ts
           pnpm run deno:publish
-
-
