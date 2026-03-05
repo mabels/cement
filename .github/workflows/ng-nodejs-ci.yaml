@@ -58,7 +58,7 @@ jobs:
 
   publish:
     needs: ci
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/v') || startsWith(github.ref, 'refs/tags/docs'))
     permissions:
       contents: read
       id-token: write
@@ -87,12 +87,16 @@ jobs:
           cache-dependency-path: 'ts/pnpm-lock.yaml'
           registry-url: 'https://registry.npmjs.org'
 
-      - name: pkg-pr-new preview
+      - name: preview 
         run: |
           cd ts
           pnpm remove playwright-chromium
           pnpm install
-          cd dist/pubdir && npx pkg-pr-new publish
+          pnpm run build
+          pnpm run presmoke
+
+      - name: pkg-pr-new preview
+        run: cd ts/dist/pubdir && npx pkg-pr-new publish
 
       - name: Build documentation
         run: |
@@ -100,17 +104,14 @@ jobs:
           pnpm run docs
 
       - name: Setup Pages
-        if: startsWith(github.ref, 'refs/tags/v') || startsWith(github.ref, 'refs/tags/docs')
         uses: actions/configure-pages@v5
 
       - name: Upload artifact
-        if: startsWith(github.ref, 'refs/tags/v') || startsWith(github.ref, 'refs/tags/docs')
         uses: actions/upload-pages-artifact@v3
         with:
           path: 'ts/dist/docs'
 
       - name: Deploy to GitHub Pages
-        if: startsWith(github.ref, 'refs/tags/v') || startsWith(github.ref, 'refs/tags/docs')
         id: deployment
         uses: actions/deploy-pages@v4
 
