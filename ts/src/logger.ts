@@ -167,7 +167,7 @@ export interface Lengthed {
 export type SizeOrLength = Sized | Lengthed;
 
 export interface LogFormatter {
-  format(attr: LogSerializable): Uint8Array;
+  format(attr: LogSerializable): Uint8Array<ArrayBuffer>;
 }
 
 export interface LevelHandler {

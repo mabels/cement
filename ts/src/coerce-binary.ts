@@ -28,7 +28,10 @@ export function isUint8Array(value: unknown): value is Uint8Array {
  * @param input - String, ArrayBuffer, ArrayBufferView, Uint8Array, or Blob to convert
  * @returns Promise resolving to Uint8Array
  */
-export async function top_uint8(input: CoerceBinaryInput | Blob, encode?: (x: unknown) => Uint8Array): Promise<Uint8Array> {
+export async function top_uint8(
+  input: CoerceBinaryInput | Blob,
+  encode?: (x: unknown) => Uint8Array<ArrayBuffer>,
+): Promise<Uint8Array<ArrayBuffer>> {
   if (input instanceof Blob) {
     return new Uint8Array(await input.arrayBuffer());
   }
@@ -44,22 +47,25 @@ export async function top_uint8(input: CoerceBinaryInput | Blob, encode?: (x: un
  * @param encoder - Optional TextEncoder instance (uses singleton if not provided)
  * @returns Uint8Array representation of the input
  */
-export function to_uint8(input: CoerceBinaryInput, encoder?: TextEncoder | ((x: unknown) => Uint8Array)): Uint8Array {
+export function to_uint8(
+  input: CoerceBinaryInput,
+  encoder?: TextEncoder | ((x: unknown) => Uint8Array<ArrayBuffer>),
+): Uint8Array<ArrayBuffer> {
   if (isArrayBuffer(input)) {
     return new Uint8Array(input);
   }
   if (isUint8Array(input)) {
-    return input;
+    return input as Uint8Array<ArrayBuffer>;
   }
-  let encodeFn: (x: unknown) => Uint8Array;
+  let encodeFn: (x: unknown) => Uint8Array<ArrayBuffer>;
   let isDefaultTxtEncoder = false;
   if (typeof encoder === "function") {
     encodeFn = encoder;
   } else if (!encoder) {
     isDefaultTxtEncoder = true;
-    encodeFn = TxtEnDecoderSingleton().encode as (x: unknown) => Uint8Array;
+    encodeFn = TxtEnDecoderSingleton().encode as (x: unknown) => Uint8Array<ArrayBuffer>;
   } else {
-    encodeFn = (x: unknown): Uint8Array => encoder.encode(x as string);
+    encodeFn = (x: unknown): Uint8Array<ArrayBuffer> => encoder.encode(x as string);
   }
   if (typeof input === "string" || isDefaultTxtEncoder) {
     return encodeFn(input);
@@ -68,7 +74,7 @@ export function to_uint8(input: CoerceBinaryInput, encoder?: TextEncoder | ((x: 
     return encodeFn(input);
   }
   // not nice but we make the cloudflare types happy
-  return new Uint8Array(input as unknown as ArrayBufferLike);
+  return new Uint8Array(input as unknown as ArrayBufferLike) as Uint8Array<ArrayBuffer>;
 }
 
 /**
@@ -98,6 +104,6 @@ export function to_arraybuf(input: CoerceBinaryInput, encoder?: TextEncoder): Ar
     return input;
   }
   const u8 = to_uint8(input, encoder);
-  return u8.buffer.slice(u8.byteOffset, u8.byteOffset + u8.byteLength) as ArrayBuffer;
+  return u8.buffer.slice(u8.byteOffset, u8.byteOffset + u8.byteLength);
   // return to_uint8(input).buffer; //  as ArrayBuffer;
 }

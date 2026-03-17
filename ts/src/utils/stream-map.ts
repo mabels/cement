@@ -162,7 +162,7 @@ export async function stream2array<T>(a: ReadableStream<T>): Promise<T[]> {
 
 export function coerceStreamUint8(
   stream: ReadableStream<Uint8Array | string>,
-  encoder?: (x: unknown) => Uint8Array,
+  encoder?: (x: unknown) => Uint8Array<ArrayBuffer>,
 ): ReadableStream<Uint8Array> {
   return streamMap(stream, {
     Map: (chunk) => top_uint8(chunk, encoder),

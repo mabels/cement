@@ -125,7 +125,7 @@ describe("coerceStreamUint8", () => {
   });
 
   it("custom encoder: is called for string chunks", async () => {
-    const encodeSpy = vitest.fn((x: unknown): Uint8Array => {
+    const encodeSpy = vitest.fn((x: unknown): Uint8Array<ArrayBuffer> => {
       return new TextEncoder().encode(x as string);
     });
     await stream2array(coerceStreamUint8(array2stream<Uint8Array | string>(["a", "b", new Uint8Array([99])]), encodeSpy));

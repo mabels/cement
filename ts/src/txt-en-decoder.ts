@@ -6,7 +6,7 @@ export type ToDecoder = ToUInt8 | string | Result<string>;
 export type AsyncToDecoder = ToDecoder | Blob | Promise<ToDecoder | Blob>;
 
 export interface TxtEnDecoder {
-  encode: (input: string) => Uint8Array;
+  encode: (input: string) => Uint8Array<ArrayBuffer>;
   decode: (input?: ToDecoder) => string;
   asyncDecode: (input?: AsyncToDecoder) => Promise<string>;
 }
@@ -15,7 +15,7 @@ class TxtOps implements TxtEnDecoder {
   readonly encoder = new TextEncoder();
   readonly decoder = new TextDecoder();
 
-  readonly encode = (str: string): Uint8Array => {
+  readonly encode = (str: string): Uint8Array<ArrayBuffer> => {
     return this.encoder.encode(str);
   };
   readonly decode = (data?: ToDecoder): string => {

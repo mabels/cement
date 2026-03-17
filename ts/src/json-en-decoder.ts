@@ -11,14 +11,18 @@ export interface JSONEnDecoder {
     space?: string | number,
   ): Promise<string>;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  uint8ify<T>(input: Result<T> | T, replacer?: (this: any, key: string, value: any) => any, space?: string | number): Uint8Array;
+  uint8ify<T>(
+    input: Result<T> | T,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    replacer?: (this: any, key: string, value: any) => any,
+    space?: string | number,
+  ): Uint8Array<ArrayBuffer>;
   asyncUint8ify<T>(
     input: Promise<Result<T> | T>,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     replacer?: (this: any, key: string, value: any) => any,
     space?: string | number,
-  ): Promise<Uint8Array>;
+  ): Promise<Uint8Array<ArrayBuffer>>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   parse<T>(input: ToDecoder, reviver?: (this: any, key: string, value: any) => any): Result<T>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -44,7 +48,7 @@ class JSONOps implements JSONEnDecoder {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     replacer?: (this: any, key: string, value: any) => any,
     space?: string | number,
-  ): Promise<Uint8Array> {
+  ): Promise<Uint8Array<ArrayBuffer>> {
     const resolved = await input;
     return this.uint8ify(resolved, replacer, space);
   }
@@ -57,8 +61,12 @@ class JSONOps implements JSONEnDecoder {
   stringify<T>(input: Result<T> | T, replacer?: (this: any, key: string, value: any) => any, space?: string | number): string {
     return JSON.stringify(Result.Is(input) ? input.unwrap() : input, replacer, space);
   }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  uint8ify<T>(input: Result<T> | T, replacer?: (this: any, key: string, value: any) => any, space?: string | number): Uint8Array {
+  uint8ify<T>(
+    input: Result<T> | T,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    replacer?: (this: any, key: string, value: any) => any,
+    space?: string | number,
+  ): Uint8Array<ArrayBuffer> {
     return this.txtOps.encode(this.stringify(input, replacer, space));
   }
 

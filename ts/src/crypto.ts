@@ -104,11 +104,11 @@ export interface CryptoRuntime {
   decrypt(algo: { name: string; iv: Uint8Array; tagLength: number }, key: CTCryptoKey, data: Uint8Array): Promise<ArrayBuffer>;
   encrypt(algo: { name: string; iv: Uint8Array; tagLength: number }, key: CTCryptoKey, data: Uint8Array): Promise<ArrayBuffer>;
   digestSHA256(data: Uint8Array): Promise<ArrayBuffer>;
-  randomBytes(size: number): Uint8Array;
+  randomBytes(size: number): Uint8Array<ArrayBuffer>;
 }
 
 function randomBytes(crypto: typeof globalThis.crypto): CryptoRuntime["randomBytes"] {
-  return (size: number): Uint8Array => {
+  return (size: number): Uint8Array<ArrayBuffer> => {
     const bytes = new Uint8Array(size);
     if (size > 0) {
       crypto.getRandomValues(bytes);

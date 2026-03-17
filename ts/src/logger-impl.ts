@@ -61,7 +61,7 @@ export class JSONFormatter implements LogFormatter {
     this._txtEnDe = txtEnde;
     this._space = space;
   }
-  format(attr: LogSerializable): Uint8Array {
+  format(attr: LogSerializable): Uint8Array<ArrayBuffer> {
     let ret: string;
     try {
       ret = JSON.stringify(attr, null, this._space);
@@ -79,7 +79,7 @@ export class YAMLFormatter implements LogFormatter {
     this._txtEnDe = txtEnde;
     this._space = space;
   }
-  format(attr: LogSerializable): Uint8Array {
+  format(attr: LogSerializable): Uint8Array<ArrayBuffer> {
     return this._txtEnDe.encode("---\n" + YAML.stringify(attr, null, this._space) + "\n");
   }
 }
@@ -427,7 +427,7 @@ export class LoggerImpl implements Logger {
     );
   }
 
-  _resetAttributes(fn: () => () => Uint8Array): () => Uint8Array {
+  _resetAttributes(fn: () => () => Uint8Array<ArrayBuffer>): () => Uint8Array<ArrayBuffer> {
     const ret = fn();
     Object.keys(this._attributes).forEach((key) => {
       // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
@@ -448,9 +448,9 @@ export class LoggerImpl implements Logger {
       if (typeof msg === "string" && !msg.trim().length) {
         delete this._attributes["msg"];
       }
-      let fnRet = (): Uint8Array => this._formatter.format({ ...this._attributes });
+      let fnRet = (): Uint8Array<ArrayBuffer> => this._formatter.format({ ...this._attributes });
       if (doWrite) {
-        let encoded: Uint8Array;
+        let encoded: Uint8Array<ArrayBuffer>;
         try {
           encoded = fnRet();
           this._logWriter.write(encoded);
@@ -460,7 +460,7 @@ export class LoggerImpl implements Logger {
           console.error(where, e, this._attributes);
           encoded = this._txtEnDe.encode(where + (e as Error).message + "\n" + (e as Error).stack + "\n");
         }
-        fnRet = (): Uint8Array => encoded;
+        fnRet = (): Uint8Array<ArrayBuffer> => encoded;
       }
       return fnRet;
     });
