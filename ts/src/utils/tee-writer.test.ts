@@ -296,3 +296,38 @@ describe("teeWriter sync-throw", () => {
     expect(result.Ok().peer.write).toHaveBeenCalledWith(new Uint8Array([1, 2, 3]));
   });
 });
+
+// ---------------------------------------------------------------------------
+// Regression: peer whose close fails was dropped without cancel (resource leak)
+// ---------------------------------------------------------------------------
+
+describe("teeWriter close-fail cancel", () => {
+  it("peer whose close fails is cancelled before being dropped", async () => {
+    const failClose = makePeerStream({
+      close: vi.fn<() => Promise<void>>().mockRejectedValue(new Error("close failed")),
+    });
+    const survivor = makePeerStream();
+
+    const result = await teeWriter([makePeer(failClose), makePeer(survivor)], uint8array2stream());
+
+    expect(result.isOk()).toBe(true);
+    expect(result.Ok().peer).toBe(survivor);
+    // The peer that failed close must have been cancelled
+    expect(failClose.cancel).toHaveBeenCalled();
+  });
+
+  it("peer whose close hangs is cancelled after timeout", async () => {
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    const hangClose = makePeerStream({ close: vi.fn<() => Promise<void>>().mockImplementation(() => new Promise(() => {})) });
+    const survivor = makePeerStream({
+      close: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
+      cancel: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
+    });
+
+    const result = await teeWriter([makePeer(hangClose), makePeer(survivor)], uint8array2stream(), { peerTimeout: 15 });
+
+    expect(result.isOk()).toBe(true);
+    expect(result.Ok().peer).toBe(survivor);
+    expect(hangClose.cancel).toHaveBeenCalled();
+  });
+});
