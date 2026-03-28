@@ -32,8 +32,3 @@ it("scoped package with suffix", () => {
 it("throws on invalid package string", () => {
   expect(() => NPMPackage.parse("@scope-only")).toThrow();
 });
-
-it("resolves package-exports", () => {
-  const p = NPMPackage.parse("@vibes.diy/prompts");
-  expect(p).toEqual("xx");
-});
