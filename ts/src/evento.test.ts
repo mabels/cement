@@ -779,7 +779,7 @@ describe("Evento", () => {
     const error = new Error("test validate error");
     evo.push({
       hash: "regular-handler-0",
-      validate: async (ctx: ValidateTriggerCtx<Request, ReqTestType, ResType>): Promise<Result<Option<ReqTestType>>> => {
+      validate: (ctx: ValidateTriggerCtx<Request, ReqTestType, ResType>): Promise<Result<Option<ReqTestType>>> => {
         send.fn("regular-handler-0-validate", ctx);
         return Promise.reject(error);
       },
@@ -899,7 +899,7 @@ describe("Evento", () => {
     const error = new Error("test handle error");
     evo.push({
       hash: "regular-handler-0",
-      handle: async (ctx: HandleTriggerCtx<Request, ReqTestType, ResType>): Promise<Result<EventoResultType>> => {
+      handle: (ctx: HandleTriggerCtx<Request, ReqTestType, ResType>): Promise<Result<EventoResultType>> => {
         send.fn("regular-handler-0-handle", ctx);
         return Promise.reject(error);
       },
@@ -1014,7 +1014,7 @@ describe("Evento", () => {
         send.fn("regular-handler-0-handle", ctx);
         return Promise.resolve(Result.Ok(EventoResult.Continue));
       },
-      post: async (ctx: HandleTriggerCtx<Request, ReqTestType, ResType>): Promise<void> => {
+      post: (ctx: HandleTriggerCtx<Request, ReqTestType, ResType>): Promise<void> => {
         send.fn("regular-handler-0-post", ctx);
         return Promise.reject(new Error("test post-0 error"));
       },

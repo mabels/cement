@@ -78,7 +78,7 @@ describe("test streaming through rebuffer", () => {
     const reb = rebuffer(ts.readable, reBufferSize);
     await Promise.all([receiveFromStream(reb, state), sendToStream(ts.writable, state)]);
 
-    expect(state.CollectorFn).toBeCalledTimes(~~((state.sendChunkSize * state.sendChunks) / reBufferSize) + 1 + 1 /*done*/);
+    expect(state.CollectorFn).toHaveBeenCalledTimes(~~((state.sendChunkSize * state.sendChunks) / reBufferSize) + 1 + 1 /*done*/);
     expect(state.CollectorFn.mock.calls.slice(-1)[0][0].done).toBeTruthy();
     let lastfillCalls = 0;
     for (let i = 0; i < state.CollectorFn.mock.calls.length - 1 /*done*/; i++) {

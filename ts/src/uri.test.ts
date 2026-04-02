@@ -140,7 +140,7 @@ describe("URI", () => {
 
   it("unregistered protocol with hostPart", () => {
     const withoutHostpart = URI.from("indexdb://fp:bla/test/?name=test&store=meta");
-    expect(() => withoutHostpart.hostname).toThrowError('you can use hostname only if protocol is ["http","https","ws","wss"]');
+    expect(() => withoutHostpart.hostname).toThrow('you can use hostname only if protocol is ["http","https","ws","wss"]');
   });
 
   it("register protocol with hostPart", () => {
@@ -328,8 +328,8 @@ describe("URI", () => {
       expect(url.getParam({ key: "default" })).toBe("@bla");
       expect(url.getParam({ key2: "default" })).toBe("default");
 
-      expect(() => url.getParam({})).toThrowError("Invalid key: {}");
-      expect(() => url.getParam({ key: "x", key2: "y" })).toThrowError('Invalid key: {"key":"x","key2":"y"}');
+      expect(() => url.getParam({})).toThrow("Invalid key: {}");
+      expect(() => url.getParam({ key: "x", key2: "y" })).toThrow('Invalid key: {"key":"x","key2":"y"}');
     });
   }
   it("dashed getParamsResult", () => {

@@ -860,9 +860,9 @@ describe("TestLogger", () => {
       logger.Error().Msg("msg error");
       logger.Warn().Msg("msg warn");
       await logger.Flush();
-      expect(logParams.log).toBeCalledWith("msg debug", { level: "debug" });
-      expect(logParams.error).toBeCalledWith("msg error", { level: "error" });
-      expect(logParams.warn).toBeCalledWith("msg warn", { level: "warn" });
+      expect(logParams.log).toHaveBeenCalledWith("msg debug", { level: "debug" });
+      expect(logParams.error).toHaveBeenCalledWith("msg error", { level: "error" });
+      expect(logParams.warn).toHaveBeenCalledWith("msg warn", { level: "warn" });
     }
   });
 

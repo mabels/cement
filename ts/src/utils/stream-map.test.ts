@@ -46,7 +46,7 @@ it("stream_map", async () => {
       Close: closeFn,
     }),
   );
-  expect(closeFn).toBeCalledTimes(1);
+  expect(closeFn).toHaveBeenCalledTimes(1);
   expect(s).toEqual([12, 23, 34]);
 });
 
@@ -58,7 +58,7 @@ it("stream_map async", async () => {
       Close: closeFn,
     }),
   );
-  expect(closeFn).toBeCalledTimes(1);
+  expect(closeFn).toHaveBeenCalledTimes(1);
   expect(s).toEqual([12, 23, 34]);
 });
 
@@ -92,7 +92,7 @@ describe("test streaming through streamMap", () => {
     });
     await Promise.all([receiveFromStream(reb, state), sendToStream(ts.writable, state)]);
 
-    expect(state.CollectorFn).toBeCalledTimes(state.sendChunks + 1 /*done*/);
+    expect(state.CollectorFn).toHaveBeenCalledTimes(state.sendChunks + 1 /*done*/);
     expect(state.CollectorFn.mock.calls.slice(-1)[0][0].done).toBeTruthy();
     let lastfillCalls = 0;
     for (let i = 0; i < state.CollectorFn.mock.calls.length - 1 /*done*/; i++) {
@@ -129,7 +129,7 @@ describe("coerceStreamUint8", () => {
       return new TextEncoder().encode(x as string);
     });
     await stream2array(coerceStreamUint8(array2stream<Uint8Array | string>(["a", "b", new Uint8Array([99])]), encodeSpy));
-    expect(encodeSpy).toBeCalledTimes(2);
+    expect(encodeSpy).toHaveBeenCalledTimes(2);
   });
 });
 
@@ -162,6 +162,6 @@ describe("coerceStreamString", () => {
     });
     const enc = new TextEncoder();
     await stream2array(coerceStreamString(array2stream<Uint8Array | string>([enc.encode("a"), enc.encode("b"), "c"]), decodeSpy));
-    expect(decodeSpy).toBeCalledTimes(3);
+    expect(decodeSpy).toHaveBeenCalledTimes(3);
   });
 });

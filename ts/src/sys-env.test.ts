@@ -30,7 +30,7 @@ describe("sys_env", () => {
   it("onSet wild card", () => {
     const fn = vi.fn();
     envImpl.onSet(fn);
-    expect(fn).toBeCalledTimes(envImpl.keys().length);
+    expect(fn).toHaveBeenCalledTimes(envImpl.keys().length);
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     expect(fn.mock.calls.map((i) => i[0]).sort()).toEqual(envImpl.keys().sort());
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
@@ -47,13 +47,13 @@ describe("sys_env", () => {
     });
     const fn = vi.fn();
     env.onSet(fn, key);
-    expect(fn).toBeCalledTimes(1);
+    expect(fn).toHaveBeenCalledTimes(1);
     expect(fn.mock.calls[0]).toEqual([key, "value"]);
     env.set(key, "value2");
-    expect(fn).toBeCalledTimes(2);
+    expect(fn).toHaveBeenCalledTimes(2);
     expect(fn.mock.calls[1]).toEqual([key, "value2"]);
     env.delete(key);
-    expect(fn).toBeCalledTimes(3);
+    expect(fn).toHaveBeenCalledTimes(3);
     expect(fn.mock.calls[2]).toEqual([key, undefined]);
   });
   it("test register", () => {
@@ -108,7 +108,7 @@ describe("sys_env", () => {
 
       env.set("cf-key-1", "cf-value-2");
 
-      expect(onSet).toBeCalledWith("cf-key", "cf-value");
+      expect(onSet).toHaveBeenCalledWith("cf-key", "cf-value");
       expect(env.get("cf-key")).toBe("cf-value");
     });
   }

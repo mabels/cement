@@ -1,15 +1,16 @@
 import tsconfigPaths from "vite-tsconfig-paths";
-import { defineWorkersConfig } from "@cloudflare/vitest-pool-workers/config";
+import { cloudflareTest } from "@cloudflare/vitest-pool-workers";
+import { defineConfig } from "vitest/config";
 
-export default defineWorkersConfig({
-  plugins: [tsconfigPaths()],
+export default defineConfig({
+  plugins: [
+    tsconfigPaths(),
+    cloudflareTest({
+      wrangler: { configPath: "./wrangler.test.toml" },
+    }),
+  ],
   test: {
     name: "cf-runtime",
-    poolOptions: {
-      workers: {
-        wrangler: { configPath: "./wrangler.test.toml" },
-      },
-    },
     include: ["src/**/*test.?(c|m)[jt]s?(x)"],
   },
 });

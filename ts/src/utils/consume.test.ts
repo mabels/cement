@@ -245,6 +245,6 @@ describe("consumeIterator chunking behavior", () => {
     const result = await consumeIterator(largeAsyncGen(), (x: number) => x, { setTimeoutFn, chunkSize: 10 });
 
     expect(result).toHaveLength(53);
-    expect(setTimeoutFn).toBeCalledTimes(4); // Should have used setTimeout for chunking
+    expect(setTimeoutFn).toHaveBeenCalledTimes(4); // Should have used setTimeout for chunking
   });
 });

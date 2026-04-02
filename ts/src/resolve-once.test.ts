@@ -423,8 +423,8 @@ describe("resolve-once", () => {
     const fn = (): Promise<number> => {
       throw new Error(`nope ${val++}`);
     };
-    expect(() => once.once(fn)).toThrowError("nope 42");
-    expect(() => once.once(fn)).toThrowError("nope 42");
+    expect(() => once.once(fn)).toThrow("nope 42");
+    expect(() => once.once(fn)).toThrow("nope 42");
   });
 
   it.each([(): Promise<void> => new Promise((resolve) => setTimeout(resolve, 10)), (): Promise<void> => Promise.resolve()])(

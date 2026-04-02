@@ -1,5 +1,6 @@
 import { defineConfig } from "vitest/config";
 import tsconfigPaths from "vite-tsconfig-paths";
+import { playwright } from "@vitest/browser-playwright";
 
 export default defineConfig({
   plugins: [tsconfigPaths()],
@@ -9,7 +10,7 @@ export default defineConfig({
     browser: {
       enabled: true,
       headless: process.env.BROWSER === "safari" ? false : true,
-      provider: "playwright",
+      provider: playwright(),
       instances: [
         {
           browser: "chromium",
