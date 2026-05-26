@@ -105,19 +105,5 @@
   },
   "engines": {
     "node": ">=20.19.0"
-  },
-  "pnpm": {
-    "ignoredBuiltDependencies": [
-      "edgedriver",
-      "geckodriver",
-      "msw",
-      "sharp"
-    ],
-    "onlyBuiltDependencies": [
-      "deno",
-      "esbuild",
-      "playwright-chromium",
-      "workerd"
-    ]
   }
 }

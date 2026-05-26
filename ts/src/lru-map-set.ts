@@ -213,7 +213,7 @@ export class LRUMap<K, V> {
       return val;
     } else {
       const val = await createFN(key);
-      this.set(key, val as V);
+      this.set(key, val);
       return val;
     }
   }

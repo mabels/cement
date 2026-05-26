@@ -108,7 +108,7 @@ export class ResolveSeq<T, CTX extends NonNullable<object> = object> {
       }
       item.future.resolve(value);
     } catch (e) {
-      item.future.reject(e as Error);
+      item.future.reject(e);
     } finally {
       this._seqFutures.shift();
     }
@@ -453,11 +453,12 @@ export class AsyncResolveOnce<T, CTX> implements SyncOrAsyncIf<T> {
       try {
         const couldBePromise = fn();
         if (!isPromise(couldBePromise)) {
-          promiseResult = Promise.resolve(couldBePromise) as Promise<T>;
+          promiseResult = Promise.resolve(couldBePromise);
         } else {
           promiseResult = couldBePromise as Promise<T>;
         }
       } catch (e) {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
         promiseResult = Promise.reject(e as Error);
       }
       this.#queue.push(new AsyncResolveItem<T, CTX>(promiseResult, this.#rOnce, this.#state));
@@ -861,7 +862,7 @@ export class KeyedResolvOnce<
         );
       },
       key2string: kp.key2string,
-      ctx: kp.ctx as CTX,
+      ctx: kp.ctx,
       lru: kp.lru,
     });
   }
@@ -1139,7 +1140,7 @@ export class KeyedResolvSeq<
         });
       },
       key2string: kp.key2string,
-      ctx: kp.ctx as CTX,
+      ctx: kp.ctx,
       lru: kp.lru,
     });
   }
@@ -1157,7 +1158,7 @@ class LazyContainer<T> {
   }
   call<Args extends readonly unknown[], Return>(fn: (...args: Args) => Return): () => Return {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-explicit-any
-    return (...args: Args) => this.resolveOnce.once(() => fn(...args) as any) as unknown as Return;
+    return (...args: Args) => this.resolveOnce.once(() => fn(...args) as any);
   }
 }
 

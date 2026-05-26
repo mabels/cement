@@ -105,6 +105,8 @@ export interface CryptoRuntime {
   encrypt(algo: { name: string; iv: Uint8Array; tagLength: number }, key: CTCryptoKey, data: Uint8Array): Promise<ArrayBuffer>;
   digestSHA256(data: Uint8Array): Promise<ArrayBuffer>;
   randomBytes(size: number): Uint8Array<ArrayBuffer>;
+  sign(algorithm: CTAlgorithmIdentifier, key: CTCryptoKey, data: CTBufferSource): Promise<ArrayBuffer>;
+  verify(algorithm: CTAlgorithmIdentifier, key: CTCryptoKey, signature: CTBufferSource, data: CTBufferSource): Promise<boolean>;
 }
 
 function randomBytes(crypto: typeof globalThis.crypto): CryptoRuntime["randomBytes"] {
@@ -186,11 +188,13 @@ export function toCryptoRuntime(cryptoOpts: Partial<CryptoRuntime> = {}): Crypto
   }
   const runtime = {
     importKey: cryptoOpts.importKey || (crypto.subtle.importKey.bind(crypto.subtle) as CryptoRuntime["importKey"]),
-    exportKey: cryptoOpts.exportKey || (crypto.subtle.exportKey.bind(crypto.subtle) as CryptoRuntime["exportKey"]),
+    exportKey: cryptoOpts.exportKey || crypto.subtle.exportKey.bind(crypto.subtle),
     encrypt: cryptoOpts.encrypt || (crypto.subtle.encrypt.bind(crypto.subtle) as CryptoRuntime["encrypt"]),
     decrypt: cryptoOpts.decrypt || (crypto.subtle.decrypt.bind(crypto.subtle) as CryptoRuntime["decrypt"]),
     randomBytes: cryptoOpts.randomBytes || randomBytes(crypto),
     digestSHA256: cryptoOpts.digestSHA256 || digestSHA256(crypto),
+    sign: cryptoOpts.sign || crypto.subtle.sign.bind(crypto.subtle),
+    verify: cryptoOpts.verify || crypto.subtle.verify.bind(crypto.subtle),
   };
   // console.log("cryptoOpts", cryptoOpts, opts)
   return runtime;

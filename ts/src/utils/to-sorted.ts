@@ -39,7 +39,7 @@ function toSortedRecursive<T>(arrayOrObject: T, touchFn?: TouchFn, cycleReferenc
 
     case arrayOrObject instanceof Uint8Array:
       touchFn?.(arrayOrObject, "Uint8Array");
-      return arrayOrObject as T;
+      return arrayOrObject;
 
     case Array.isArray(arrayOrObject):
       touchFn?.(arrayOrObject, "Array");

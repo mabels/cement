@@ -572,7 +572,7 @@ export class Evento {
       // this skips encoding if already encoded
       if (!ctx.enRequest) {
         ctx.stats.encode.startTime = new Date();
-        const rUnk = await this.encoder.encode(ctx.request as never);
+        const rUnk = await this.encoder.encode(ctx.request);
         ctx.stats.encode.doneTime = new Date();
         if (rUnk.isErr()) {
           return Result.Err(rUnk);

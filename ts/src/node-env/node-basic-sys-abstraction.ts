@@ -24,7 +24,7 @@ export class NodeRuntimeService implements BasicRuntimeService {
   constructor(ende: TxtEnDecoder, envFactory: EnvFactory) {
     this._txtEnDe = ende;
     this._envFactory = envFactory;
-    this._gthis = globalThis as unknown as NodeRuntimeService["_gthis"];
+    this._gthis = globalThis;
   }
   Env(): Env {
     return this._envFactory();

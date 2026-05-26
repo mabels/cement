@@ -158,7 +158,7 @@ export function OnFunc<Fn extends (...args: any[]) => OnFuncReturn | X, X = unkn
   const ret = instance.addFunction.bind(instance) as ReturnOnFunc<ExtractArgs<Fn, X>>;
   ret.invoke = instance.invoke.bind(instance) as ReturnOnFunc<ExtractArgs<Fn, X>>["invoke"];
   ret.invokeAsync = instance.invokeAsync.bind(instance) as ReturnOnFunc<ExtractArgs<Fn, X>>["invokeAsync"];
-  ret.clear = instance.clear.bind(instance) as ReturnOnFunc<ExtractArgs<Fn, X>>["clear"];
+  ret.clear = instance.clear.bind(instance);
   ret.once = instance.once.bind(instance) as ReturnOnFunc<ExtractArgs<Fn, X>>["once"];
   ret.onRegister = instance.onRegister.addFunction.bind(instance.onRegister) as ReturnOnFunc<ExtractArgs<Fn, X>>["onRegister"];
   return ret;

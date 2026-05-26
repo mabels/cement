@@ -761,8 +761,8 @@ export class URI implements URIInterface<URI> {
         style: "host",
         hostname: this.hostname,
         port: this.port,
-      }) as Partial<HostURIObject>;
+      });
     }
-    return stripper(strips, pathURI) as Partial<PathURIObject>;
+    return stripper(strips, pathURI);
   }
 }

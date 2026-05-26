@@ -211,7 +211,7 @@ export class HttpHeader {
     if (values === undefined || values.size === 0) {
       return undefined;
     }
-    return values.values().next().value as string;
+    return values.values().next().value;
   }
 
   /**

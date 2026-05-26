@@ -92,9 +92,7 @@ function logValueInternal(val: LogValueArg, ctx: LogValueStateInternal): LogValu
         return logValueInternal(bin2string(val, 512), ctx);
       }
       if (Array.isArray(val)) {
-        return new LogValue(() =>
-          (val as Serialized[]).map((v) => logValue(v, { ...ctx, state: undefined }).value() as Serialized),
-        );
+        return new LogValue(() => val.map((v) => logValue(v, { ...ctx, state: undefined }).value() as Serialized));
       }
       // if (val instanceof Response) {
       //   // my = my.clone() as unknown as LogValue | Serialized[] | null

@@ -637,13 +637,13 @@ describe("TestLogger", () => {
       log.Info().Len(null, key).Msg("null");
       log
         .Info()
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .Len(true as any, key)
+
+        .Len(true, key)
         .Msg("bool");
       log
         .Info()
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .Len(1 as any, key)
+
+        .Len(1, key)
         .Msg("number");
 
       log.Info().Len("string", key).Msg("string");

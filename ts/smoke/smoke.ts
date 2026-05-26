@@ -12,6 +12,7 @@ async function main(): Promise<void> {
     .With()
     .Str("runtime", globalThis.Deno ? "Deno" : "Node")
     .Str("version", VERSION)
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument,@typescript-eslint/no-unsafe-member-access
     .Str("runtime-version", !globalThis.Deno ? process?.version : globalThis.Deno.version.deno)
     .Logger();
   const rt = runtimeFn();

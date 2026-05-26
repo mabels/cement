@@ -275,7 +275,7 @@ export class LoggerImpl implements Logger {
         );
       }
     } else {
-      this.Any(key, err as LogSerializable);
+      this.Any(key, err);
     }
     return this;
   }
@@ -325,7 +325,7 @@ export class LoggerImpl implements Logger {
       reqAndOrres = req;
     }
     if (reqAndOrres) {
-      this.Any(key || "Http", reqAndOrres as unknown as LogSerializable);
+      this.Any(key || "Http", reqAndOrres);
     }
     return this;
   }
@@ -340,7 +340,7 @@ export class LoggerImpl implements Logger {
         this.Result(key, value);
         continue;
       }
-      this.Any(key, value as LogSerializable);
+      this.Any(key, value);
     }
     return this;
   }

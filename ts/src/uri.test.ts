@@ -1,4 +1,4 @@
-import { ReadonlyURL, BuildURI, HostURIObject, PathURIObject, URI, isCoerceURI, param } from "@adviser/cement";
+import { ReadonlyURL, BuildURI, URI, isCoerceURI, param } from "@adviser/cement";
 import { describe, beforeEach, it, expect, expectTypeOf } from "vitest";
 
 describe("BuildURI", () => {
@@ -167,7 +167,7 @@ describe("URI", () => {
         name: "test",
         key: "@bla",
       },
-    } as HostURIObject);
+    });
   });
 
   it("path uri as json with omit", () => {
@@ -181,7 +181,7 @@ describe("URI", () => {
         name: "test",
         key: "@bla",
       },
-    } as PathURIObject);
+    });
   });
   it("URI getParamResult", () => {
     const uri = URI.from("blix://bla/blub?name=test&store=meta&key=%40bla");

@@ -1,0 +1,7 @@
+allowBuilds:
+  deno: true
+  esbuild: true
+  msw: false
+  playwright-chromium: true
+  sharp: false
+  workerd: true
