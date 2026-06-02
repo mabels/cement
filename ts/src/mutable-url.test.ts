@@ -148,15 +148,15 @@ describe("ReadonlyURL", () => {
     });
 
     it("should throw error when accessing host for non-host protocol", () => {
-      expect(() => url.host).toThrow("you can use hostname only if protocol is");
+      expect(() => url.host).toThrow(/^you can use host only if protocol/);
     });
 
     it("should throw error when accessing hostname for non-host protocol", () => {
-      expect(() => url.hostname).toThrow("you can use hostname only if protocol is");
+      expect(() => url.hostname).toThrow(/^you can use hostname only if protocol/);
     });
 
     it("should throw error when accessing port for non-host protocol", () => {
-      expect(() => url.port).toThrow("you can use hostname only if protocol is");
+      expect(() => url.port).toThrow(/^you can use port only if protocol/);
     });
   });
 

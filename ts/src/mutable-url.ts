@@ -25,26 +25,33 @@ export class ReadonlyURL extends URL {
   protected _protocol: string;
   protected _pathname: string;
   protected _hasHostpart: boolean;
+  protected _lazy: boolean;
 
-  static readonly fromThrow = (urlStr: string): ReadonlyURL => {
-    return new ReadonlyURL(urlStr);
+  protected readonly _init: {
+    urlStr: string;
+    tryed: string;
   };
 
-  static from(urlStr: string): Result<ReadonlyURL> {
+  static readonly fromThrow = (urlStr: string, lazy = false): ReadonlyURL => {
+    return new ReadonlyURL(urlStr, lazy);
+  };
+
+  static from(urlStr: string, lazy = false): Result<ReadonlyURL> {
     if (urlRegex.test(urlStr)) {
-      return exception2Result(() => new ReadonlyURL(urlStr));
+      return exception2Result(() => new ReadonlyURL(urlStr, lazy));
     }
     return Result.Err(`Invalid URL: ${urlStr}`);
   }
 
-  protected constructor(urlStr: string) {
+  protected constructor(urlStr: string, lazy: boolean) {
     super("defect://does.not.exist");
+    this._lazy = lazy;
     const partedURL = urlStr.split(":");
     this._hasHostpart = hasHostPartProtocols.has(partedURL[0]);
     let hostPartUrl = ["http", ...partedURL.slice(1)].join(":");
     if (!this._hasHostpart) {
-      const pathname = hostPartUrl.replace(/http:\/\/[/]*/, "").replace(/[#?].*$/, "");
-      hostPartUrl = hostPartUrl.replace(/http:\/\//, `http://localhost/${pathname}`);
+      // const pathname = hostPartUrl.replace(/http:\/\/[/]*/, "").replace(/[#?].*$/, "");
+      hostPartUrl = hostPartUrl.replace(/http:\/\//, `http://localhost/`);
     }
     try {
       this._sysURL = new URL(hostPartUrl);
@@ -53,11 +60,20 @@ export class ReadonlyURL extends URL {
       e.message = `${e.message} for URL: ${urlStr}`;
       throw e;
     }
+    this._init = {
+      urlStr,
+      tryed: hostPartUrl,
+    };
     this._protocol = `${partedURL[0]}:`; // this._sysURL.protocol.replace(new RegExp("^cement-"), "");
     if (this._hasHostpart) {
       this._pathname = this._sysURL.pathname;
     } else {
-      this._pathname = urlStr.replace(new RegExp(`^${this._protocol}//`), "").replace(/[#?].*$/, "");
+      if (this._protocol !== ":") {
+        this._pathname = urlStr.replace(new RegExp(`^${this._protocol}//`), "").replace(/[#?].*$/, "");
+      } else {
+        this._pathname = this._sysURL.pathname; // .replace(/^\/?/, ""); // remove leading slash if no protocol, to be consistent with non-hostpart URLs
+        this._protocol = "file:"; // if no protocol, set to empty string
+      }
     }
     // this.hash = this._sysURL.hash;
   }
@@ -114,9 +130,12 @@ export class ReadonlyURL extends URL {
 
   // Host getter and setter
   override get host(): string {
+    if (this._lazy) {
+      return "";
+    }
     if (!this._hasHostpart) {
       throw new Error(
-        `you can use hostname only if protocol is ${this.toString()} ${JSON.stringify(Array.from(hasHostPartProtocols.keys()))}`,
+        `you can use host only if protocol is ${JSON.stringify(this._init)} ${JSON.stringify(Array.from(hasHostPartProtocols.keys()))}`,
       );
     }
     return this._sysURL.host;
@@ -128,8 +147,13 @@ export class ReadonlyURL extends URL {
 
   // Hostname getter and setter
   override get hostname(): string {
+    if (this._lazy) {
+      return "";
+    }
     if (!this._hasHostpart) {
-      throw new Error(`you can use hostname only if protocol is ${JSON.stringify(Array.from(hasHostPartProtocols.keys()))}`);
+      throw new Error(
+        `you can use hostname only if protocol is ${JSON.stringify(this._init)} ${JSON.stringify(Array.from(hasHostPartProtocols.keys()))}`,
+      );
     }
     return this._sysURL.hostname;
   }
@@ -149,8 +173,13 @@ export class ReadonlyURL extends URL {
 
   // Port getter and setter
   override get port(): string {
+    if (this._lazy) {
+      return "";
+    }
     if (!this._hasHostpart) {
-      throw new Error(`you can use hostname only if protocol is ${JSON.stringify(Array.from(hasHostPartProtocols.keys()))}`);
+      throw new Error(
+        `you can use port only if protocol is ${JSON.stringify(this._init)} ${JSON.stringify(Array.from(hasHostPartProtocols.keys()))}`,
+      );
     }
     return this._sysURL.port;
   }
@@ -218,18 +247,18 @@ export class WritableURL extends ReadonlyURL {
   portExplicitlySet = false;
 
   static override readonly fromThrow = (urlStr: string): WritableURL => {
-    return new WritableURL(urlStr);
+    return new WritableURL(urlStr, false);
   };
 
   static override from(urlStr: string): Result<WritableURL> {
     if (urlRegex.test(urlStr)) {
-      return exception2Result(() => new WritableURL(urlStr));
+      return exception2Result(() => new WritableURL(urlStr, false));
     }
     return Result.Err(`Invalid URL: ${urlStr}`);
   }
 
-  private constructor(urlStr: string) {
-    super(urlStr);
+  private constructor(urlStr: string, lazy: boolean) {
+    super(urlStr, lazy);
   }
 
   override toJSON(): string {
@@ -242,7 +271,7 @@ export class WritableURL extends ReadonlyURL {
   }
 
   override clone(): WritableURL {
-    return new WritableURL(this.toString());
+    return new WritableURL(this.toString(), this._lazy);
   }
 
   override set origin(_h: string) {

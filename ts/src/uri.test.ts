@@ -140,7 +140,7 @@ describe("URI", () => {
 
   it("unregistered protocol with hostPart", () => {
     const withoutHostpart = URI.from("indexdb://fp:bla/test/?name=test&store=meta");
-    expect(() => withoutHostpart.hostname).toThrow('you can use hostname only if protocol is ["http","https","ws","wss"]');
+    expect(() => withoutHostpart.hostname).toThrow(/^you can use hostname only if protocol/);
   });
 
   it("register protocol with hostPart", () => {
@@ -855,5 +855,104 @@ describe("URI", () => {
     const coercedBuildURI = BuildURI.from(req);
     expect(coercedURI.toString()).toBe("http://example.com/meno");
     expect(coercedBuildURI.toString()).toBe("http://example.com/meno");
+  });
+
+  describe("Issue #745 - hostname throws on unknown protocol", () => {
+    describe("URI unknown protocol", () => {
+      const uri = URI.from("unknown://example.com/meno");
+      it("should throw on hostname", () => {
+        expect(() => uri.hostname).toThrow(/^you can use hostname only if protocol/);
+      });
+      it("should not throw on port", () => {
+        expect(() => uri.port).toThrow(/^you can use port only if protocol/);
+      });
+      it("should not throw on host", () => {
+        expect(() => uri.host).toThrow(/^you can use host only if protocol/);
+      });
+
+      // const buri = uri.build();
+      // it("should throw set hostname", () => {
+      //   expect(() => buri.hostname("xx")).toThrow('you can use hostname only if protocol is ["http","https","ws","wss"]');
+      // });
+      // it("should throw set port", () => {
+      //   expect(() => buri.port("xx")).toThrow('you can use port only if protocol is ["http","https","ws","wss"]');
+      // });
+      // it("should throw set host", () => {
+      //   expect(() => buri.host("xx")).toThrow('you can use host only if protocol is ["http","https","ws","wss"]');
+      // });
+    });
+
+    describe("broken uri any ways", () => {
+      it("lazyFrom should default on null", () => {
+        const uri = URI.lazyFrom();
+        expect(uri.protocol).toBe("file:");
+        expect(uri.pathname).toBe("/");
+        expect(uri.host).toBe("");
+        expect(uri.port).toBe("");
+        expect(uri.hostname).toBe("");
+      });
+      it("lazyFrom should default on empty", () => {
+        const uri = URI.lazyFrom("");
+        expect(uri.protocol).toBe("file:");
+        expect(uri.pathname).toBe("");
+        expect(uri.host).toBe("");
+        expect(uri.port).toBe("");
+        expect(uri.hostname).toBe("");
+      });
+      it("lazyFrom should default on illegal", () => {
+        const uri = URI.lazyFrom("hund");
+        expect(uri.protocol).toBe("file:");
+        expect(uri.pathname).toBe("hund");
+        expect(uri.host).toBe("");
+        expect(uri.port).toBe("");
+        expect(uri.hostname).toBe("");
+      });
+
+      it("lazyFrom should default on illegal", () => {
+        const uri = URI.lazyFrom("://///:::::::::\\kdkk:::::x/");
+        expect(uri.protocol).toBe("file:");
+        expect(uri.pathname).toBe("////:::::::::/kdkk:::::x/");
+        expect(uri.host).toBe("");
+        expect(uri.port).toBe("");
+        expect(uri.hostname).toBe("");
+      });
+
+      describe.each(["unknown://xxx", "file:///xxx"])("lazy accesss host/port", (val) => {
+        const uri = URI.lazyFrom(val);
+        it("should throw on hostname", () => {
+          expect(uri.hostname).toBe("");
+        });
+        it("should not throw on port", () => {
+          expect(uri.port).toBe("");
+        });
+        it("should not throw on host", () => {
+          expect(uri.host).toBe("");
+        });
+      });
+    });
+
+    describe("URI known protocol", () => {
+      const uri = URI.from("http://example.com/meno");
+      it("should throw on hostname", () => {
+        expect(() => uri.hostname).not.toThrow(/^you can use hostname only if protocol/);
+      });
+      it("should not throw on port", () => {
+        expect(() => uri.port).not.toThrow(/^you can use port only if protocol/);
+      });
+      it("should not throw on host", () => {
+        expect(() => uri.host).not.toThrow(/^you can use host only if protocol/);
+      });
+
+      const buri = uri.build();
+      it("should throw set hostname", () => {
+        expect(() => buri.hostname("xx")).not.toThrow(/^you can use hostname only if protocol/);
+      });
+      it("should throw set port", () => {
+        expect(() => buri.port("xx")).not.toThrow(/^you can use port only if protocol/);
+      });
+      it("should throw set host", () => {
+        expect(() => buri.host("xx")).not.toThrow(/^you can use host only if protocol/);
+      });
+    });
   });
 });

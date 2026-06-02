@@ -209,6 +209,7 @@ function from<R, T extends ReadonlyURL | WritableURL>(
     fromThrow: (urlStr: string) => T;
   },
 ): R {
+  // console.log("from", { strURLUri, defaultProtocol }, typeof falsy2undef(strURLUri));
   switch (typeof falsy2undef(strURLUri)) {
     case "undefined":
       return fac(action.fromThrow(`${defaultProtocol}///`));
@@ -618,6 +619,15 @@ export class URI implements URIInterface<URI> {
     );
   }
 
+  static lazyFrom(strURLUri?: CoerceURI, defaultProtocol = "file:"): URI {
+    return from((url) => uriInstances.get(`lazy+${url.toString()}`).once(() => new URI(url)), strURLUri, defaultProtocol, {
+      fromThrow: (urlStr: string) => {
+        // fix broken url
+        return ReadonlyURL.fromThrow(urlStr, true);
+      },
+    });
+  }
+
   // if no protocol is provided, default to file:
   static from(strURLUri?: CoerceURI, defaultProtocol = "file:"): URI {
     // this is not optimal, but it is a start
@@ -630,11 +640,11 @@ export class URI implements URIInterface<URI> {
   }
 
   static fromResult(strURLUri?: CoerceURI, defaultProtocol = "file:"): Result<URI> {
-    return exception2Result(() =>
-      from((url) => uriInstances.get(url.toString()).once(() => new URI(url)), strURLUri, defaultProtocol, {
-        fromThrow: ReadonlyURL.fromThrow,
-      }),
-    ); //as Result<URI>;
+    return exception2Result(() => URI.from(strURLUri, defaultProtocol));
+    //   from((url) => uriInstances.get(url.toString()).once(() => new URI(url)), strURLUri, defaultProtocol, {
+    //     fromThrow: ReadonlyURL.fromThrow,
+    //   }),
+    // ); //as Result<URI>;
   }
 
   readonly _url: ReadonlyURL;
