@@ -592,10 +592,12 @@ export class ResolveOnce<T, CTX = void> implements ResolveOnceIf<T, CTX> {
           // node solution
           const runtime = runtimeFn();
           switch (true) {
-            case runtime.isDeno:
-              {
-                let id = this.resetAfterTimer as unknown as number;
+            case runtime.isDeno: {
+              const [major, minor] = Deno.version.deno.split(".").map(Number);
+              if (major < 2 || (major === 2 && minor < 8)) {
+                // Deno < 2.8.0: unrefTimer expects a numeric ID extracted from the timer struct
                 if (typeof Deno.unrefTimer === "function") {
+                  let id = this.resetAfterTimer as unknown as number;
                   if (typeof this.resetAfterTimer === "number") {
                     id = this.resetAfterTimer;
                   } else {
@@ -605,7 +607,6 @@ export class ResolveOnce<T, CTX = void> implements ResolveOnceIf<T, CTX> {
                       });
                       if (ret) {
                         id = this.resetAfterTimer[ret as keyof typeof this.resetAfterTimer] as unknown as number;
-                        // console.warn("Deno.unrefTimer timerId from struct:", id, "version:", globalThis.Deno?.version);
                       }
                     } catch (e) {
                       // eslint-disable-next-line no-console
@@ -621,8 +622,11 @@ export class ResolveOnce<T, CTX = void> implements ResolveOnceIf<T, CTX> {
                   }
                   Deno.unrefTimer(id);
                 }
+                break;
               }
-              break;
+              // Deno >= 2.8.0 uses Node.js Timeout objects — fall through to isNodeIsh
+            }
+            // falls through
             case runtime.isNodeIsh:
               (this.resetAfterTimer as unknown as { unref: () => void }).unref();
               break;
