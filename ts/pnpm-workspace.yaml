@@ -14,3 +14,4 @@ minimumReleaseAgeExclude:
   - "@typescript/native-preview-win32-arm64@7.0.0-dev.20260609.1"
   - "@typescript/native-preview-win32-x64@7.0.0-dev.20260609.1"
   - "@typescript/native-preview@7.0.0-dev.20260609.1"
+  - "@cloudflare/workers-types@5.20260812.1"

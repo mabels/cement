@@ -216,8 +216,7 @@ export interface BasicSysAbstractionParams {
 export type WrapperBasicSysAbstractionParams = Partial<BasicRuntimeService & BasicSysAbstractionParams>;
 
 export type BaseBasicRuntimeSysAbstractionParams =
-  | (BasicRuntimeService & BasicSysAbstractionParams)
-  | (BasicRuntimeService & BaseSysAbstractionParams);
+  (BasicRuntimeService & BasicSysAbstractionParams) | (BasicRuntimeService & BaseSysAbstractionParams);
 
 export type WithCementWrapperSysAbstractionParams = WithCement<Partial<BaseBasicRuntimeSysAbstractionParams>>;
 /**

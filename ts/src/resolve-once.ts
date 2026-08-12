@@ -606,7 +606,8 @@ export class ResolveOnce<T, CTX = void> implements ResolveOnceIf<T, CTX> {
                         return key.toString().includes("timerId");
                       });
                       if (ret) {
-                        id = this.resetAfterTimer[ret as keyof typeof this.resetAfterTimer] as unknown as number;
+                        const timerRecord = this.resetAfterTimer as unknown as Record<PropertyKey, unknown>;
+                        id = timerRecord[ret] as number;
                       }
                     } catch (e) {
                       // eslint-disable-next-line no-console

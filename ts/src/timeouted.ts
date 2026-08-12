@@ -52,10 +52,7 @@ export type TimeoutResultAborted<CTX = unknown> = PurTimeoutResultAborted & Time
 export type TimeoutResultError<CTX = unknown> = PurTimeoutResultError & TimeoutState<CTX> & IsTimeouted<unknown, CTX>;
 
 export type TimeoutResult<T, CTX> =
-  | TimeoutResultSuccess<T, CTX>
-  | TimeoutResultTimeout<CTX>
-  | TimeoutResultAborted<CTX>
-  | TimeoutResultError<CTX>;
+  TimeoutResultSuccess<T, CTX> | TimeoutResultTimeout<CTX> | TimeoutResultAborted<CTX> | TimeoutResultError<CTX>;
 
 export function createTimeoutResult<T, CTX>(t: PurTimeoutResult<T> & TimeoutState<CTX>): TimeoutResult<T, CTX> {
   return { ...isTimeoutedMixin(t), ...t } as TimeoutResult<T, CTX>;
