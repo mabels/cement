@@ -62,7 +62,7 @@ importers:
         version: 0.15.0(supports-color@10.2.2)
       deno:
         specifier: ^2.9.5
-        version: 2.9.5
+        version: 2.9.6
       esbuild:
         specifier: ^0.28.2
         version: 0.28.2
@@ -345,35 +345,35 @@ packages:
     resolution: {integrity: sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw==}
     engines: {node: '>=12'}
 
-  '@deno/darwin-arm64@2.9.5':
-    resolution: {integrity: sha512-SX98qSdBT1lw9x6NwGwx2xIayl1kRimdRnFohYlJ6nt3mLKzTKHHKQwQs5D2pEY7mbUGGbYe9brM2kfN75pPkg==}
+  '@deno/darwin-arm64@2.9.6':
+    resolution: {integrity: sha512-V8uO1Aolrl/yvdMb5lOtgtigs8YuZBjrOrgviVMiYkQ0swymFfzkae1wZak4Xi24t7vf7d/eiMb/7ryjjVm+tg==}
     cpu: [arm64]
     os: [darwin]
 
-  '@deno/darwin-x64@2.9.5':
-    resolution: {integrity: sha512-gbdlxWZuAZFiJiZtTT00Mv/aC7f/31+pyqJGQKlZr5X33WeTo5B0GG+efcX3P1UZceRKHuPEAQ1B/M2oRt8r9Q==}
+  '@deno/darwin-x64@2.9.6':
+    resolution: {integrity: sha512-tPi3CWPRdjW1MaWlvWjORE7Ass5SADdWdj1BF1Q1PEdzi+5u/mC5YhmZzniMiPr81PpaFeqjXaLAsfb8lFsZ0Q==}
     cpu: [x64]
     os: [darwin]
 
-  '@deno/linux-arm64-glibc@2.9.5':
-    resolution: {integrity: sha512-IuYjsz9PGl7CJcNXMuN27KNDB8Q40brK3SG3l+TXMDVW61ZKwcn0fQHBHnXFiiygEwI8by/fKnASEluhZB1atw==}
+  '@deno/linux-arm64-glibc@2.9.6':
+    resolution: {integrity: sha512-poqhoH9B3nYloigEMPT5t8HY+wBeiuea1An5Q7fqgJzP0SYmWsoS/oUnWO/pEiA4ofzIBy1Elt/in58xKtxEoQ==}
     cpu: [arm64]
     os: [linux]
     libc: [glibc]
 
-  '@deno/linux-x64-glibc@2.9.5':
-    resolution: {integrity: sha512-TDqcnoLe3jlgqYEQm7H7MK6q0JOth+o8iSZzknRODnVkJfPiNnjVn1M1Zc6vnp+ipkyb6Av1/CUlHgHtlq59Gw==}
+  '@deno/linux-x64-glibc@2.9.6':
+    resolution: {integrity: sha512-3md4TKLCuzsLDmfOoC5KN7NAZaxSVkMgm64vg6foD00JBADCpYS2/5QqXfzgnP5ZQz3iLP9vBQJtEgc116OAoQ==}
     cpu: [x64]
     os: [linux]
     libc: [glibc]
 
-  '@deno/win32-arm64@2.9.5':
-    resolution: {integrity: sha512-tTPrE/4SX7uaC8nJW47iNnibtjzk1y4zoiYjBBHE34vdkbb6LHopqH68BxyT61HZdfqXzOTEYjDVHhtmVZFy+w==}
+  '@deno/win32-arm64@2.9.6':
+    resolution: {integrity: sha512-iHSHs89g2Uy6k0bGHmXkgzTIW8WXImYPpvqRRO/zNsK1/N79PcjvAth1TuQatuIALcLdocstPs/PAYtndbfr0A==}
     cpu: [arm64]
     os: [win32]
 
-  '@deno/win32-x64@2.9.5':
-    resolution: {integrity: sha512-LkcERsH0olOgevg9L9eootSr1U8ydyfnX1bS3mFqU+lGBeTYtlec5b/QF473WUOGVgPlWECrkxi4As5kEaFOzg==}
+  '@deno/win32-x64@2.9.6':
+    resolution: {integrity: sha512-qRGnmVz/Ea6UWPht/S3xFRK17UZ/ls38DSVfgGB17fpASLxPkksqzWUI/BzL9YYoOknYzfc94mySGyInZu/JXw==}
     cpu: [x64]
     os: [win32]
 
@@ -1352,8 +1352,8 @@ packages:
   deep-is@0.1.4:
     resolution: {integrity: sha512-oIPzksmTg4/MriiaYGO+okXDT7ztn/w3Eptv/+gSIdMdKsJo0u4CfYNFJPy+4SKMuCqGw2wxnA+URMg3t8a/bQ==}
 
-  deno@2.9.5:
-    resolution: {integrity: sha512-Jt/AcJiErtUW9krGwlwUDsm1coNtmfthiQ4JtSCF+JNkqohbeiJoRVkCr4FA4WQstyHuSJaON6PHCin0UCtlLg==}
+  deno@2.9.6:
+    resolution: {integrity: sha512-cr16GxYiUeH1juNvFTMOxt99V5QRVmANfy5UsZvE5hjC6P/o4Op/MBbRhLeBOL8WJpV6tr9hb+Kjb1MW0nEoVg==}
     hasBin: true
 
   detect-libc@2.1.2:
@@ -2460,22 +2460,22 @@ snapshots:
     dependencies:
       '@jridgewell/trace-mapping': 0.3.9
 
-  '@deno/darwin-arm64@2.9.5':
+  '@deno/darwin-arm64@2.9.6':
     optional: true
 
-  '@deno/darwin-x64@2.9.5':
+  '@deno/darwin-x64@2.9.6':
     optional: true
 
-  '@deno/linux-arm64-glibc@2.9.5':
+  '@deno/linux-arm64-glibc@2.9.6':
     optional: true
 
-  '@deno/linux-x64-glibc@2.9.5':
+  '@deno/linux-x64-glibc@2.9.6':
     optional: true
 
-  '@deno/win32-arm64@2.9.5':
+  '@deno/win32-arm64@2.9.6':
     optional: true
 
-  '@deno/win32-x64@2.9.5':
+  '@deno/win32-x64@2.9.6':
     optional: true
 
   '@emnapi/runtime@1.11.3':
@@ -3232,14 +3232,14 @@ snapshots:
 
   deep-is@0.1.4: {}
 
-  deno@2.9.5:
+  deno@2.9.6:
     optionalDependencies:
-      '@deno/darwin-arm64': 2.9.5
-      '@deno/darwin-x64': 2.9.5
-      '@deno/linux-arm64-glibc': 2.9.5
-      '@deno/linux-x64-glibc': 2.9.5
-      '@deno/win32-arm64': 2.9.5
-      '@deno/win32-x64': 2.9.5
+      '@deno/darwin-arm64': 2.9.6
+      '@deno/darwin-x64': 2.9.6
+      '@deno/linux-arm64-glibc': 2.9.6
+      '@deno/linux-x64-glibc': 2.9.6
+      '@deno/win32-arm64': 2.9.6
+      '@deno/win32-x64': 2.9.6
 
   detect-libc@2.1.2: {}
 
