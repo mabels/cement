@@ -46,6 +46,7 @@ jobs:
           pnpm run prettier --check
           pnpm run lint
           pnpm run build
+          pnpm run bench
           pnpm why playwright --json
           PLAYWRIGHT_VERSION=$(pnpm why playwright --json | jq -r '.[] | select(.name == "playwright") | .version // empty')
           docker run --rm \
@@ -55,11 +56,6 @@ jobs:
             bash -c "npm run test:js"
           pnpm run test:deno
           pnpm run smoke
-
-      - name: Benchmark stream2uint8array
-        run: |
-          cd ts
-          pnpm run bench
 
   publish:
     needs: ci
