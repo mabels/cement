@@ -45,7 +45,7 @@
     "build:deno": "deno publish --dry-run --unstable-sloppy-imports --allow-dirty --set-version 0.0.0-dev --quiet",
     "test": "pnpm run test:js",
     "posttest": "pnpm run test:deno",
-    "test:deno": "deno run --quiet --allow-net --allow-write --allow-run  --allow-sys --allow-ffi  --allow-read --allow-env  ./node_modules/vitest/vitest.mjs --run --project node",
+    "test:deno": "deno run --quiet --allow-all ./node_modules/vitest/vitest.mjs --run --project node",
     "test:js": "vitest --run",
     "pubdir": "src/cli/run.sh preparePubdir",
     "presmoke": "pnpm run pubdir",
