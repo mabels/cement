@@ -75,8 +75,8 @@
     "yaml": "^2.8.4"
   },
   "devDependencies": {
-    "@cloudflare/vitest-pool-workers": "^0.23.0",
-    "@cloudflare/workers-types": "^5.20260812.1",
+    "@cloudflare/vitest-plugin": "^1.7.0",
+    "@cloudflare/workers-types": "^5.20261110.1",
     "@eslint/js": "^10.0.1",
     "@types/deno": "^2.3.0",
     "@types/fs-extra": "^11.0.4",
