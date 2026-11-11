@@ -47,38 +47,7 @@ export async function stream2string(stream?: ReadableStream<Uint8Array> | null, 
 }
 
 /**
- * Converts a ReadableStream of Uint8Array chunks to a single Uint8Array.
- *
- * Reads and concatenates all chunks from the stream into a single buffer.
- * Useful for loading binary data from streams.
- *
- * @param stream - The ReadableStream to convert (returns empty Uint8Array if null/undefined)
- * @returns Promise resolving to the concatenated Uint8Array
- *
- * @example
- * ```typescript
- * const response = await fetch('/image.png');
- * const bytes = await stream2uint8array(response.body);
- * ```
+ * Binary stream helpers live in `./stream2uint8array.js` and are re-exported
+ * here for backwards compatibility.
  */
-export async function stream2uint8array(stream?: ReadableStream<Uint8Array> | null): Promise<Uint8Array> {
-  if (!stream) {
-    return Promise.resolve(new Uint8Array());
-  }
-  const reader = stream.getReader();
-  let res = new Uint8Array();
-  // eslint-disable-next-line no-constant-condition
-  while (1) {
-    try {
-      const { done, value } = await reader.read();
-      if (done) {
-        break;
-      }
-      res = new Uint8Array([...res, ...value]);
-    } catch (err) {
-      // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
-      return Promise.reject(err);
-    }
-  }
-  return Promise.resolve(res);
-}
+export * from "./stream2uint8array.js";

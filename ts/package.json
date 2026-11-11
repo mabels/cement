@@ -47,6 +47,8 @@
     "posttest": "pnpm run test:deno",
     "test:deno": "deno run --quiet --allow-all ./node_modules/vitest/vitest.mjs --run --project node",
     "test:js": "vitest --run",
+    "test:stream2uint8array": "vitest --run --config bench/vitest.config.ts --reporter=verbose",
+    "bench": "vitest --run --config bench/vitest.config.ts --reporter=verbose",
     "pubdir": "src/cli/run.sh preparePubdir",
     "presmoke": "pnpm run pubdir",
     "deno:publish": "pnpm run pubdir; cd dist/pubdir ; pnpm exec deno publish --allow-dirty --unstable-sloppy-imports --quiet",
